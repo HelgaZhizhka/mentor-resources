@@ -18,7 +18,7 @@ Before writing any code, in order:
 ## Working rules
 
 - **One feature at a time.** The one with `status: "in-progress"` in `feature_list.json`. Do not start a new feature without first marking the current one done.
-- **TypeScript strict, no `any`.** Existing `tsconfig.json` enforces this — don't loosen it.
+- **TypeScript strict, no `any`.** `tsconfig.base.json` at repo root enforces this (each package extends it); don't loosen it.
 - **No tests unless explicitly asked** (per global CLAUDE.md). M5 has a smoke test as the only exception — see SPEC §7.
 - **Code review before commit.** Invoke `feature-dev:code-reviewer` subagent on the diff. At milestone boundaries (end of M1, M3, M4, M5) wrap that in `/requesting-code-review` and `/receiving-code-review` skills.
 - **No scope creep.** SPEC §2 lists what's out of scope for v0.9. Resist the temptation to add it.
@@ -28,7 +28,7 @@ Before writing any code, in order:
 
 Mark a feature `"done"` in `feature_list.json` only when:
 
-- [ ] `pnpm exec tsc --noEmit` passes
+- [ ] `pnpm typecheck` passes (alias for `pnpm -r typecheck` — runs per-package)
 - [ ] `pnpm lint` passes
 - [ ] `feature-dev:code-reviewer` reviewed the diff; every flagged issue triaged (fixed or pushed back with reason)
 - [ ] For M5: smoke test against `pocket-mentor-test-fixtures` passed (draft-review URL in `evidence`)

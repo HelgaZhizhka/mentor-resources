@@ -30,6 +30,11 @@ lint-*.txt
 coverage/
 .nyc_output/
 
+# Secrets
+.env
+.env.*
+!.env.example
+
 # IDE
 .vscode/
 .idea/
