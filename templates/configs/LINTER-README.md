@@ -1,5 +1,10 @@
 # ESLint конфигурация для чистого кода
 
+## Профили конфигурации
+
+- `eslint.config.js` + `tsconfig.json` — базовый профиль для TypeScript-проектов без React
+- `eslint.react.config.js` + `tsconfig.react.json` — профиль для React + TypeScript, расширяет базовые правила React-проверками
+
 ## Что проверяет линтер
 
 ### Именование
@@ -33,12 +38,13 @@
 - ✅ No nested ternary
 - ✅ Обязательные фигурные скобки
 
-### React
+### React (`eslint.react.config.js`)
 
 - ✅ Именованные экспорты (не default)
 - ✅ Key в map()
 - ✅ Нет dangerouslySetInnerHTML
 - ✅ Правила React Hooks
+- ✅ Fast Refresh friendly exports
 - ✅ Порядок импортов
 
 ### Async/Await
@@ -73,11 +79,19 @@ pnpm run format:check
 
 ```bash
 # Из этого репозитория в ваш проект
-cp eslint.config.js your-project/
-cp tsconfig.json your-project/
-cp .prettierrc.json your-project/
-cp package.json your-project/  # Только devDependencies
+# TypeScript-проект
+cp templates/configs/eslint.config.js your-project/
+cp templates/configs/tsconfig.json your-project/
+
+# React + TypeScript-проект
+cp templates/configs/eslint.config.js your-project/
+cp templates/configs/eslint.react.config.js your-project/
+cp templates/configs/tsconfig.react.json your-project/tsconfig.json
 ```
+
+> Note: starting from Pocket Mentor v0.9, the repo root holds its own
+> Node-only configs for `packages/engine` and `packages/cli`. Student-facing
+> reference configs now live in `templates/configs/`.
 
 ### Установить зависимости
 

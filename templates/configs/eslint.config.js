@@ -1,14 +1,10 @@
-// ESLint Configuration for Clean Code
-// Covers maximum rules from the clean-code repository
+// ESLint Configuration for Clean TypeScript Code
+// Base configuration for TypeScript projects.
 
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 import importPlugin from 'eslint-plugin-import';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
 import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
 
@@ -26,7 +22,6 @@ export default tseslint.config(
       ...tseslint.configs.strictTypeChecked,
       ...tseslint.configs.stylisticTypeChecked,
       unicorn.configs.recommended,
-      jsxA11y.flatConfigs.recommended,
       eslintPluginPrettier,
     ],
     files: ['**/*.{ts,tsx}'],
@@ -39,9 +34,6 @@ export default tseslint.config(
       },
     },
     plugins: {
-      react,
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
       import: importPlugin,
     },
     rules: {
@@ -70,7 +62,7 @@ export default tseslint.config(
         },
         {
           selector: 'function',
-          format: ['camelCase', 'PascalCase'], // PascalCase for React components
+          format: ['camelCase', 'PascalCase'],
         },
         // PascalCase for classes, interfaces, types
         {
@@ -116,20 +108,19 @@ export default tseslint.config(
         { accessibility: 'explicit', overrides: { constructors: 'off' } },
       ],
 
-      // No empty interfaces
-      '@typescript-eslint/no-empty-interface': 'error',
-
       // Consistent type imports
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
 
-      // No type assertions (as, <Type>)
+      // Prefer modern `as` assertions over angle-bracket assertions.
+      // Avoids a full ban because `as const` and DOM assertions are common in TypeScript.
       '@typescript-eslint/consistent-type-assertions': [
         'error',
         {
-          assertionStyle: 'never', // Forbids 'as' and '<Type>' assertions
+          assertionStyle: 'as',
+          objectLiteralTypeAssertions: 'allow-as-parameter',
         },
       ],
 
@@ -149,11 +140,11 @@ export default tseslint.config(
       // Maximum 3 parameters
       'max-params': ['error', 3],
 
-      // Maximum function length (30 lines)
+      // Maximum function length (recommendation, not a hard blocker)
       'max-lines-per-function': [
-        'error',
+        'warn',
         {
-          max: 30,
+          max: 50,
           skipBlankLines: true,
           skipComments: true,
           IIFEs: true,
@@ -194,7 +185,7 @@ export default tseslint.config(
       'no-unreachable-loop': 'error',
 
       // Class methods should use 'this'
-      'class-methods-use-this': 'error',
+      '@typescript-eslint/class-methods-use-this': 'error',
 
       // Warning comments (TODO, FIXME, HACK)
       'no-warning-comments': [
@@ -207,9 +198,9 @@ export default tseslint.config(
 
       // Magic numbers
       '@typescript-eslint/no-magic-numbers': [
-        'error',
+        'warn',
         {
-          ignore: [0, 1, -1],
+          ignore: [0, 1, -1, 2, 10, 100],
           ignoreArrayIndexes: true,
           ignoreDefaultValues: true,
           ignoreEnums: true,
@@ -264,51 +255,11 @@ export default tseslint.config(
       'no-promise-executor-return': 'error',
 
       // ==============================================
-      // REACT
-      // ==============================================
-
-      ...reactHooks.configs.recommended.rules,
-      ...react.configs.recommended.rules,
-      ...react.configs['jsx-runtime'].rules,
-
-      // No default export (only named exports)
-      'import/no-default-export': 'error',
-      'import/prefer-default-export': 'off',
-
-      // Key in map()
-      'react/jsx-key': ['error', { checkFragmentShorthand: true }],
-
-      // No dangerouslySetInnerHTML
-      'react/no-danger': 'error',
-
-      // Hooks rules
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-
-      // Props destructuring
-      'react/destructuring-assignment': ['error', 'always'],
-
-      // No array index as key
-      'react/no-array-index-key': 'error',
-
-      // Self-closing tags
-      'react/self-closing-comp': 'error',
-
-      // JSX boolean value
-      'react/jsx-boolean-value': ['error', 'never'],
-
-      // Fragment shorthand
-      'react/jsx-fragments': ['error', 'syntax'],
-
-      // Props spreading
-      'react/jsx-props-no-spreading': 'off', // Allow ...props
-
-      // ==============================================
       // CONSOLE & DEBUGGING
       // ==============================================
 
       // No console.log
-      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-console': ['error', { allow: ['warn', 'info', 'error'] }],
 
       // No debugger
       'no-debugger': 'error',
@@ -330,7 +281,7 @@ export default tseslint.config(
       ],
 
       // No circular dependencies
-      'import/no-cycle': ['error', { maxDepth: Infinity }],
+      'import/no-cycle': ['warn', { maxDepth: 3 }],
 
       // No unused imports (also covers dead code detection)
       '@typescript-eslint/no-unused-vars': [
@@ -360,7 +311,7 @@ export default tseslint.config(
         {
           cases: {
             kebabCase: true, // Allow kebab-case (utils, hooks, etc.)
-            pascalCase: true, // Allow PascalCase (React components)
+            pascalCase: true, // Allow PascalCase (classes and constructors)
           },
         },
       ],
@@ -378,11 +329,19 @@ export default tseslint.config(
         {
           allowList: {
             acc: true, // accumulator in reduce
+            cb: true, // callback
+            ctx: true, // context
             env: true, // environment variables
+            err: true, // caught errors
+            fn: true, // function argument
             i: true, // loop index
             j: true, // nested loop index
+            params: true, // URL/search params
+            prev: true, // previous state value
             props: true, // React props
             Props: true, // React Props type
+            ref: true, // references
+            utils: true, // utilities
           },
         },
       ],
@@ -443,9 +402,6 @@ export default tseslint.config(
       curly: ['error', 'all'],
     },
     settings: {
-      react: {
-        version: 'detect',
-      },
       'import/resolver': {
         typescript: true,
         node: true,
