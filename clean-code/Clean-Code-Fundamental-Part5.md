@@ -2,6 +2,10 @@
 
 ## Принципы чистого кода в архитектурных паттернах
 
+SOLID часто объясняют через классы, но это не значит, что чистая архитектура во frontend обязательно должна быть OOP-heavy. В React те же идеи часто выражаются через маленькие компоненты, custom hooks, композицию, явные зависимости и разделение UI/логики/API.
+
+Используйте SOLID как способ думать о связности и ответственности, а не как требование создавать много классов.
+
 ### 1 SOLID Principles
 
 #### S - Single Responsibility Principle (Принцип единственной ответственности)
@@ -152,6 +156,8 @@ const printArea = (shape: Shape) => {
 
 - Когда нужно добавлять новую функциональность
 - Когда код часто расширяется новыми типами/случаями
+
+**Важно про баланс с YAGNI:** Open/Closed не означает “никогда не менять существующий код” и не требует заранее строить абстракции под все будущие сценарии. Создавайте точки расширения там, где изменения действительно ожидаемы. Если сценарий гипотетический — сначала выберите простое решение.
 
 #### L - Liskov Substitution Principle (Принцип подстановки Барбары Лисков)
 
@@ -377,6 +383,26 @@ const postgresService = new UserService(new PostgreSQLDatabase());
 - Когда код зависит от конкретных реализаций
 - Когда нужна гибкость в выборе реализации (БД, API, сервисы)
 
+**Frontend/React пример без классов:**
+
+```typescript
+type FetchUser = (id: string) => Promise<User>;
+
+const createUseUser = (fetchUser: FetchUser) => {
+  return (userId: string) => {
+    const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+      fetchUser(userId).then(setUser);
+    }, [fetchUser, userId]);
+
+    return user;
+  };
+};
+```
+
+Идея та же: hook зависит от переданной функции `fetchUser`, а не от конкретного API-клиента внутри себя. На практике часто достаточно проще: вынести API-функцию в отдельный модуль и мокать её в тестах.
+
 ### 2 KISS (Keep It Simple, Stupid)
 
 **Определение:** Код должен быть максимально простым. Простое решение всегда лучше сложного.
@@ -445,7 +471,7 @@ const processUser = (user: User | null): void => {
 1. **Early return** — выходить из функции как можно раньше
 2. **Извлечение методов** — выносить сложную логику в отдельные функции
 3. **Избегать глубокой вложенности** — максимум 2-3 уровня
-4. **Использовать встроенные методы** — `map`, `filter`, `reduce` вместо циклов
+4. **Использовать подходящие методы** — `map`, `filter`, `find`, `some`, `reduce` или `for...of`, если это читается проще
 
 ### 3 DRY (Don't Repeat Yourself)
 
@@ -614,9 +640,16 @@ const UserProfile = () => {
 
 ```typescript
 // 1. Data Layer (API)
+// isUser — type guard для проверки структуры ответа
 const fetchUser = async (): Promise<User> => {
   const response = await fetch('/api/user');
-  return response.json();
+  const data: unknown = await response.json();
+
+  if (!isUser(data)) {
+    throw new Error('Invalid user response');
+  }
+
+  return data;
 };
 
 // 2. Business Logic (Hook)

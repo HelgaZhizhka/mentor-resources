@@ -8,8 +8,11 @@
 
 - Он отключает проверку типов, и **код становится незащищённым**
 - TypeScript перестаёт помогать отлавливать ошибки
+- Ошибки начинают проявляться только в runtime
+- `any` заражает соседний код: если значение стало `any`, TypeScript перестаёт проверять цепочку вызовов дальше
 - Теряется смысл использования TypeScript
-  **❌ Плохо:**
+
+**❌ Плохо:**
 
 ```typescript
 const processData = (data: any) => {
@@ -36,6 +39,62 @@ const users: User[] = fetchUsers();
 const items: Item[] = getItems();
 const result: Promise<Data> = loadData();
 ```
+
+### 1.1.1 Опасность неявного `any`
+
+`any` опасен не только когда его явно написали. Иногда он появляется **неявно**, если TypeScript не может вывести тип и строгие настройки выключены.
+
+**❌ Плохо — параметр становится `any`, если выключен `noImplicitAny`:**
+
+```typescript
+const getUserName = (user) => {
+  return user.profile.name.toUpperCase();
+};
+```
+
+В таком коде TypeScript не знает структуру `user`, но при выключенном `noImplicitAny` разрешит любые обращения:
+
+```typescript
+getUserName(null); // Runtime error
+getUserName({}); // Runtime error
+getUserName({ profile: null }); // Runtime error
+```
+
+**✅ Хорошо — тип параметра описан явно:**
+
+```typescript
+type User = {
+  profile: {
+    name: string;
+  };
+};
+
+const getUserName = (user: User): string => {
+  return user.profile.name.toUpperCase();
+};
+```
+
+**✅ Ещё лучше для данных извне — принять `unknown` и проверить структуру:**
+
+```typescript
+const isUser = (value: unknown): value is User => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const user = value as { profile?: { name?: unknown } };
+
+  return typeof user.profile?.name === 'string';
+};
+
+const getUserName = (value: unknown): string => {
+  if (!isUser(value)) {
+    throw new Error('Invalid user');
+  }
+
+  return value.profile.name.toUpperCase();
+};
+```
+
+**Правило:** включайте `noImplicitAny` и не оставляйте параметры, результаты API, callbacks и данные из библиотек без типа.
 
 **Настройка запрета `any`:**
 
@@ -66,7 +125,8 @@ module.exports = {
 **Правило:**
 
 - **Используем `unknown` вместо `any`**, если не знаем, какой будет тип
-- **Только через проверку или `as` приводим `unknown` к нужному типу**
+- **Сначала проверяем `unknown` через type guard или валидацию**
+- `as` используем только точечно, когда TypeScript не может вывести тип после проверки
 
 **❌ Плохо — `any` отключает проверки TypeScript:**
 
@@ -194,9 +254,17 @@ const add = (a: number, b: number): number => a + b;
 const formatUser = (user: User): string => `${user.name} (${user.email})`;
 
 // ✅ Async функция
+// В реальном проекте данные из API нужно валидировать перед возвратом как Data
+// isData — type guard для проверки структуры ответа
 const fetchData = async (url: string): Promise<Data> => {
   const response = await fetch(url);
-  return response.json();
+  const data: unknown = await response.json();
+
+  if (!isData(data)) {
+    throw new Error('Invalid API response');
+  }
+
+  return data;
 };
 
 // ✅ Функция без возврата
@@ -319,16 +387,17 @@ interface Window {
 
 ## 3. Enum vs const объекты
 
-### 3.1 Почему `enum` — это плохо
+### 3.1 Почему в frontend чаще избегают `enum`
 
-**Проблемы `enum`:**
+**Проблемы обычного `enum` во frontend-коде:**
 
-- Генерирует лишний код в JavaScript
-- Ломает `Object.keys`
-- Не всегда работает как ожидается
-- Занимает больше места в бандле
+- Генерирует runtime-код в JavaScript
+- Этот код попадает в итоговый bundle
+- Numeric enum создаёт reverse mapping, из-за чего `Object.keys` может вернуть неожиданные значения
+- Работает не как чистый type-level механизм TypeScript
+- Обычно занимает больше места, чем `as const` + union type
 
-**❌ Плохо — `enum` генерирует лишний код в JS:**
+**❌ Нежелательно во frontend — обычный `enum` генерирует лишний JS-код:**
 
 ```typescript
 enum Role {
@@ -344,11 +413,11 @@ var Role;
 })(Role || (Role = {}));
 ```
 
-**Когда `enum` допустим:**
+**Когда `enum` может быть допустим:**
 
-Есть несколько случаев, когда использование `enum` оправдано:
+В новых frontend-проектах лучше по умолчанию выбирать `as const` или union literals. Но есть случаи, когда `enum` уже задан контекстом проекта:
 
-**1. `const enum` — полностью удаляется из JS:**
+**1. `const enum` может быть удалён из JS при совместимой сборке:**
 
 ```typescript
 const enum Status {
@@ -359,7 +428,7 @@ const enum Status {
 
 const status = Status.Success; // В JS будет: const status = 1
 
-// ✅ Никакого лишнего кода в бандле!
+// ✅ При обычной компиляции TypeScript без preserveConstEnums лишний runtime-код не попадёт в бандл.
 ```
 
 **2. Numeric enum с reverse mapping:**
@@ -376,10 +445,10 @@ console.log(HttpStatus[200]); // "OK"
 console.log(HttpStatus.OK); // 200
 ```
 
-**3. Когда требуется совместимость с внешними библиотеками:**
-Если библиотека использует enum в типах, вам придется использовать их.
+**3. Когда требуется совместимость с внешними библиотеками, legacy-кодом или shared contracts:**
+Если библиотека, backend contract или существующий shared-пакет уже использует `enum`, иногда проще и безопаснее использовать тот же тип.
 
-**Рекомендация:** В 95% случаев используйте `as const` вместо `enum`. Используйте `const enum` только если критична оптимизация бандла и не нужен reverse mapping.
+**Рекомендация:** В frontend-коде по умолчанию используйте `as const` вместо обычного `enum`, чтобы не добавлять runtime-код в bundle. `const enum` используйте осторожно: он зависит от настроек сборки (`preserveConstEnums`, Babel/SWC, `isolatedModules`) и не всегда подходит для библиотек.
 
 ### 3.2 Использование `as const`
 
@@ -439,7 +508,17 @@ const handleStatus = (status: Status) => {
 ### 4.1 Type Assertion (`as`)
 
 **Проблема:**
-Оператор **type assertion (`as`)** просто **заставляет TypeScript "поверить", что тип корректный**, но **он не делает реальной проверки в рантайме**.
+Оператор **type assertion (`as`)** просто **заставляет TypeScript "поверить", что тип корректный**, но **он не делает реальной проверки в runtime**.
+
+Это важно: `as` не преобразует данные, не валидирует объект и не защищает приложение от падения. Он только говорит компилятору: "поверь мне, я знаю лучше".
+
+**Почему это опасно:**
+
+- Можно скрыть реальную ошибку типов
+- Можно получить runtime error там, где TypeScript показывает "всё зелёное"
+- Можно случайно протащить неверные данные из API в доменную модель
+- Можно превратить `unknown` или `any` в любой тип без проверки
+- Можно создать ложное чувство безопасности: код выглядит типизированным, но фактически не проверен
 
 **❌ Плохо — может привести к ошибке:**
 
@@ -449,6 +528,69 @@ console.log(input.value); // ❌ В runtime здесь будет ошибка, 
 ```
 
 **Проблема:** Если элемент не найден, `input` будет `null`, но TypeScript об этом не знает!
+
+**❌ Плохо — assertion не валидирует данные из API:**
+
+```typescript
+type User = {
+  id: string;
+  name: string;
+};
+
+const loadUser = async (): Promise<User> => {
+  const response = await fetch('/api/user');
+  const data = await response.json();
+
+  return data as User;
+};
+```
+
+Этот код выглядит безопасно, но если API вернёт `{ id: 1, fullName: 'Alex' }`, TypeScript не предупредит. Ошибка появится позже, когда код начнёт обращаться к `user.name` как к строке.
+
+**❌ Плохо — double assertion почти всегда признак проблемы:**
+
+```typescript
+const user = data as unknown as User;
+```
+
+Такой код полностью обходит систему типов. Если приходится писать `as unknown as`, почти всегда лучше остановиться и добавить нормальную проверку данных.
+
+**✅ Хорошо — проверить тип перед использованием:**
+
+```typescript
+type User = {
+  id: string;
+  name: string;
+};
+
+const isUser = (value: unknown): value is User => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const user = value as { id?: unknown; name?: unknown };
+
+  return typeof user.id === 'string' && typeof user.name === 'string';
+};
+
+const loadUser = async (): Promise<User> => {
+  const response = await fetch('/api/user');
+  const data: unknown = await response.json();
+
+  if (!isUser(data)) {
+    throw new Error('Invalid user response');
+  }
+
+  return data;
+};
+```
+
+**Когда `as` допустим:**
+
+- После runtime-проверки, когда TypeScript не может вывести тип достаточно точно
+- Для DOM API, если есть проверка `instanceof` или null-check
+- Для `as const`, чтобы зафиксировать literal types и readonly-значения
+- В редких местах на границе с плохо типизированной библиотекой, желательно с комментарием почему
+
+**Правило:** используйте `as` как последнее средство. Если данные приходят извне — API, `localStorage`, `JSON.parse`, query params — сначала проверяйте их через type guard, schema validation или явную валидацию.
 
 ### 4.2 Type Guards (`typeof`, `instanceof`, `is`)
 
@@ -533,7 +675,229 @@ const validUsers = users.filter(isDefined); // Type: User[]
 - Type guard (как `typeof`, `instanceof`, свои is-функции) реально валидируют тип во время выполнения и защищают от падения приложения
 
 **Рекомендации:**
+
 - [ts-reset](https://github.com/total-typescript/ts-reset) — исправляет встроенные типы TS (`JSON.parse`, `fetch` → `unknown` вместо `any`)
+
+### 4.3 Современные практики TypeScript
+
+#### `satisfies`
+
+`as const` фиксирует значения, но иногда нужно ещё проверить, что объект соответствует ожидаемой форме. Для этого используйте `satisfies`.
+
+**❌ Плохо — `as` может скрыть ошибку:**
+
+```typescript
+type Route = {
+  path: string;
+  title: string;
+};
+
+const routes = {
+  home: { path: '/', title: 'Home' },
+  profile: { path: '/profile', label: 'Profile' }, // ❌ title отсутствует
+} as Record<string, Route>;
+```
+
+**✅ Хорошо — `satisfies` проверяет форму, но сохраняет точные типы:**
+
+```typescript
+type Route = {
+  path: string;
+  title: string;
+};
+
+const routes = {
+  home: { path: '/', title: 'Home' },
+  profile: { path: '/profile', title: 'Profile' },
+} satisfies Record<string, Route>;
+```
+
+**Когда использовать:**
+
+- конфиги;
+- словари роутов;
+- maps статусов;
+- объекты с дизайн-токенами;
+- данные, где важно проверить форму, но сохранить literal types.
+
+#### Discriminated unions
+
+Discriminated union помогает описывать состояния явно и безопасно. Это особенно полезно для UI-состояний: loading, error, success.
+
+**❌ Плохо — много nullable-полей и неясные комбинации:**
+
+```typescript
+type State = {
+  isLoading: boolean;
+  data?: User[];
+  error?: string;
+};
+```
+
+Такой тип разрешает странные состояния: `isLoading: true`, но при этом уже есть `data` и `error`.
+
+**✅ Хорошо — каждое состояние описано отдельно:**
+
+```typescript
+type State =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: User[] }
+  | { status: 'error'; message: string };
+
+const renderUsers = (state: State): React.ReactNode => {
+  switch (state.status) {
+    case 'idle':
+      return null;
+    case 'loading':
+      return <Spinner />;
+    case 'success':
+      return <UserList users={state.data} />;
+    case 'error':
+      return <ErrorMessage message={state.message} />;
+  }
+};
+```
+
+#### Exhaustiveness checking через `never`
+
+Если вариантов union станет больше, TypeScript должен подсказать, что обработка неполная.
+
+```typescript
+const assertNever = (value: never): never => {
+  throw new Error(`Unexpected value: ${String(value)}`);
+};
+
+const getStatusLabel = (state: State): string => {
+  switch (state.status) {
+    case 'idle':
+      return 'Idle';
+    case 'loading':
+      return 'Loading';
+    case 'success':
+      return 'Success';
+    case 'error':
+      return 'Error';
+    default:
+      return assertNever(state);
+  }
+};
+```
+
+Если добавить новый статус, например `{ status: 'empty' }`, TypeScript покажет ошибку в `assertNever(state)`.
+
+#### Осторожно с non-null assertion (`!`)
+
+Оператор `!` говорит TypeScript: "значение точно не `null` и не `undefined`". Но runtime-проверки он не делает.
+
+**❌ Плохо:**
+
+```typescript
+const input = document.querySelector('input')!;
+input.value = 'Hello';
+```
+
+Если `input` не найден, приложение упадёт.
+
+**✅ Хорошо:**
+
+```typescript
+const input = document.querySelector('input');
+
+if (!(input instanceof HTMLInputElement)) {
+  throw new Error('Input not found');
+}
+
+input.value = 'Hello';
+```
+
+**Правило:** избегайте `!` в прикладном коде. Лучше сделать явную проверку или изменить тип данных так, чтобы `null` был обработан.
+
+#### `noUncheckedIndexedAccess`
+
+При обращении по индексу элемент может отсутствовать. Настройка `noUncheckedIndexedAccess` заставляет TypeScript учитывать это.
+
+**❌ Плохо — без строгой настройки можно забыть про `undefined`:**
+
+```typescript
+const users: User[] = [];
+const firstUser = users[0];
+
+console.log(firstUser.name); // Runtime error, если массива пустой
+```
+
+**✅ Хорошо — проверяем наличие элемента:**
+
+```typescript
+const users: User[] = [];
+const firstUser = users[0];
+
+if (!firstUser) {
+  return null;
+}
+
+console.log(firstUser.name);
+```
+
+То же касается `Record` и динамических ключей:
+
+```typescript
+const usersById: Record<string, User> = {};
+const user = usersById[userId];
+
+if (!user) {
+  throw new Error('User not found');
+}
+```
+
+#### `readonly` и `ReadonlyArray`
+
+`readonly` помогает защитить данные от случайной мутации.
+
+**❌ Плохо — функция может изменить входные данные:**
+
+```typescript
+const sortUsers = (users: User[]): User[] => {
+  return users.sort((a, b) => a.name.localeCompare(b.name));
+};
+```
+
+**✅ Хорошо — входной массив нельзя мутировать:**
+
+```typescript
+const sortUsers = (users: ReadonlyArray<User>): User[] => {
+  return [...users].sort((a, b) => a.name.localeCompare(b.name));
+};
+```
+
+Для объектов:
+
+```typescript
+type Config = Readonly<{
+  apiUrl: string;
+  timeout: number;
+}>;
+```
+
+#### Utility types: `Pick`, `Omit`, `Partial`, `Required`
+
+Utility types полезны, если не злоупотреблять ими.
+
+```typescript
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+};
+
+type PublicUser = Omit<User, 'passwordHash'>;
+type UserPreview = Pick<User, 'id' | 'name'>;
+type UpdateUserPayload = Partial<Pick<User, 'name' | 'email'>>;
+type CompleteUserForm = Required<UpdateUserPayload>;
+```
+
+**Правило:** utility types должны упрощать код, а не превращать типы в головоломку. Если тип становится трудно читать — лучше описать его явно.
 
 ## 5. Константы и Magic Values
 

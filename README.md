@@ -19,7 +19,7 @@
 | **Нужен чеклист для проверки кода?**       | → [Clean Code Checklist](./clean-code/Check-List.md)      |
 | **Изучаешь React?**                        | → [React Best Practices](./clean-code/React.md)           |
 | **Работаешь с TypeScript?**                | → [TypeScript Best Practices](./clean-code/TypeScript.md) |
-| **Хочешь автоматизировать проверку кода?** | → [ESLint конфигурация](./LINTER-README.md)               |
+| **Хочешь автоматизировать проверку кода?** | → [ESLint конфигурация](./templates/configs/LINTER-README.md)               |
 
 ### Для менторов
 
@@ -29,9 +29,7 @@
 | **Нужны чек-листы для проверки?**             | → [Чек-листы](./templates/checklists/)                     |
 | **Хочешь автоматизировать проверки?**         | → [Скрипт автопроверки](./templates/scripts/auto-check.sh) |
 | **Нужен AI агент для code review?**           | → [AI Code Reviewer](./templates/agents/reviewer.md)       |
-| **Нужен линтер для автоматической проверки?** | → [ESLint конфигурация](./LINTER-README.md)                |
-
-[Ссылка на документацию по код-ревью для ментора RS School](https://github.com/rolling-scopes-school/docs/blob/master/docs/ru/pull-request-review-process.md)
+| **Нужен линтер для автоматической проверки?** | → [ESLint конфигурация](./templates/configs/LINTER-README.md)                |
 
 ## Содержание репозитория
 
@@ -45,8 +43,8 @@
 - [Часть 2: Рефакторинг](./clean-code/Clean-Code-Fundamental-Part2.md) — code smells, организация кода
 - [Часть 3: Продвинутые практики](./clean-code/Clean-Code-Fundamental-Part3.md) — работа с данными, асинхронность
 - [Часть 4: Производительность](./clean-code/Clean-Code-Fundamental-Part4.md) — оптимизация, тестируемость, примеры тестов
-- [Часть 5: SOLID](./clean-code/Clean-Code-Fundamentals-Part5.md) — архитектурные принципы с примерами
-- [Часть 6: Дополнительно](./clean-code/Clean-Code-Fundamentals-Part6.md)
+- [Часть 5: SOLID](./clean-code/Clean-Code-Fundamental-Part5.md) — архитектурные принципы с примерами
+- [Часть 6: Дополнительно](./clean-code/Clean-Code-Fundamental-Part6.md)
 
 #### Технологии
 
@@ -95,7 +93,7 @@
 
 Агент создаёт детальный отчёт с примерами кода и рекомендациями.
 
-**3. ESLint конфигурация** → [Подробнее](./LINTER-README.md)
+**3. ESLint конфигурация** → [Подробнее](./templates/configs/LINTER-README.md)
 
 Покрывает базовые правила автоматически:
 

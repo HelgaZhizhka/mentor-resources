@@ -133,7 +133,9 @@ const updatedUsers = users.map((u) => (u.id === 1 ? { ...u, name: 'Jane' } : u))
 
 ### 1.5 Работа с массивами
 
-**Декларативные методы вместо циклов:**
+**Декларативные методы вместо циклов, когда это повышает читаемость:**
+
+`map`, `filter`, `reduce`, `some`, `every`, `find` часто делают намерение кода понятнее. Но это не запрет на циклы: простой `for...of` иногда читается лучше, особенно если нужен early exit, несколько накопителей или сложная пошаговая логика.
 
 **❌ Плохо — императивный стиль:**
 
@@ -174,6 +176,12 @@ const doubled = numbers.map((n) => n * 2);
 
 // Сумма
 const sum = numbers.reduce((acc, n) => acc + n, 0);
+
+// Если reduce становится сложным — лучше обычный цикл
+let total = 0;
+for (const number of numbers) {
+  total += number;
+}
 ```
 
 **Читаемость цепочек:**
@@ -202,7 +210,7 @@ const usersWithFullName = activeUsers.map((u) => ({
 
 const adults = usersWithFullName.filter((u) => u.age > 18);
 
-const sortedByAge = adults.sort((a, b) => a.age - b.age);
+const sortedByAge = [...adults].sort((a, b) => a.age - b.age);
 
 const topTen = sortedByAge.slice(0, 10);
 
@@ -222,7 +230,7 @@ const sortByAge = (a: User, b: User) => a.age - b.age;
 const result = users
   .filter((u) => u.isActive && u.age > 18)
   .map(formatUser)
-  .sort(sortByAge)
+  .toSorted(sortByAge)
   .slice(0, 10)
   .map((u) => u.email);
 ```
@@ -453,7 +461,7 @@ fetchUser(userId)
 // ❌ Плохо — ошибки не обрабатываются
 fetchUser(userId).then((user) => saveUser(user));
 
-// ✅ Хорошо — всегда добавлять catch
+// ✅ Хорошо — ошибка обработана явно
 fetchUser(userId)
   .then((user) => saveUser(user))
   .catch((error) => {
@@ -464,8 +472,10 @@ fetchUser(userId)
 
 **Promise.all, Promise.race:**
 
+`Promise.all` используйте только для независимых операций. Если второй запрос зависит от результата первого — выполняйте их последовательно. Если нужно получить все результаты, даже при частичных ошибках, используйте `Promise.allSettled`.
+
 ```typescript
-// Параллельное выполнение
+// Параллельное выполнение независимых запросов
 const [users, posts, comments] = await Promise.all([fetchUsers(), fetchPosts(), fetchComments()]);
 
 // Гонка — первый выполненный
@@ -543,6 +553,7 @@ const loadData = async () => {
 
 // ✅ Хорошо — параллельное выполнение (быстро)
 const loadData = async () => {
+  // ✅ Запросы независимы друг от друга, поэтому их можно запускать параллельно
   const [users, posts, comments] = await Promise.all([fetchUsers(), fetchPosts(), fetchComments()]);
   // Всего: 1 секунда (если все запросы одинаковые)
 };
@@ -557,6 +568,8 @@ const users = await fetchUsers();
 
 export { config, users };
 ```
+
+Top-level await зависит от target/bundler и может задерживать выполнение модулей, которые импортируют этот файл. Во frontend-приложениях часто лучше загружать данные через router loaders, React Query/SWR, server components или внутри эффекта — в зависимости от архитектуры.
 
 ### 2.3 Анти-паттерны
 

@@ -342,8 +342,9 @@ sendEmail({
 
 ### 1.9 Switch Statements
 
-**Когда switch — smell:**
-**❌ Плохо — switch можно заменить:**
+`switch` сам по себе не является плохой практикой. Он становится smell, когда один и тот же набор условий дублируется в разных местах или постоянно расширяется при добавлении новых вариантов.
+
+**❌ Плохо — простой switch можно заменить словарём:**
 
 ```typescript
 const getAnimalSound = (animal: string): string => {
@@ -397,8 +398,11 @@ console.log(animal.makeSound()); // woof
 
 **Когда switch ОК:**
 
+- Работа с discriminated unions в TypeScript
+- Reducers и state machines
+- Нужна exhaustive-проверка всех вариантов
 - Сложная логика в каждой ветке
-- Fall-through behavior нужен
+- Fall-through behavior нужен и явно задокументирован
 - Работа с диапазонами
 
 ### 1.10 Shotgun Surgery
@@ -630,8 +634,8 @@ export * from './input';
 export * from './card';
 // ... 50+ компонентов
 
-// Проблема: импортируется весь bundle
-import { Button } from '@/components'; // Загружает ВСЁ
+// Проблема: сложнее анализировать зависимости, возможны циклы и проблемы с tree-shaking/code splitting
+import { Button } from '@/components';
 
 // ✅ Хорошо — прямые импорты
 import { Button } from '@/components/button';
@@ -643,3 +647,6 @@ import { Input } from '@/components/input';
 - Небольшое количество экспортов (5-10)
 - Логически связанная группа
 - Публичное API библиотеки
+- Локальный `index.ts` внутри папки компонента, если он не превращается в глобальный barrel для всего проекта
+
+**Важно:** современные bundlers умеют tree-shaking, поэтому barrel export не всегда “загружает всё”. Реальные риски чаще в другом: циклические зависимости, медленнее TypeScript/IDE resolution, хуже code splitting и менее прозрачные зависимости.

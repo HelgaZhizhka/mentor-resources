@@ -37,7 +37,7 @@ useEffect(() => {
 }, []); // ❌ Утечка памяти — интервал не очищается
 ```
 
-**✅ Хорошо:**
+**✅ Хорошо — очищаем interval:**
 
 ```typescript
 useEffect(() => {
@@ -46,26 +46,56 @@ useEffect(() => {
   }, 1000);
 
   return () => clearInterval(interval); // ✅ Cleanup
-}, []);
+}, [fetchData]);
 ```
+
+Если `fetchData` создаётся внутри компонента, следите за dependency array. Часто лучше объявить функцию внутри `useEffect` или вынести логику в custom hook.
+
+**✅ Хорошо — polling с `AbortController`:**
+
+```typescript
+useEffect(() => {
+  const controller = new AbortController();
+
+  const interval = setInterval(() => {
+    fetchData({ signal: controller.signal });
+  }, 1000);
+
+  return () => {
+    controller.abort();
+    clearInterval(interval);
+  };
+}, [fetchData]);
+```
+
+`clearInterval` останавливает будущие вызовы, но не отменяет уже начатый `fetch`. Если внутри interval есть запросы, используйте `AbortController`.
 
 **Альтернативы:**
 
 ```typescript
-// Вместо setTimeout — async/await + delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// Вместо вложенных setTimeout — async/await + delay
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-const run = async () => {
+const run = async (): Promise<void> => {
   await delay(2000);
   console.log('After 2 seconds');
 };
-
-// Вместо setInterval — requestAnimationFrame
-const tick = () => {
-  console.log('Frame');
-  requestAnimationFrame(tick);
-};
 ```
+
+**`requestAnimationFrame` — не универсальная замена `setInterval`:**
+
+Используйте `requestAnimationFrame` для анимаций и визуальных обновлений, которые должны быть синхронизированы с repaint браузера.
+
+```typescript
+const animate = (): void => {
+  updateAnimationFrame();
+  requestAnimationFrame(animate);
+};
+
+requestAnimationFrame(animate);
+```
+
+Для polling/API-запросов лучше использовать `setInterval`/`setTimeout` с cleanup или специализированные инструменты вроде React Query/SWR.
 
 ## 3. Event Delegation
 
@@ -97,17 +127,30 @@ newButton.textContent = 'New Button';
 document.body.appendChild(newButton); // Обработчик не сработает!
 ```
 
-**✅ Хорошо — Event Delegation**
+**✅ Хорошо — Event Delegation с безопасной проверкой DOM**
 
-```javascript
+```typescript
 // Один обработчик на родительском элементе
 const container = document.querySelector('.button-container');
 
+if (!(container instanceof HTMLElement)) {
+  throw new Error('Button container not found');
+}
+
 container.addEventListener('click', (event) => {
-  // Проверяем, что клик был именно по кнопке
-  if (event.target.classList.contains('button')) {
-    console.log('Button clicked:', event.target.textContent);
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return;
   }
+
+  const button = target.closest<HTMLButtonElement>('.button');
+
+  if (!button || !container.contains(button)) {
+    return;
+  }
+
+  console.log('Button clicked:', button.textContent);
 });
 
 // Динамически добавленные кнопки работают автоматически!

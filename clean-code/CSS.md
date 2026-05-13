@@ -8,9 +8,9 @@
 
 - Смешивание **логики и представления**
 - Сложно **переопределить** (inline стили имеют высокий приоритет)
-- Плохая **производительность** (каждое изменение - reflow)
+- Можно случайно менять layout-свойства и вызывать reflow (`width`, `height`, `top`, `left`)
 - Сложно **поддерживать** (стили разбросаны по JS файлам)
-- Не работает **CSS transitions/animations**
+- Сложнее переиспользовать transitions/animations и состояния (`hover`, `focus-visible`, media queries)
 
 ### 1.2 Когда JS стили допустимы?
 
@@ -73,7 +73,7 @@ header nav ul li a span {
 
 ### 2.2 BEM методология (рекомендуется)
 
-**BEM = Block\_\_Element_Modifier**
+**BEM = block\_\_element--modifier**
 
 ```css
 /* Block */
@@ -95,7 +95,7 @@ header nav ul li a span {
   border-color: gold;
 }
 
-.news-card__title_large {
+.news-card__title--large {
   font-size: 24px;
 }
 ```
@@ -143,7 +143,9 @@ header nav ul li a span {
 
 ## 4. CSS переменные (Custom Properties)
 
-### 4.1 Почему CSS переменные лучше препроцессоров?
+### 4.1 Когда CSS переменные особенно полезны?
+
+CSS custom properties и препроцессоры решают разные задачи. Для дизайн-токенов, темизации и runtime-изменений часто лучше подходят CSS переменные.
 
 **Преимущества CSS переменных:**
 
@@ -264,6 +266,55 @@ const primaryColor = getComputedStyle(document.documentElement).getPropertyValue
 }
 ```
 
+### 5.3 Современный responsive: `clamp()` и container queries
+
+`clamp()` помогает делать плавную типографику и spacing без большого количества breakpoints.
+
+```css
+.title {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+}
+
+.section {
+  padding-inline: clamp(1rem, 5vw, 4rem);
+}
+```
+
+Container queries полезны, когда компонент должен адаптироваться к ширине своего контейнера, а не всего viewport.
+
+```css
+.card-list {
+  container-type: inline-size;
+}
+
+@container (min-width: 600px) {
+  .card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+  }
+}
+```
+
+### 5.4 Flex/Grid overflow: `min-width: 0`
+
+Частая проблема: текст внутри flex/grid элемента не сжимается и создаёт горизонтальный скролл.
+
+```css
+.card {
+  display: flex;
+}
+
+.card__content {
+  min-width: 0;
+}
+
+.card__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
+
 ## 6. Производительность
 
 ### 6.1 Избегай дорогих свойств
@@ -296,7 +347,7 @@ const primaryColor = getComputedStyle(document.documentElement).getPropertyValue
   width: 100px;
   height: 100px;
   transform: translate(0, 0);
-  will-change: transform; /* Hint для браузера */
+  /* will-change добавляйте только точечно перед тяжёлой анимацией, не постоянно */
 }
 
 /* Анимация через transform */
@@ -356,16 +407,47 @@ ol {
 }
 ```
 
+### 6.3 Доступность анимаций
+
+Уважайте системную настройку пользователя `prefers-reduced-motion`.
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+### 6.4 Фокус через `:focus-visible`
+
+Не убирайте `outline` без замены. Для клавиатурной навигации должен быть видимый focus state.
+
+```css
+.button:focus-visible {
+  outline: 3px solid var(--color-focus, #005fcc);
+  outline-offset: 2px;
+}
+```
+
 ## Checklist для CSS review
 
 - [ ] Динамические стили через **классы** (не inline через JS)
 - [ ] Вложенность селекторов **≤2 уровня**
-- [ ] Единообразные единицы измерения (только rem или система)
+- [ ] Единицы измерения используются по назначению (`rem` для типографики/spacing, `px` для borders/shadows, `%`/viewport по ситуации)
 - [ ] CSS переменные для цветов, spacing, transitions
 - [ ] Mobile-first подход
 - [ ] Нет `!important`
 - [ ] Нет дублирования стилей
 - [ ] Анимации через `transform`/`opacity` (не `left`/`top`/`width`)
+- [ ] Есть `prefers-reduced-motion` для пользователей, которым нужна сниженная анимация
+- [ ] Видимый focus state через `:focus-visible`
+- [ ] Flex/Grid элементы не создают неожиданный overflow (`min-width: 0`, где нужно)
 - [ ] Классы в kebab-case
 - [ ] Нет magic numbers (всё через переменные)
 

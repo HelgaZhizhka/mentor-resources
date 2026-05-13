@@ -210,11 +210,9 @@ export const MyComponent = ({ children, className }: MyComponentProps): React.JS
 
 ```typescript
 // Компонент без пропсов
-const App = (): React.JSX.Element => {
+export const App = (): React.JSX.Element => {
   return <div className="App">Hello World</div>
 }
-
-export default App
 ```
 
 **Компонент с пропсами:**
@@ -226,7 +224,7 @@ type ButtonProps = {
   disabled?: boolean
 }
 
-const Button = ({
+export const Button = ({
   label,
   onClick,
   disabled = false,
@@ -237,8 +235,6 @@ const Button = ({
     </button>
   )
 }
-
-export default Button
 ```
 
 **С destructuring:**
@@ -325,10 +321,13 @@ children: (value: number) => React.ReactNode;
 
 ### 2.3 Использование `React.memo()`
 
+`React.memo()` — это оптимизация, а не правило по умолчанию. Используйте его, когда есть реальная причина или измеримая проблема с лишними ререндерами.
+
 **Когда использовать:**
 
 - Компонент часто ререндерится с теми же пропсами
 - Компонент тяжёлый (сложные вычисления или большой UI)
+- Ререндеры действительно заметны в профайлере или усложняют UX
 
 **✅ С `displayName` для отладки:**
 
@@ -342,9 +341,9 @@ const UserCard = ({ user }: { user: User }): React.JSX.Element => {
   )
 }
 
-UserCard.displayName = 'UserCard'
+export const MemoizedUserCard = React.memo(UserCard)
 
-export default React.memo(UserCard)
+MemoizedUserCard.displayName = 'UserCard'
 ```
 
 **С кастомным сравнением:**
@@ -354,7 +353,7 @@ const areEqual = (prevProps: Props, nextProps: Props) => {
   return prevProps.user.id === nextProps.user.id;
 };
 
-export default React.memo(UserCard, areEqual);
+export const MemoizedUserCard = React.memo(UserCard, areEqual);
 ```
 
 ### 2.4 Разбиение больших компонентов
@@ -459,7 +458,9 @@ const onChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) =>
 
 #### 3.1 `useCallback`
 
-**Когда `useCallback` НУЖЕН:**
+**Когда `useCallback` может быть нужен:**
+
+`useCallback` не делает функцию быстрее сам по себе. Он сохраняет ссылку на функцию между ререндерами и полезен только там, где стабильная ссылка действительно важна.
 
 **1️⃣ Функция передаётся в дочерний компонент с `React.memo()`:**
 
@@ -487,7 +488,7 @@ const Child = React.memo<{ onClick: () => void }>(({ onClick }) => {
 
 ✅ Теперь `Child` **не перерисовывается при каждом изменении `count`**!
 
-**2️⃣ Функция передаётся в `useEffect`:**
+**2️⃣ Функция используется внутри `useEffect` и должна быть в dependency array:**
 
 ```typescript
 const Component = (): React.JSX.Element => {
@@ -497,7 +498,23 @@ const Component = (): React.JSX.Element => {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData]) // ✅ Без useCallback этот useEffect запускался бы при каждом ререндере!
+  }, [fetchData]) // ✅ Стабильная ссылка предотвращает лишний повтор эффекта
+
+  return <div>Content</div>
+}
+```
+
+Иногда проще и чище объявить функцию прямо внутри `useEffect`, если она больше нигде не используется.
+
+```typescript
+const Component = (): React.JSX.Element => {
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log('Fetching data...')
+    }
+
+    fetchData()
+  }, [])
 
   return <div>Content</div>
 }
@@ -516,7 +533,25 @@ const Component = (): React.JSX.Element => {
   useEffect(() => {
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
-  }, [tick]) // ✅ Теперь `tick` будет всегда актуальным!
+  }, [tick]) // ✅ Ссылка на tick стабильна
+
+  return <div>{count}</div>
+}
+```
+
+В этом примере актуальное значение `count` обеспечивает functional update `setCount((prev) => prev + 1)`, а `useCallback` только стабилизирует ссылку на `tick`.
+
+```typescript
+const Component = (): React.JSX.Element => {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((prev) => prev + 1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return <div>{count}</div>
 }
@@ -578,13 +613,15 @@ export const usePeople = (query: string, page: number) => {
 
         setPeople(data.results);
         setTotalCount(data.count);
-      } catch (error) {
-        if (error.name !== 'AbortError') {
+      } catch (error: unknown) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
           console.error('Error loading people:', error);
           setHasError(true);
         }
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -627,11 +664,7 @@ const MainPage = (): React.JSX.Element => {
 
 ### 3.3 `AbortController` в `useEffect`
 
-**Проблема:** Если компонент размонтируется до завершения запроса, React выдаст ошибку:
-
-```
-Warning: Can't perform a React state update on an unmounted component.
-```
+**Проблема:** Если компонент размонтируется до завершения запроса, результат может прийти уже после unmount или после нового запроса. В React 18 старый warning про `setState` после unmount удалён, но race conditions и лишняя работа всё ещё остаются.
 
 **✅ Решение — отменять запрос с `AbortController`:**
 
@@ -646,8 +679,8 @@ useEffect(() => {
       });
       const data = await response.json();
       setData(data);
-    } catch (error) {
-      if (error.name !== 'AbortError') {
+    } catch (error: unknown) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
         console.error('Ошибка загрузки:', error);
       }
     }
@@ -663,11 +696,179 @@ useEffect(() => {
 
 **Когда `AbortController` нужен:**
 
-| Сценарий                         | Нужен `AbortController`? | Почему?                                               |
-| -------------------------------- | ------------------------ | ----------------------------------------------------- |
-| Одноразовый запрос в `useEffect` | ✅ **Да**                | Если компонент размонтируется, запрос отменяется      |
-| `useEffect` с `setInterval`      | ✅ **Да**                | Нужно отменять запросы перед каждым повторным вызовом |
-| Синхронные операции              | ❌ **Нет**               | Запрос сразу выполняется, `abort` не нужен            |
+| Сценарий                         | Нужен `AbortController`?      | Почему?                                                                                                    |
+| -------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Одноразовый запрос в `useEffect` | ✅ **Да**                     | Если компонент размонтируется, запрос отменяется                                                           |
+| `useEffect` с `setInterval`      | ⚠️ **Если внутри есть fetch** | Сам interval очищается через `clearInterval`, а запросы внутри него можно отменять через `AbortController` |
+| Синхронные операции              | ❌ **Нет**                    | Запрос сразу выполняется, `abort` не нужен                                                                 |
+
+### 3.4 React 18 StrictMode и двойной запуск эффектов
+
+В React 18 в development mode `StrictMode` может запускать `useEffect` дважды: mount → cleanup → mount. Это сделано специально, чтобы найти небезопасные side effects.
+
+**Важно:** в production такого двойного запуска нет, но код всё равно должен быть устойчив к повторному mount/cleanup.
+
+**❌ Плохо — эффект создаёт подписку без cleanup:**
+
+```typescript
+useEffect(() => {
+  window.addEventListener('resize', handleResize);
+}, []);
+```
+
+При двойном запуске эффекта можно получить несколько подписок.
+
+**✅ Хорошо — всегда возвращаем cleanup:**
+
+```typescript
+useEffect(() => {
+  window.addEventListener('resize', handleResize);
+
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, []);
+```
+
+**Правило:** если эффект создаёт подписку, таймер, запрос, observer или внешний ресурс — у него должен быть cleanup.
+
+### 3.5 Stale closures
+
+Stale closure — ситуация, когда callback использует устаревшее значение из прошлого render.
+
+**❌ Плохо — interval всегда видит старое значение `count`:**
+
+```typescript
+const Counter = (): React.JSX.Element => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(count + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <div>{count}</div>;
+};
+```
+
+`count` внутри interval останется тем значением, которое было при первом render.
+
+**✅ Хорошо — functional update:**
+
+```typescript
+const Counter = (): React.JSX.Element => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((previousCount) => previousCount + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <div>{count}</div>;
+};
+```
+
+**Правило:** если новое состояние зависит от предыдущего — используйте functional update.
+
+### 3.6 Когда `useEffect` не нужен
+
+`useEffect` нужен для синхронизации с внешним миром: API, DOM API, subscriptions, timers, storage, analytics. Если значение можно вычислить из props/state во время render — effect не нужен.
+
+**❌ Плохо — derived state через effect:**
+
+```typescript
+const UserList = ({ users }: { users: User[] }): React.JSX.Element => {
+  const [activeUsers, setActiveUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    setActiveUsers(users.filter((user) => user.isActive));
+  }, [users]);
+
+  return <List users={activeUsers} />;
+};
+```
+
+Здесь появляется лишний render: сначала компонент рендерится со старым `activeUsers`, потом effect обновляет state.
+
+**✅ Хорошо — вычисляем во время render:**
+
+```typescript
+const UserList = ({ users }: { users: User[] }): React.JSX.Element => {
+  const activeUsers = users.filter((user) => user.isActive);
+
+  return <List users={activeUsers} />;
+};
+```
+
+**Если вычисление тяжёлое — используйте `useMemo`:**
+
+```typescript
+const activeUsers = useMemo(() => {
+  return users.filter((user) => user.isActive);
+}, [users]);
+```
+
+### 3.7 `useMemo` без cargo cult
+
+`useMemo` — это оптимизация, а не обязательное правило. Он полезен, когда вычисление действительно тяжёлое или когда стабильная ссылка нужна для memoized child/component/library.
+
+**❌ Плохо — memoization без причины:**
+
+```typescript
+const fullName = useMemo(() => {
+  return `${firstName} ${lastName}`;
+}, [firstName, lastName]);
+```
+
+Для простой строки `useMemo` только усложняет код.
+
+**✅ Хорошо — тяжёлое вычисление:**
+
+```typescript
+const filteredProducts = useMemo(() => {
+  return products.filter((product) => product.matches(filters)).sort((a, b) => b.rating - a.rating);
+}, [products, filters]);
+```
+
+**Правило:** сначала пишите простой код. Добавляйте `useMemo`, когда есть реальная причина: тяжёлое вычисление, стабильная ссылка или подтверждённая проблема производительности.
+
+### 3.8 Dependency array и `eslint-plugin-react-hooks`
+
+Не подбирайте dependencies вручную “чтобы effect запускался реже”. Dependency array должна отражать все значения из component scope, которые используются внутри effect/callback/memo.
+
+**❌ Плохо — зависимость скрыта:**
+
+```typescript
+const UserPage = ({ userId }: { userId: string }): React.JSX.Element => {
+  useEffect(() => {
+    fetchUser(userId);
+  }, []);
+
+  return <div>User page</div>;
+};
+```
+
+Если `userId` изменится, effect не запустится повторно.
+
+**✅ Хорошо — зависимость указана:**
+
+```typescript
+const UserPage = ({ userId }: { userId: string }): React.JSX.Element => {
+  useEffect(() => {
+    fetchUser(userId);
+  }, [userId]);
+
+  return <div>User page</div>;
+};
+```
+
+**Правило:** не отключайте `react-hooks/exhaustive-deps` без причины. Если правило “мешает”, чаще всего нужно изменить структуру кода: перенести функцию внутрь effect, использовать functional update, вынести логику в custom hook или стабилизировать зависимость.
 
 ## 4. Оптимизация и производительность
 
@@ -1043,12 +1244,12 @@ fetchUser();
 
 ### ✅ React и DOM
 
-- [ ] Нет использования `querySelector`, `getElementById`, `getElementsByClassName`
-- [ ] Нет прямых манипуляций с DOM
+- [ ] Нет использования `querySelector`, `getElementById`, `getElementsByClassName` для управления UI внутри React-компонентов
+- [ ] Нет прямых манипуляций с DOM; UI меняется через state/props
 - [ ] `useRef` используется только для фокуса, скролла, измерений или сторонних библиотек
 - [ ] Все изменения UI через состояние (`useState`, `useReducer`)
 - [ ] Формы используют controlled components
-- [ ] Условный рендеринг вместо `display: none/block`
+- [ ] Условный рендеринг используется для логики показа/скрытия; CSS (`display`, `visibility`) — только для визуальных состояний, responsive или сохранения состояния DOM
 
 ### ✅ Хуки
 

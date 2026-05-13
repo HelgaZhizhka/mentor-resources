@@ -60,15 +60,35 @@ const item = map.get(key);
 // Мемоизация дорогой функции
 const cache = new Map<string, User>();
 
-const getUserById = (id: string): User => {
-  if (cache.has(id)) {
-    return cache.get(id)!;
+const getUserById = (id: string): User | null => {
+  const cachedUser = cache.get(id);
+
+  if (cachedUser) {
+    return cachedUser;
   }
 
   const user = database.find(id);
+
+  if (!user) {
+    return null;
+  }
+
   cache.set(id, user);
   return user;
 };
+```
+
+Важно: кеш не должен скрывать отсутствие данных. Если `database.find(id)` может вернуть `null` или `undefined`, тип функции должен это отражать (`User | null`), а вызывающий код должен обработать этот случай.
+
+```typescript
+const user = getUserById(userId);
+
+if (!user) {
+  showNotFoundMessage();
+  return;
+}
+
+renderUser(user);
 ```
 
 **Debounce/Throttle:**
@@ -79,7 +99,7 @@ const debounce = <T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);

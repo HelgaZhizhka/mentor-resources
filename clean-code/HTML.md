@@ -9,7 +9,7 @@
 - Улучшают **доступность** (screen readers понимают структуру)
 - Улучшают **SEO** (поисковики лучше индексируют)
 - Делают код **читаемым** (структура очевидна без CSS)
-- Поддерживают **keyboard navigation** автоматически
+- Нативные интерактивные элементы (`button`, `a href`, `input`) поддерживают **keyboard navigation** автоматически
 
 ### 1.2 Основные семантические теги
 
@@ -110,19 +110,19 @@
 
 ## 2. Атрибут `alt` для изображений
 
-### 2.1 Почему `alt` обязателен?
+### 2.1 Почему `alt` нужен?
 
 - **Доступность:** screen readers читают alt текст для незрячих пользователей
 - **SEO:** поисковики индексируют alt текст
 - **Fallback:** показывается если картинка не загрузилась
-- **По стандарту HTML5** — обязательный атрибут!
+- Для доступности правило по умолчанию: у каждого `img` должен быть `alt`; для декоративных изображений — пустой `alt=""`
 
 ### 2.2 Правила написания `alt`
 
 **❌ Плохо:**
 
 ```html
-<!-- Пустой alt -->
+<!-- Отсутствует alt -->
 <img src="logo.png" />
 
 <!-- Бесполезный alt -->
@@ -174,6 +174,20 @@
 
 <!-- Для адаптивных изображений через CSS -->
 <img src="photo.jpg" alt="Photo" width="800" height="600" style="max-width: 100%; height: auto;" />
+```
+
+### 2.4 Lazy loading и LCP
+
+`loading="lazy"` полезен для изображений ниже первого экрана, но его не стоит ставить на главное изображение страницы (LCP image), потому что это может замедлить загрузку основного контента.
+
+**✅ Хорошо:**
+
+```html
+<!-- Hero/LCP изображение загружается сразу -->
+<img src="hero.jpg" alt="Course students working together" width="1200" height="600" />
+
+<!-- Изображения ниже первого экрана можно лениво загружать -->
+<img src="gallery-1.jpg" alt="Student project example" width="600" height="400" loading="lazy" />
 ```
 
 ## 3. Именование классов (kebab-case)
@@ -356,8 +370,11 @@
   <li><a href="#">Item 1</a></li>
 </ul>
 
-<!-- Живая область (уведомления) -->
-<div role="alert" aria-live="polite">File uploaded successfully!</div>
+<!-- Некритичное уведомление -->
+<div role="status" aria-live="polite">File uploaded successfully!</div>
+
+<!-- Критичная ошибка, которую нужно озвучить сразу -->
+<div role="alert">Failed to save changes</div>
 ```
 
 ### 5.2 Фокус и keyboard navigation
@@ -375,8 +392,13 @@
 <!-- button focusable по умолчанию -->
 <button onclick="handleClick()">Click me</button>
 
-<!-- Если ОБЯЗАТЕЛЬНО нужен div -->
-<div role="button" tabindex="0" onclick="handleClick()" onkeypress="handleKeyPress()">Click me</div>
+<!-- Если ОБЯЗАТЕЛЬНО нужен кастомный элемент, обработайте клавиатуру через keydown -->
+<div role="button" tabindex="0" onclick="handleClick()" onkeydown="handleKeyDown(event)">
+  Click me
+</div>
+
+<!-- Но почти всегда лучше использовать настоящий button -->
+<button type="button" onclick="handleClick()">Click me</button>
 ```
 
 ## 6. Практические советы

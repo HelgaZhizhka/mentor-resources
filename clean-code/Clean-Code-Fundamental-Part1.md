@@ -26,10 +26,10 @@ function calc(a, b, t) {
 
 - Непонятные имена (`a`, `b`, `t`)
 - Магические числа (что такое `1`, `2`, `3`?)
-- Слабое сравнение (`==` вместо `===`)
+- Непонятная логика выбора операции через магические числа
 - Нет обработки деления на ноль
 
-```javascript
+```typescript
 // ✅ Чистый код
 const OPERATIONS = {
   ADD: 'add',
@@ -38,11 +38,9 @@ const OPERATIONS = {
   DIVIDE: 'divide',
 } as const;
 
-function calculate(
-  firstNumber: number,
-  secondNumber: number,
-  operation: keyof typeof OPERATIONS
-): number {
+type Operation = (typeof OPERATIONS)[keyof typeof OPERATIONS];
+
+function calculate(firstNumber: number, secondNumber: number, operation: Operation): number {
   switch (operation) {
     case OPERATIONS.ADD:
       return firstNumber + secondNumber;
@@ -893,7 +891,7 @@ const calculateShippingCost = (order: Order): number => {
 ```typescript
 // ✅ Объясняем почему выбрано именно это решение
 const debounce = (fn: Function, delay: number) => {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return (...args: unknown[]) => {
     // Очищаем предыдущий таймер вместо проверки времени

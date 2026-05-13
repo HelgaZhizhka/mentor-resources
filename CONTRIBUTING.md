@@ -1,151 +1,166 @@
 # Contributing to Mentor Resources
 
-Спасибо за интерес к проекту!
-Этот репозиторий создан для сообщества RS School и приветствуется любой вклад.
+Thank you for your interest in the project!
+This repository was created for the RS School community and any contribution is welcome.
 
-## Кто может внести вклад?
+## Who can contribute?
 
-- **Студенты RS School** — делитесь своим опытом и улучшениями
-- **Менторы** — добавляйте новые материалы и чек-листы
-- **Опытные разработчики** — помогайте улучшать практики и примеры
-- **Все желающие** — исправления опечаток, улучшение документации
+- **RS School students** — share your experience and improvements
+- **Mentors** — add new materials and checklists
+- **Experienced developers** — help improve practices and examples
+- **Anyone** — fix typos, improve documentation
 
-## Виды вкладов
+## Types of contributions
 
-### Материалы по чистому коду
+### Clean code materials
 
-**Что можно добавить:**
+**What you can add:**
 
-- Новые примеры кода (плохо/хорошо)
-- Дополнительные практики и рекомендации
-- Исправления ошибок или неточностей
-- Улучшение объяснений
+- New code examples (bad/good)
+- Additional practices and recommendations
+- Bug fixes or corrections
+- Improved explanations
 
-**Где находится:**
+**Where to find it:**
 
-- `clean-code/` — основные материалы
-- `clean-code/Check-List.md` — чек-лист для быстрой проверки
+- `clean-code/` — main materials
+- `clean-code/Check-List.md` — quick-reference checklist
 
-**Пример:**
+**Example format:**
 
-**Название практики**
+**Practice name**
 
-**❌ Плохо:**
+**❌ Bad:**
 
-плохой пример с объяснением почему
+bad example with an explanation of why
 
-**✅ Хорошо:**
+**✅ Good:**
 
-хороший пример с объяснением почему
+good example with an explanation of why
 
-Объяснение причин и последствий
+Explanation of the reasons and consequences
 
-### Чек-листы для менторов
+### Checklists for mentors
 
-**Что можно добавить:**
+**What you can add:**
 
-- Новые чек-листы для других заданий RS School
-- Улучшения существующих чек-листов
-- Дополнительные критерии проверки
+- New checklists for other RS School assignments
+- Improvements to existing checklists
+- Additional review criteria
 
-**Где находится:**
+**Where to find it:**
 
-- `templates/checklists/checklist.md` — общий чек-лист
-- `templates/checklists/checklist-migration.md` — пример для конкретного задания
+- `templates/checklists/checklist.md` — general checklist
+- `templates/checklists/checklist-migration.md` — example for a specific assignment
 
-### Скрипты автоматизации
+### Automation scripts
 
-**Что можно улучшить:**
+**What you can improve:**
 
-- Добавить новые проверки
-- Улучшить существующие проверки
-- Исправить баги
-- Добавить поддержку новых инструментов
+- Add new checks
+- Improve existing checks
+- Fix bugs
+- Add support for new tools
 
-**Где находится:**
+**Where to find it:**
 
-- `templates/scripts/auto-check.sh` — основной скрипт проверки
+- `templates/scripts/auto-check.sh` — main check script
 
-### AI агент для code review
+### AI agent for code review
 
-**Что можно улучшить:**
+**What you can improve:**
 
-- Дополнить промпт новыми инструкциями
-- Добавить примеры для конкретных сценариев
-- Улучшить структуру отчёта
-- Добавить проверки под новые технологии
+- Extend the prompt with new instructions
+- Add examples for specific scenarios
+- Improve the report structure
+- Add checks for new technologies
 
-**Где находится:**
+**Where to find it:**
 
-- `templates/agents/reviewer.md` — промпт для AI агента
+- `templates/agents/reviewer.md` — AI agent prompt
 
-**Рекомендации:**
+**Recommendations:**
 
-- Добавляйте конкретные примеры
-- Указывайте приоритеты проверок
-- Следите за балансом между детальностью и читаемостью
+- Add concrete examples
+- Specify review priorities
+- Keep a balance between detail and readability
 
-### ESLint конфигурация
+### ESLint configuration
 
-**Что можно добавить:**
+**What you can add:**
 
-- Новые правила для проверки
-- Улучшение существующих правил
-- Настройки под конкретные стеки
+- New lint rules
+- Improvements to existing rules
+- Settings tailored to specific stacks
 
-**Где находится:**
+**Where to find it:**
 
-- `eslint.config.js` — конфигурация ESLint
-- `LINTER-README.md` — документация по линтеру
+- `eslint.config.js` — ESLint configuration
+- `LINTER-README.md` — linter documentation
 
-## Процесс создания Pull Request
+## Pull Request process
 
-### 1. Fork и клонирование
+### 1. Fork and clone
 
 ```bash
-# Fork репозитория через GitHub UI
-# Затем клонируйте свой fork
+# Fork the repository via the GitHub UI
+# Then clone your fork
 git clone https://github.com/YOUR-USERNAME/mentor-resources.git
 cd mentor-resources
 ```
 
-### 2. Создание ветки
+### 2. Create a branch
 
 ```bash
-# Создайте ветку для своих изменений
+# Create a branch for your changes
 git checkout -b your-feature-name
-
 ```
 
-### 3. Внесение изменений
+### 3. Make your changes
 
-- Вносите изменения в соответствии с существующим стилем
-- Проверяйте форматирование markdown
-- Тестируйте скрипты перед коммитом
+- Follow the existing style of the project
+- Check Markdown formatting
+- Test scripts before committing
 
-### 4. Коммит изменений
+### 4. Commit your changes
 
-Используйте [Conventional Commits](https://www.conventionalcommits.org/):
+Use [Conventional Commits](https://www.conventionalcommits.org/):
 
-### 5. Push и создание PR
+```bash
+git commit -m "docs: add example for async error handling"
+git commit -m "fix: correct typo in Clean-Code-Fundamental-Part1.md"
+git commit -m "feat: add checklist for TypeScript assignment"
+```
+
+### 5. Push and open a PR
 
 ```bash
 git push origin your-feature-name
 ```
 
-Затем создайте Pull Request через GitHub UI:
+Then open a Pull Request via the GitHub UI:
 
-**Структура PR:**
+**PR structure:**
 
 ```markdown
-## Описание
+## Description
 
-Краткое описание изменений
+Brief description of the changes
+
+## What was changed
+
+- Added / fixed / improved ...
+
+## Checklist
+
+- [ ] Follows the existing style
+- [ ] Markdown renders correctly
+- [ ] No broken links
 ```
 
-## Вопросы и помощь
+## Questions and help
 
-- **Вопросы по контрибуции:** создайте [Issue](https://github.com/HelgaZhizhka/mentor-resources/issues)
-- **Баги и проблемы:** создайте [Issue](https://github.com/HelgaZhizhka/mentor-resources/issues) с меткой `bug`
+- **Contribution questions:** open an [Issue](https://github.com/HelgaZhizhka/mentor-resources/issues)
+- **Bugs and problems:** open an [Issue](https://github.com/HelgaZhizhka/mentor-resources/issues) with the `bug` label
 
-**Спасибо за ваш вклад! 🧡**
+**Thank you for your contribution! 🧡**
