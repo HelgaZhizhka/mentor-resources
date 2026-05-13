@@ -8,15 +8,15 @@
       "name": "Monorepo setup + tooling + harness",
       "description": "Update pnpm-workspace.yaml with packages/*. Create packages/engine and packages/cli skeletons with package.json and tsconfig.json extending root. Add ESLint override for engine and cli (Node-only, no react plugins). Verify init.sh exits 0.",
       "dependencies": [],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "commits 3c95a04..c31cf0c; ./init.sh green (pnpm install + lint + pnpm -r typecheck); feature-dev:code-reviewer reviewed full M0 diff; all flagged issues triaged and fixed"
     },
     {
       "id": "M1",
       "name": "Engine core: rubric fetch + parse, PR fetch",
       "description": "RubricFetcher (HTTP + on-disk cache). EnrichmentLoader (Zod-validated). RubricParser (LLM-driven). PRFetcher (Octokit). Shared types and Zod schemas at engine/src/types.ts + schemas.ts.",
       "dependencies": ["M0"],
-      "status": "pending",
+      "status": "in-progress",
       "evidence": ""
     },
     {
