@@ -63,6 +63,12 @@ importers:
         specifier: 8.33.0
         version: 8.33.0(eslint@9.39.1)(typescript@5.8.3)
 
+  packages/cli:
+    dependencies:
+      '@pocket-mentor/engine':
+        specifier: workspace:*
+        version: link:../engine
+
   packages/engine: {}
 
 packages:
