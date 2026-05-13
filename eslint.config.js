@@ -4,6 +4,17 @@ import importPlugin from 'eslint-plugin-import';
 import unicorn from 'eslint-plugin-unicorn';
 import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 
+// Root ESLint config for Pocket Mentor's @pocket-mentor/engine and
+// @pocket-mentor/cli packages. Node-only — no React, no jsx-a11y.
+//
+// Team contract: `noInlineConfig: true` forbids per-line eslint-disable
+// comments. If a rule is genuinely wrong for a real case, fix it here in the
+// config (with a code comment explaining why) rather than disabling inline.
+//
+// `unicorn/prevent-abbreviations` is off intentionally: idiomatic Node code
+// uses `err`, `res`, `req`, `args`, `opts`, `cb`, etc. We trust naming review
+// to catch genuinely cryptic abbreviations.
+
 export default tseslint.config(
   {
     ignores: [
@@ -83,6 +94,10 @@ export default tseslint.config(
       'unicorn/filename-case': ['error', { cases: { kebabCase: true } }],
       'unicorn/no-null': 'off',
       'unicorn/prevent-abbreviations': 'off',
+
+      // Warn (don't block) on growing complexity — surfaces drift without halting work.
+      complexity: ['warn', 10],
+      'max-params': ['warn', 4],
 
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
