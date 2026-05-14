@@ -72,7 +72,9 @@ Each session appends a new entry at the bottom. Newer entries below.
 - feature-dev:code-reviewer on full M1 diff; applied all 5 fixes
 
 **Decisions this session (durable):**
-- OpenRouter support added to M1 (not deferred): `OpenRouterLLMClient` uses `openai` package pointed at `openrouter.ai/api/v1`. CLI selects provider from env var (ANTHROPIC_API_KEY vs OPENROUTER_API_KEY) — wired in M5.
+- Migrated LLM clients to Vercel AI SDK (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`) — replaces `@anthropic-ai/sdk` + `openai` + custom `retry.ts`. Adding any new provider is now one import line. See SPEC §11 decisions log.
+- OpenRouter via `@ai-sdk/openai` with `baseURL: https://openrouter.ai/api/v1` (no dedicated OR package needed).
+- OpenRouter support added to M1 (not deferred): `OpenRouterLLMClient` uses Vercel AI SDK's `@ai-sdk/openai`. CLI selects provider from env var (ANTHROPIC_API_KEY vs OPENROUTER_API_KEY) — wired in M5.
 - OpenRouter default model: `anthropic/claude-sonnet-4.5` (dot separator, not hyphen)
 - GitHub diff media type: `application/vnd.github.diff` (not the legacy v3 variant)
 - `cachePathFor` in RubricFetcher guards against path traversal via `path.resolve` + startsWith check
