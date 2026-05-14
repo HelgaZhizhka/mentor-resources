@@ -57,8 +57,8 @@ export class LLMOutputInvalidError extends PocketMentorError {
   public readonly raw: string;
   public readonly issues: readonly string[];
 
-  constructor(message: string, raw: string, issues: readonly string[]) {
-    super(message);
+  constructor(message: string, raw: string, issues: readonly string[], cause?: unknown) {
+    super(message, cause);
     this.name = 'LLMOutputInvalidError';
     this.raw = raw;
     this.issues = issues;

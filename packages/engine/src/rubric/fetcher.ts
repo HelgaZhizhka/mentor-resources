@@ -52,7 +52,15 @@ export class RubricFetcher {
   }
 
   private cachePathFor(commitSha: string, repoPath: string): string {
-    return path.join(this.cacheDir, commitSha, repoPath);
+    const base = path.resolve(this.cacheDir);
+    const resolved = path.resolve(base, commitSha, repoPath);
+    if (!resolved.startsWith(base + path.sep)) {
+      throw new RubricFetchError(
+        `Unsafe cache path resolved outside cache dir: ${resolved}`,
+        repoPath
+      );
+    }
+    return resolved;
   }
 }
 

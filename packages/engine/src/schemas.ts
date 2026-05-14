@@ -35,11 +35,15 @@ export const enrichmentFileSchema = z.object({
   criteria: z.record(z.string().min(1), enrichmentEntrySchema),
 });
 
-const penaltySchema = z.object({
-  kind: z.enum(['fixed', 'zero-category']),
-  points: z.number().optional(),
-  reason: z.string().min(1),
-});
+const penaltySchema = z
+  .object({
+    kind: z.enum(['fixed', 'zero-category']),
+    points: z.number().optional(),
+    reason: z.string().min(1),
+  })
+  .refine((penalty) => penalty.kind !== 'fixed' || penalty.points !== undefined, {
+    message: "penalty with kind='fixed' must include a points value",
+  });
 
 export const criterionSchema = z.object({
   id: z.string().min(1),

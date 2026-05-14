@@ -120,7 +120,7 @@ export class PRFetcher {
         owner: location.owner,
         repo: location.repo,
         pull_number: location.number,
-        headers: { accept: 'application/vnd.github.v3.diff' },
+        headers: { accept: 'application/vnd.github.diff' },
       });
     } catch (error) {
       throw wrapGitHubError(error, prUrl, `Failed to fetch PR diff for ${prUrl}`);
