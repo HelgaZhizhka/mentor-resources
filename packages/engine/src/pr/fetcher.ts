@@ -121,7 +121,6 @@ export class PRFetcher {
       }
       return response.data;
     } catch (error) {
-      if (error instanceof PRFetchError) throw error;
       throw wrapGitHubError(error, prUrl, `Failed to fetch PR diff for ${prUrl}`);
     }
   }

@@ -69,14 +69,17 @@ const parseJson = (raw: string): unknown => {
     return JSON.parse(stripped) as unknown;
   } catch (error) {
     const issue = error instanceof Error ? error.message : String(error);
-    throw new LLMOutputInvalidError(`RubricParser: LLM output was not valid JSON: ${issue}`, raw, [
-      issue,
-    ]);
+    throw new LLMOutputInvalidError(
+      `RubricParser: LLM output was not valid JSON: ${issue}`,
+      raw,
+      [issue],
+      error
+    );
   }
 };
 
 const stripCodeFences = (raw: string): string => {
-  const fenced = /^```(?:json)?\n([\S\s]*?)\n```$/.exec(raw.trim());
+  const fenced = /^```(?:json)?\r?\n([\S\s]*?)\r?\n```$/.exec(raw.trim());
   return fenced?.[1] ?? raw;
 };
 
