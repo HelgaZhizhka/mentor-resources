@@ -81,3 +81,6 @@ export class PRFetchError extends PocketMentorError {
     this.url = url;
   }
 }
+
+export const describeError = (value: unknown): string =>
+  value instanceof Error ? value.message : String(value);

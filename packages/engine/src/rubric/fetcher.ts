@@ -8,19 +8,24 @@ import { type HttpClient } from '../http.js';
 export type RubricFetcherOptions = {
   readonly httpClient: HttpClient;
   readonly cacheDir?: string;
+  readonly repoOwner?: string;
+  readonly repoName?: string;
 };
 
 const RAW_HOST = 'https://raw.githubusercontent.com';
-const SCHOOL_REPO = 'rolling-scopes-school/tasks';
 const HTTP_OK = 200;
 
 export class RubricFetcher {
   private readonly httpClient: HttpClient;
   private readonly cacheDir: string;
+  private readonly repoOwner: string;
+  private readonly repoName: string;
 
   constructor(options: RubricFetcherOptions) {
     this.httpClient = options.httpClient;
     this.cacheDir = options.cacheDir ?? path.join(homedir(), '.pocket-mentor', 'cache');
+    this.repoOwner = options.repoOwner ?? 'rolling-scopes-school';
+    this.repoName = options.repoName ?? 'tasks';
   }
 
   async fetch(commitSha: string, repoPath: string): Promise<string> {
@@ -29,7 +34,7 @@ export class RubricFetcher {
     if (cached !== undefined) {
       return cached;
     }
-    const url = buildRawUrl(commitSha, repoPath);
+    const url = buildRawUrl(this.repoOwner, this.repoName, commitSha, repoPath);
     const response = await this.requestRubric(url);
     await writeCached(cachePath, response);
     return response;
@@ -64,9 +69,14 @@ export class RubricFetcher {
   }
 }
 
-const buildRawUrl = (commitSha: string, repoPath: string): string => {
+const buildRawUrl = (
+  repoOwner: string,
+  repoName: string,
+  commitSha: string,
+  repoPath: string
+): string => {
   const normalisedPath = repoPath.startsWith('/') ? repoPath.slice(1) : repoPath;
-  return `${RAW_HOST}/${SCHOOL_REPO}/${commitSha}/${normalisedPath}`;
+  return `${RAW_HOST}/${repoOwner}/${repoName}/${commitSha}/${normalisedPath}`;
 };
 
 const readCached = async (cachePath: string): Promise<string | undefined> => {
