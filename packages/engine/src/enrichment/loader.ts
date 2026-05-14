@@ -4,7 +4,7 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 import { ZodError } from 'zod';
 
-import { EnrichmentInvalidError, EnrichmentNotFoundError } from '../errors.js';
+import { describeError, EnrichmentInvalidError, EnrichmentNotFoundError } from '../errors.js';
 import { enrichmentFileSchema, type EnrichmentFileRaw } from '../schemas.js';
 import { type Enrichment, type EnrichmentEntry } from '../types.js';
 
@@ -103,6 +103,3 @@ export class EnrichmentLoader {
 
 const isFsErrorCode = (value: unknown, code: string): boolean =>
   typeof value === 'object' && value !== null && 'code' in value && value.code === code;
-
-const describeError = (value: unknown): string =>
-  value instanceof Error ? value.message : String(value);

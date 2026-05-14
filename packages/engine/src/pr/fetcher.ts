@@ -1,7 +1,7 @@
 import { RequestError } from '@octokit/request-error';
 import { type Octokit } from '@octokit/rest';
 
-import { GitHubAuthError, PRFetchError } from '../errors.js';
+import { describeError, GitHubAuthError, PRFetchError } from '../errors.js';
 import { type PRContext, type PRFile, type PRFileStatus } from '../types.js';
 
 import { parsePRUrl, type PRLocation } from './url.js';
@@ -109,21 +109,21 @@ export class PRFetcher {
   }
 
   private async fetchDiff(location: PRLocation, prUrl: string): Promise<string> {
-    let response: { data: unknown };
     try {
-      response = await this.octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      const response = await this.octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
         owner: location.owner,
         repo: location.repo,
         pull_number: location.number,
         headers: { accept: 'application/vnd.github.diff' },
       });
+      if (typeof response.data !== 'string') {
+        throw new PRFetchError(`Unexpected non-string diff response for ${prUrl}`, prUrl);
+      }
+      return response.data;
     } catch (error) {
+      if (error instanceof PRFetchError) throw error;
       throw wrapGitHubError(error, prUrl, `Failed to fetch PR diff for ${prUrl}`);
     }
-    if (typeof response.data !== 'string') {
-      throw new PRFetchError(`Unexpected non-string diff response for ${prUrl}`, prUrl);
-    }
-    return response.data;
   }
 }
 
@@ -146,6 +146,3 @@ const wrapGitHubError = (error: unknown, prUrl: string, message: string): Error 
   }
   return new PRFetchError(`${message}: ${describeError(error)}`, prUrl, error);
 };
-
-const describeError = (value: unknown): string =>
-  value instanceof Error ? value.message : String(value);

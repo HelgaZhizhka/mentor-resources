@@ -1,4 +1,5 @@
 export {
+  describeError,
   EnrichmentInvalidError,
   EnrichmentNotFoundError,
   GitHubAuthError,
