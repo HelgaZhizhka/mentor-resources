@@ -1,4 +1,5 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 
 import { LLMError } from '../errors.js';
@@ -87,37 +88,30 @@ const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.5';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 export class OpenRouterLLMClient implements LLMClient {
+  private readonly openrouter: ReturnType<typeof createOpenAI>;
   private readonly modelId: string;
   private readonly maxTokens: number;
   private readonly maxRetries: number;
-  private readonly apiKey: string;
-  private readonly siteUrl: string | undefined;
-  private readonly siteName: string | undefined;
 
   constructor(options: OpenRouterLLMClientOptions) {
-    this.apiKey = options.apiKey;
+    const headers: Record<string, string> = {};
+    if (options.siteUrl !== undefined) headers['HTTP-Referer'] = options.siteUrl;
+    if (options.siteName !== undefined) headers['X-Title'] = options.siteName;
+
+    this.openrouter = createOpenAI({
+      baseURL: OPENROUTER_BASE_URL,
+      apiKey: options.apiKey,
+      headers,
+    });
     this.modelId = options.model ?? process.env['OPENROUTER_MODEL'] ?? OPENROUTER_DEFAULT_MODEL;
     this.maxTokens = options.maxTokens ?? DEFAULT_MAX_TOKENS;
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
-    this.siteUrl = options.siteUrl;
-    this.siteName = options.siteName;
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
-    const { createOpenAI } = await import('@ai-sdk/openai');
-    const headers: Record<string, string> = {};
-    if (this.siteUrl !== undefined) headers['HTTP-Referer'] = this.siteUrl;
-    if (this.siteName !== undefined) headers['X-Title'] = this.siteName;
-
-    const openrouter = createOpenAI({
-      baseURL: OPENROUTER_BASE_URL,
-      apiKey: this.apiKey,
-      headers,
-    });
-
     try {
       const result = await generateText({
-        model: openrouter(this.modelId),
+        model: this.openrouter(this.modelId),
         system: request.system,
         prompt: request.user,
         maxOutputTokens: request.maxTokens ?? this.maxTokens,
