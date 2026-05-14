@@ -16,15 +16,15 @@
       "name": "Engine core: rubric fetch + parse, PR fetch",
       "description": "RubricFetcher (HTTP + on-disk cache). EnrichmentLoader (Zod-validated). RubricParser (LLM-driven). PRFetcher (Octokit). Shared types and Zod schemas at engine/src/types.ts + schemas.ts.",
       "dependencies": ["M0"],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "commits d4e6a69..1d6faff; ./init.sh green; feature-dev:code-reviewer reviewed full M1 diff; all 5 flagged issues fixed (OpenRouter model ID, GitHub diff media type, path traversal guard, LLMOutputInvalidError cause, penaltySchema refine)"
     },
     {
       "id": "M2",
       "name": "Async-race enrichment YAML",
       "description": "Classify every criterion in async-race non-functional-requirements.md as mech / llm / hybrid. Define checker_id for mech, llm_focus for llm and hybrid. Pin source_commit SHA from rolling-scopes-school/tasks master. Helga-expertise bottleneck — ~zero engine code.",
       "dependencies": ["M1"],
-      "status": "pending",
+      "status": "in-progress",
       "evidence": ""
     },
     {

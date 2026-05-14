@@ -6,7 +6,7 @@
 
 **Architecture:** Pure business logic in `packages/engine/src/`. Side-effects (HTTP, filesystem, GitHub API, Anthropic API) are reached through small interfaces injected at the entry point — no `fetch()` deep inside a parser. Shared types and Zod schemas at the top level so M3/M4 can consume them. Errors are typed and inherit from a single `PocketMentorError` base.
 
-**Tech Stack:** TypeScript strict, ESM, Node ≥20, Zod (boundary validation), js-yaml (enrichment YAML), @octokit/rest (GitHub API), @anthropic-ai/sdk (LLM client). Native `fetch` for raw HTTP.
+**Tech Stack:** TypeScript strict, ESM, Node ≥20, Zod (boundary validation), js-yaml (enrichment YAML), @octokit/rest (GitHub API), @anthropic-ai/sdk (Anthropic direct), openai (OpenRouter-compatible client). Native `fetch` for raw HTTP.
 
 **Out of M1 (per SPEC §10):** mech checkers (M3), LLM review orchestration (M4), aggregator (M4), GitHub delivery (M5), CLI (M5). M1 is just I/O + parsing.
 
@@ -30,7 +30,7 @@ packages/engine/
 │   ├── errors.ts                 # error class hierarchy
 │   ├── http.ts                   # HttpClient type + native-fetch impl
 │   ├── llm/
-│   │   └── client.ts             # LLMClient type + AnthropicLLMClient
+│   │   └── client.ts             # LLMClient type + AnthropicLLMClient + OpenRouterLLMClient
 │   ├── rubric/
 │   │   ├── fetcher.ts            # RubricFetcher (HTTP + disk cache)
 │   │   └── parser.ts             # RubricParser (LLM-driven)
@@ -39,7 +39,7 @@ packages/engine/
 │   └── pr/
 │       ├── url.ts                # parsePRUrl
 │       └── fetcher.ts            # PRFetcher (Octokit)
-└── package.json                  # +zod, +js-yaml, +@types/js-yaml, +@octokit/rest, +@anthropic-ai/sdk
+└── package.json                  # +zod, +js-yaml, +@types/js-yaml, +@octokit/rest, +@anthropic-ai/sdk, +openai
 ```
 
 **Decomposition principles applied:**
@@ -74,11 +74,13 @@ packages/engine/
 Run from repo root:
 
 ```bash
-pnpm --filter @pocket-mentor/engine add zod@^3.23.0 js-yaml@^4.1.0 @octokit/rest@^21.0.0 @anthropic-ai/sdk@^0.32.0
+pnpm --filter @pocket-mentor/engine add zod@^3.23.0 js-yaml@^4.1.0 @octokit/rest@^21.0.0 @anthropic-ai/sdk@^0.32.0 openai@^4.0.0
 pnpm --filter @pocket-mentor/engine add -D @types/js-yaml@^4.0.9
 ```
 
-Expected: pnpm resolves and installs the four runtime deps and one types dep into `packages/engine/`, updates `pnpm-lock.yaml`, symlinks them under `packages/engine/node_modules/`.
+Expected: pnpm resolves and installs the five runtime deps and one types dep into `packages/engine/`, updates `pnpm-lock.yaml`, symlinks them under `packages/engine/node_modules/`.
+
+`openai` is the official OpenAI Node SDK — it's also the standard way to consume OpenRouter, since OpenRouter exposes an OpenAI-compatible API. We use it only for `OpenRouterLLMClient`; all Anthropic-direct calls go through `@anthropic-ai/sdk`.
 
 - [ ] **Step 2: Verify package.json shape**
 
@@ -102,6 +104,7 @@ Expected: pnpm resolves and installs the four runtime deps and one types dep int
     "@anthropic-ai/sdk": "^0.32.0",
     "@octokit/rest": "^21.0.0",
     "js-yaml": "^4.1.0",
+    "openai": "^4.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
@@ -121,7 +124,7 @@ Expected: both exit 0 (engine still has only `export {};`, packages just gained 
 
 ```bash
 git add packages/engine/package.json pnpm-lock.yaml
-git commit -m "feat(engine): add zod, js-yaml, @octokit/rest, @anthropic-ai/sdk runtime deps"
+git commit -m "feat(engine): add runtime deps (zod, js-yaml, octokit, anthropic-sdk, openai)"
 ```
 
 ---
@@ -489,7 +492,7 @@ directly. fetchHttpClient is the default production implementation."
 
 ---
 
-## Task 6: LLMClient (interface + AnthropicLLMClient)
+## Task 6: LLMClient (interface + AnthropicLLMClient + OpenRouterLLMClient)
 
 **Files:**
 - Create: `packages/engine/src/llm/client.ts`
@@ -498,8 +501,11 @@ directly. fetchHttpClient is the default production implementation."
 
 ```ts
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 import { LLMError } from '../errors.js';
+
+// ─── Shared interface ────────────────────────────────────────────────────────
 
 export type LLMRequest = {
   readonly system: string;
@@ -519,13 +525,15 @@ export type LLMClient = {
   complete(request: LLMRequest): Promise<LLMResponse>;
 };
 
+// ─── Anthropic direct ────────────────────────────────────────────────────────
+
 export type AnthropicLLMClientOptions = {
   readonly apiKey: string;
   readonly model?: string;
   readonly defaultMaxTokens?: number;
 };
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const ANTHROPIC_DEFAULT_MODEL = 'claude-sonnet-4-6';
 const DEFAULT_MAX_TOKENS = 4096;
 
 export class AnthropicLLMClient implements LLMClient {
@@ -535,7 +543,7 @@ export class AnthropicLLMClient implements LLMClient {
 
   constructor(options: AnthropicLLMClientOptions) {
     this.client = new Anthropic({ apiKey: options.apiKey });
-    this.model = options.model ?? DEFAULT_MODEL;
+    this.model = options.model ?? ANTHROPIC_DEFAULT_MODEL;
     this.defaultMaxTokens = options.defaultMaxTokens ?? DEFAULT_MAX_TOKENS;
   }
 
@@ -570,7 +578,78 @@ export class AnthropicLLMClient implements LLMClient {
     }
   }
 }
+
+// ─── OpenRouter (OpenAI-compatible) ─────────────────────────────────────────
+
+export type OpenRouterLLMClientOptions = {
+  readonly apiKey: string;
+  readonly model?: string;
+  readonly defaultMaxTokens?: number;
+  readonly siteUrl?: string;
+  readonly siteName?: string;
+};
+
+// Default model via OpenRouter — uses Claude Sonnet through OR's routing.
+// Mentors can override via OPENROUTER_MODEL env var or CLI flag.
+const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4-5';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+export class OpenRouterLLMClient implements LLMClient {
+  private readonly client: OpenAI;
+  private readonly model: string;
+  private readonly defaultMaxTokens: number;
+
+  constructor(options: OpenRouterLLMClientOptions) {
+    this.client = new OpenAI({
+      baseURL: OPENROUTER_BASE_URL,
+      apiKey: options.apiKey,
+      defaultHeaders: {
+        ...(options.siteUrl !== undefined ? { 'HTTP-Referer': options.siteUrl } : {}),
+        ...(options.siteName !== undefined ? { 'X-Title': options.siteName } : {}),
+      },
+    });
+    this.model = options.model ?? OPENROUTER_DEFAULT_MODEL;
+    this.defaultMaxTokens = options.defaultMaxTokens ?? DEFAULT_MAX_TOKENS;
+  }
+
+  async complete(request: LLMRequest): Promise<LLMResponse> {
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        max_tokens: request.maxTokens ?? this.defaultMaxTokens,
+        messages: [
+          { role: 'system', content: request.system },
+          { role: 'user', content: request.user },
+        ],
+      });
+      const choice = completion.choices[0];
+      if (choice === undefined || choice.message.content === null) {
+        throw new LLMError('OpenRouter response contained no content', undefined);
+      }
+      return {
+        text: choice.message.content,
+        model: completion.model,
+        stopReason: choice.finish_reason,
+        inputTokens: completion.usage?.prompt_tokens ?? 0,
+        outputTokens: completion.usage?.completion_tokens ?? 0,
+      };
+    } catch (cause) {
+      if (cause instanceof LLMError) {
+        throw cause;
+      }
+      const message = cause instanceof Error ? cause.message : String(cause);
+      throw new LLMError(`OpenRouter API call failed: ${message}`, undefined, cause);
+    }
+  }
+}
 ```
+
+**OpenRouter model strings** (pass as `model` option or `OPENROUTER_MODEL` env):
+- `anthropic/claude-sonnet-4-5` — default, same family as AnthropicLLMClient
+- `anthropic/claude-opus-4` — higher quality, more expensive
+- `openai/gpt-4o` — OpenAI alternative
+- `meta-llama/llama-3.1-70b-instruct` — open-source option
+- Full list: https://openrouter.ai/models
 
 - [ ] **Step 2: Verify**
 
@@ -581,8 +660,10 @@ pnpm --filter @pocket-mentor/engine typecheck && pnpm lint
 Expected: both exit 0.
 
 Possible eslint friction:
-- `@typescript-eslint/no-unsafe-*` against the Anthropic SDK if its types are loose. Should be fine — the SDK is fully typed.
-- `restrict-template-expressions` against `String(cause)`. `String()` of unknown is OK because `cause` is `unknown` and we convert; the rule allows strings, numbers, etc. If it flags, change to a typeguard.
+- `@typescript-eslint/no-unsafe-*` against Anthropic or OpenAI SDK types. Both SDKs are fully typed — should pass.
+- `restrict-template-expressions` against `String(cause)` — change to typeguard if it fires.
+- `noUncheckedIndexedAccess` will flag `completion.choices[0]` — that's exactly why we check for `undefined` explicitly.
+- Spread in `defaultHeaders` — lint may flag the ternary spread pattern. If so, compute the headers object before passing it.
 
 If lint complains, fix in place and re-run.
 
@@ -590,13 +671,14 @@ If lint complains, fix in place and re-run.
 
 ```bash
 git add packages/engine/src/llm/client.ts
-git commit -m "feat(engine): add LLMClient interface and AnthropicLLMClient
+git commit -m "feat(engine): add LLMClient interface, AnthropicLLMClient, OpenRouterLLMClient
 
-Minimal client surface (one method: complete) used by RubricParser in M1
-and re-used by the future LLM orchestrator in M4. Default model is
-claude-sonnet-4-6 for the parser; orchestrator will override per SPEC §12.
-API errors are wrapped in LLMError with the Anthropic request_id when
-available so the CLI can show actionable diagnostics."
+Both clients implement the same LLMClient interface (one method: complete).
+AnthropicLLMClient uses @anthropic-ai/sdk directly. OpenRouterLLMClient uses
+the openai package pointed at openrouter.ai — gives access to 100+ models
+(Claude, GPT-4o, Llama, Gemini) through a single API key. CLI will select
+the provider based on which env var is present (ANTHROPIC_API_KEY vs
+OPENROUTER_API_KEY) — wired in M5."
 ```
 
 ---
@@ -1223,6 +1305,8 @@ export {
   type LLMClient,
   type LLMRequest,
   type LLMResponse,
+  OpenRouterLLMClient,
+  type OpenRouterLLMClientOptions,
 } from './llm/client.js';
 
 export {
