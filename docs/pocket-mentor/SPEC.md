@@ -316,6 +316,9 @@ Slack: 0 days. Any slip eats into M5 buffer.
 | 2026-05-13 | No tests except M5 smoke against private fixtures repo | Per CLAUDE.md "no tests unless asked"; smoke catches GitHub API edge cases |
 | 2026-05-13 | Repo-wide harness (AGENTS.md at root), not per-package | `mentor-resources` will host more agent work; uniform harness |
 | 2026-05-13 | No custom `.claude/agents/code-reviewer.md` | Built-in subagent reads project CLAUDE.md; no wrapper needed |
+| 2026-05-14 | LLM clients use Vercel AI SDK (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`) instead of direct provider SDKs | Single interface for all providers — adding Groq/Gemini/Mistral is one import line. `LLMClient` interface preserved for testability. Built-in `maxRetries` replaces custom retry module. |
+| 2026-05-14 | OpenRouter via `@ai-sdk/openai` with custom `baseURL: openrouter.ai/api/v1` | No dedicated `@openrouter/ai-sdk-provider` needed; OpenRouter is OpenAI-compatible; slash model strings like `anthropic/claude-sonnet-4.5` work verbatim. |
+| 2026-05-14 | LLM model selectable via `ANTHROPIC_MODEL` / `OPENROUTER_MODEL` env vars | Per SPEC §12 "allow override via env". No recompile needed to switch models at runtime. |
 
 ---
 
