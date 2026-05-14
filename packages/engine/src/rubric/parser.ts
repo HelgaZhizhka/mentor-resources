@@ -91,7 +91,8 @@ const validateCriteria = (value: unknown, raw: string): readonly Criterion[] => 
       throw new LLMOutputInvalidError(
         'RubricParser: LLM JSON output failed schema validation',
         raw,
-        issues
+        issues,
+        error
       );
     }
     throw error;

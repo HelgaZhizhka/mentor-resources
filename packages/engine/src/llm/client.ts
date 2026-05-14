@@ -89,7 +89,7 @@ export type OpenRouterLLMClientOptions = {
   readonly siteName?: string;
 };
 
-const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4-5';
+const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.5';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 export class OpenRouterLLMClient implements LLMClient {
