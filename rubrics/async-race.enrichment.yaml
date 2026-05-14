@@ -34,7 +34,8 @@ criteria:
     method: mech
     checker_id: html-body-script-only
     # Checks that index.html <body> contains only a single <script> tag.
-    # No static <div id="app">, no inline markup — all HTML must be JS-generated.
+    # <noscript> and <link rel="stylesheet"> are allowed.
+    # No static <div>, no inline markup — all HTML content must be JS-generated.
 
   # ── SPA ─────────────────────────────────────────────────────────────────────
 
@@ -69,8 +70,9 @@ criteria:
   function-modularization:
     method: mech
     checker_id: function-length
-    # Static analysis: counts lines per function/method across all .ts files.
-    # Violations = functions exceeding 40 lines (as specified in the rubric).
+    # Static analysis: counts body lines per function/method across all .ts files.
+    # Body = lines between opening and closing braces (braces themselves excluded).
+    # Violations = functions with body exceeding 40 lines.
     # Reports file:line and function name for each violation.
 
   no-magic-numbers:
@@ -126,9 +128,7 @@ criteria:
   typescript-usage-penalty:
     method: mech
     checker_id: typescript-strict-usage
-    # Checks all .ts files for:
-    #   - explicit "any" type annotations
-    #   - type assertions (as Type, <Type>value)
-    #   - non-null assertions (value!)
-    # Presence of any of these triggers the -100% zero-category penalty.
-    # Checks tsconfig.json for strict: true as a baseline signal.
+    # Checks all .ts files for explicit "any" type annotations only.
+    # Type assertions (as Type) and non-null assertions (value!) are NOT penalised here.
+    # Presence of any "any" usage triggers the -100% zero-category penalty.
+    # Also checks tsconfig.json for strict: true as a baseline signal.
