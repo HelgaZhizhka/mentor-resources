@@ -1,4 +1,6 @@
 export class PocketMentorError extends Error {
+  readonly code: string = 'POCKET_MENTOR_ERROR';
+  readonly exitCode: number = 1;
   public override readonly cause: unknown;
 
   constructor(message: string, cause?: unknown) {
@@ -9,6 +11,8 @@ export class PocketMentorError extends Error {
 }
 
 export class RubricFetchError extends PocketMentorError {
+  override readonly code = 'RUBRIC_FETCH_ERROR' as const;
+  override readonly exitCode = 3 as const;
   public readonly url: string;
 
   constructor(message: string, url: string, cause?: unknown) {
@@ -19,6 +23,8 @@ export class RubricFetchError extends PocketMentorError {
 }
 
 export class EnrichmentNotFoundError extends PocketMentorError {
+  override readonly code = 'ENRICHMENT_NOT_FOUND' as const;
+  override readonly exitCode = 2 as const;
   public readonly rubricId: string;
   public readonly availableRubrics: readonly string[];
 
@@ -32,6 +38,8 @@ export class EnrichmentNotFoundError extends PocketMentorError {
 }
 
 export class EnrichmentInvalidError extends PocketMentorError {
+  override readonly code = 'ENRICHMENT_INVALID' as const;
+  override readonly exitCode = 2 as const;
   public readonly rubricId: string;
   public readonly issues: readonly string[];
 
@@ -44,6 +52,8 @@ export class EnrichmentInvalidError extends PocketMentorError {
 }
 
 export class LLMError extends PocketMentorError {
+  override readonly code = 'LLM_ERROR' as const;
+  override readonly exitCode = 3 as const;
   public readonly requestId: string | undefined;
 
   constructor(message: string, requestId?: string, cause?: unknown) {
@@ -57,6 +67,8 @@ export class LLMError extends PocketMentorError {
 // output validation failures are distinct from API/transport failures.
 // M5 CLI should catch both: instanceof LLMError || instanceof LLMOutputInvalidError.
 export class LLMOutputInvalidError extends PocketMentorError {
+  override readonly code = 'LLM_OUTPUT_INVALID' as const;
+  override readonly exitCode = 3 as const;
   public readonly raw: string;
   public readonly issues: readonly string[];
 
@@ -69,6 +81,9 @@ export class LLMOutputInvalidError extends PocketMentorError {
 }
 
 export class GitHubAuthError extends PocketMentorError {
+  override readonly code = 'GITHUB_AUTH_ERROR' as const;
+  override readonly exitCode = 1 as const;
+
   constructor(message: string, cause?: unknown) {
     super(message, cause);
     this.name = 'GitHubAuthError';
@@ -76,6 +91,8 @@ export class GitHubAuthError extends PocketMentorError {
 }
 
 export class PRFetchError extends PocketMentorError {
+  override readonly code = 'PR_FETCH_ERROR' as const;
+  override readonly exitCode = 3 as const;
   public readonly url: string;
 
   constructor(message: string, url: string, cause?: unknown) {
