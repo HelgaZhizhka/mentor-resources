@@ -1,0 +1,134 @@
+rubric_id: async-race
+source_commit: bde2aad2cdcc64fc3e1e706dbf318d577772a550
+source_path: stage2/tasks/async-race/non-functional-requirements.md
+
+# M2: async-race enrichment
+# Each criterion maps to one entry in the school's non-functional-requirements.md.
+# criterion IDs must be stable kebab-case — RubricParser will generate the same IDs
+# when it parses the markdown (system prompt instructs it to use kebab-case).
+#
+# method:
+#   mech   — checkable by deterministic script; checker_id required
+#   llm    — requires expert judgment; llm_focus required
+#   hybrid — script narrows, LLM decides severity; both fields recommended
+
+criteria:
+
+  # ── Architecture ────────────────────────────────────────────────────────────
+
+  modular-design:
+    method: llm
+    llm_focus: >
+      Assess whether the codebase is clearly divided into logical layers:
+      API interaction (fetch calls to the race engine server), UI rendering
+      (DOM manipulation, component creation), and state management (current
+      race state, garage data, pagination). Flag tight coupling — e.g. fetch
+      calls mixed directly into event handlers, or DOM updates scattered
+      across multiple unrelated modules. Award full points only when each
+      concern is isolated enough that changing one layer does not require
+      editing others.
+
+  # ── Dynamic Content Generation ──────────────────────────────────────────────
+
+  js-generated-html:
+    method: mech
+    checker_id: html-body-script-only
+    # Checks that index.html <body> contains only a single <script> tag.
+    # No static <div id="app">, no inline markup — all HTML must be JS-generated.
+
+  # ── SPA ─────────────────────────────────────────────────────────────────────
+
+  spa-implementation:
+    method: llm
+    llm_focus: >
+      Verify the application implements client-side routing without full-page
+      reloads. Check for History API usage (pushState/popstate) or hash-based
+      routing. Flag use of <a href> links that trigger full navigation, or
+      any window.location.href assignments that reload the page. The garage
+      and winners views must switch without reloading the page.
+
+  # ── Bundling ─────────────────────────────────────────────────────────────────
+
+  use-bundler:
+    method: mech
+    checker_id: bundler-presence
+    # Checks devDependencies / dependencies for vite, webpack, parcel, esbuild,
+    # rollup or similar. Also checks for a build script in package.json.
+
+  # ── ESLint ───────────────────────────────────────────────────────────────────
+
+  eslint-unicorn:
+    method: mech
+    checker_id: eslint-unicorn-config
+    # Checks that eslint config (eslint.config.js / .eslintrc.*) includes
+    # eslint-plugin-unicorn and that a lint script exists in package.json.
+    # Does NOT run the linter — checks config presence only.
+
+  # ── Code Organisation ────────────────────────────────────────────────────────
+
+  function-modularization:
+    method: mech
+    checker_id: function-length
+    # Static analysis: counts lines per function/method across all .ts files.
+    # Violations = functions exceeding 40 lines (as specified in the rubric).
+    # Reports file:line and function name for each violation.
+
+  no-magic-numbers:
+    method: hybrid
+    checker_id: magic-numbers-scan
+    llm_focus: >
+      The mech checker has found numeric literals outside of constants.
+      Review each candidate: ignore 0, 1, -1, array indices, and well-known
+      constants (e.g. HTTP status 200, 404). Flag literals that represent
+      domain values without explanation — e.g. raw car count limits, speed
+      values, timing constants, pagination sizes — where a named constant
+      would make intent clear. Report file:line for each meaningful violation.
+
+  # ── Prettier ─────────────────────────────────────────────────────────────────
+
+  prettier-setup:
+    method: mech
+    checker_id: prettier-scripts
+    # Checks package.json scripts for both:
+    #   "format": "prettier --write ..."
+    #   "ci:format": "prettier --check ..."
+    # Also checks that prettier (or @prettier/*) appears in devDependencies.
+
+  eslint-lint-script:
+    method: mech
+    checker_id: eslint-lint-script
+    # Checks package.json scripts for a "lint" script that invokes eslint.
+    # Combined with eslint-unicorn-config this covers the full ESLint criterion.
+
+  # ── Overall Code Quality ─────────────────────────────────────────────────────
+
+  overall-code-quality:
+    method: llm
+    llm_focus: >
+      Holistic assessment of code readability and professionalism (up to 35 points,
+      mentor discretion). Consider: consistent naming conventions (camelCase variables,
+      PascalCase classes/types), self-documenting names that reflect intent, absence
+      of dead code and commented-out blocks, appropriate use of TypeScript types
+      (no implicit any, meaningful interfaces), logical file and directory structure.
+      This criterion captures quality aspects not covered by the mechanical checks.
+      Be specific: cite file:line examples for both strengths and weaknesses.
+
+  # ── Penalties ────────────────────────────────────────────────────────────────
+
+  no-libraries-penalty:
+    method: mech
+    checker_id: forbidden-imports
+    # Scans all .ts/.js files for imports of forbidden libraries:
+    # react, react-dom, angular, vue, jquery, lodash, lodash-es,
+    # @angular/*, @vue/*, material-ui, @mui/*, bootstrap (JS only — CSS allowed).
+    # A single confirmed import triggers the -100% zero-category penalty.
+
+  typescript-usage-penalty:
+    method: mech
+    checker_id: typescript-strict-usage
+    # Checks all .ts files for:
+    #   - explicit "any" type annotations
+    #   - type assertions (as Type, <Type>value)
+    #   - non-null assertions (value!)
+    # Presence of any of these triggers the -100% zero-category penalty.
+    # Checks tsconfig.json for strict: true as a baseline signal.
