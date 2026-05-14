@@ -36,19 +36,19 @@ export class RubricFetcher {
   }
 
   private async requestRubric(url: string): Promise<string> {
-    let httpResponse;
     try {
-      httpResponse = await this.httpClient.get(url);
+      const response = await this.httpClient.get(url);
+      if (response.status !== HTTP_OK) {
+        throw new RubricFetchError(
+          `Unexpected status ${response.status.toString()} fetching ${url}`,
+          url
+        );
+      }
+      return response.text;
     } catch (error) {
+      if (error instanceof RubricFetchError) throw error;
       throw new RubricFetchError(`HTTP request failed for ${url}`, url, error);
     }
-    if (httpResponse.status !== HTTP_OK) {
-      throw new RubricFetchError(
-        `Unexpected status ${httpResponse.status.toString()} fetching ${url}`,
-        url
-      );
-    }
-    return httpResponse.text;
   }
 
   private cachePathFor(commitSha: string, repoPath: string): string {
