@@ -22,8 +22,6 @@ export {
   type OpenRouterLLMClientOptions,
 } from './llm/client.js';
 
-export { withRetry, type RetryConfig } from './llm/retry.js';
-
 export { EnrichmentLoader, type EnrichmentLoaderOptions } from './enrichment/loader.js';
 
 export { RubricFetcher, type RubricFetcherOptions } from './rubric/fetcher.js';

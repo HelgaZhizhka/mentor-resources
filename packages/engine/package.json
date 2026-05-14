@@ -12,11 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
+    "@ai-sdk/anthropic": "^3.0.77",
+    "@ai-sdk/openai": "^3.0.63",
     "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^21.1.1",
+    "ai": "^6.0.182",
     "js-yaml": "^4.1.1",
-    "openai": "^4.104.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
