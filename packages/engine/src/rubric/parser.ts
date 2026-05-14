@@ -95,6 +95,7 @@ const validateCriteria = (value: unknown, raw: string): readonly Criterion[] => 
         error
       );
     }
+    // defensive: non-ZodError from Zod.parse is theoretically impossible but re-thrown for safety
     throw error;
   }
 };

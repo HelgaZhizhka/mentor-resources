@@ -5,7 +5,7 @@ import yaml from 'js-yaml';
 import { ZodError } from 'zod';
 
 import { EnrichmentInvalidError, EnrichmentNotFoundError } from '../errors.js';
-import { enrichmentFileSchema } from '../schemas.js';
+import { enrichmentFileSchema, type EnrichmentFileRaw } from '../schemas.js';
 import { type Enrichment, type EnrichmentEntry } from '../types.js';
 
 export type EnrichmentLoaderOptions = {
@@ -69,10 +69,7 @@ export class EnrichmentLoader {
     }
   }
 
-  private validate(
-    value: unknown,
-    rubricId: string
-  ): ReturnType<typeof enrichmentFileSchema.parse> {
+  private validate(value: unknown, rubricId: string): EnrichmentFileRaw {
     try {
       return enrichmentFileSchema.parse(value);
     } catch (error) {
@@ -86,7 +83,7 @@ export class EnrichmentLoader {
     }
   }
 
-  private toEnrichment(raw: ReturnType<typeof enrichmentFileSchema.parse>): Enrichment {
+  private toEnrichment(raw: EnrichmentFileRaw): Enrichment {
     const criteria = new Map<string, EnrichmentEntry>();
     for (const [criterionId, entry] of Object.entries(raw.criteria)) {
       criteria.set(criterionId, {

@@ -4,7 +4,7 @@ import { type Octokit } from '@octokit/rest';
 import { GitHubAuthError, PRFetchError } from '../errors.js';
 import { type PRContext, type PRFile, type PRFileStatus } from '../types.js';
 
-import { parsePRUrl } from './url.js';
+import { parsePRUrl, type PRLocation } from './url.js';
 
 export type PRFetcherOptions = {
   readonly octokit: Octokit;
@@ -12,6 +12,7 @@ export type PRFetcherOptions = {
 
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
+const GITHUB_MAX_PER_PAGE = 100;
 
 const PR_FILE_STATUSES = new Set<string>([
   'added',
@@ -59,7 +60,7 @@ export class PRFetcher {
   }
 
   private async fetchMetadata(
-    location: { owner: string; repo: string; number: number },
+    location: PRLocation,
     prUrl: string
   ): Promise<{
     title: string;
@@ -84,16 +85,13 @@ export class PRFetcher {
     }
   }
 
-  private async fetchFiles(
-    location: { owner: string; repo: string; number: number },
-    prUrl: string
-  ): Promise<readonly PRFile[]> {
+  private async fetchFiles(location: PRLocation, prUrl: string): Promise<readonly PRFile[]> {
     try {
       const files = await this.octokit.paginate(this.octokit.pulls.listFiles, {
         owner: location.owner,
         repo: location.repo,
         pull_number: location.number,
-        per_page: 100,
+        per_page: GITHUB_MAX_PER_PAGE,
       });
       return files.map(
         (file): PRFile => ({
@@ -110,10 +108,7 @@ export class PRFetcher {
     }
   }
 
-  private async fetchDiff(
-    location: { owner: string; repo: string; number: number },
-    prUrl: string
-  ): Promise<string> {
+  private async fetchDiff(location: PRLocation, prUrl: string): Promise<string> {
     let response: { data: unknown };
     try {
       response = await this.octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
