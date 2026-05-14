@@ -38,7 +38,7 @@ export const enrichmentFileSchema = z.object({
 const penaltySchema = z
   .object({
     kind: z.enum(['fixed', 'zero-category']),
-    points: z.number().optional(),
+    points: z.number().int().positive().optional(),
     reason: z.string().min(1),
   })
   .refine((penalty) => penalty.kind !== 'fixed' || penalty.points !== undefined, {

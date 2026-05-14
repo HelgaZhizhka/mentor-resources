@@ -53,6 +53,9 @@ export class LLMError extends PocketMentorError {
   }
 }
 
+// Intentionally extends PocketMentorError directly (not LLMError) because
+// output validation failures are distinct from API/transport failures.
+// M5 CLI should catch both: instanceof LLMError || instanceof LLMOutputInvalidError.
 export class LLMOutputInvalidError extends PocketMentorError {
   public readonly raw: string;
   public readonly issues: readonly string[];

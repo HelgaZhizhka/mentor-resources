@@ -22,6 +22,9 @@ export class EnrichmentLoader {
   }
 
   async load(rubricId: string): Promise<Enrichment> {
+    if (path.basename(rubricId) !== rubricId) {
+      throw new EnrichmentInvalidError(rubricId, ['rubricId must not contain path separators']);
+    }
     const filePath = path.join(this.rubricsDir, `${rubricId}${ENRICHMENT_SUFFIX}`);
     const raw = await this.readFile(filePath, rubricId);
     const parsed = this.parseYaml(raw, rubricId);
