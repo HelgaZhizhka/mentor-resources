@@ -24,15 +24,15 @@
       "name": "Async-race enrichment YAML",
       "description": "Classify every criterion in async-race non-functional-requirements.md as mech / llm / hybrid. Define checker_id for mech, llm_focus for llm and hybrid. Pin source_commit SHA from rolling-scopes-school/tasks master. Helga-expertise bottleneck — ~zero engine code.",
       "dependencies": ["M1"],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "rubrics/async-race.enrichment.yaml at commit c44eb2c; 12 criteria classified (7 mech, 3 llm, 1 hybrid, 2 penalty-mech); validated against enrichmentFileSchema; corrections applied based on mentor review"
     },
     {
       "id": "M3",
       "name": "Mech-checkers for async-race",
       "description": "Registry pattern: each checker is (prContext, criterion) => Violation[]. Implement each checker_id referenced from M2 enrichment. Likely set: react-imports, any-usage, eslint-config-presence, husky-presence, prettier-config-presence, tsconfig-strict, function-length, forbidden-deps.",
       "dependencies": ["M1", "M2"],
-      "status": "pending",
+      "status": "in-progress",
       "evidence": ""
     },
     {

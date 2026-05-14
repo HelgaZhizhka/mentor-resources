@@ -81,6 +81,11 @@ Each session appends a new entry at the bottom. Newer entries below.
 - `penaltySchema` now enforces `kind=fixed → points required` via Zod refine
 - `LLMOutputInvalidError` now accepts optional `cause` to preserve stack trace
 
+**v1.0 ideas (out of scope for v0.9):**
+- `pocket-mentor rubrics generate <task-name>` — CLI fetches rubric markdown, LLM drafts enrichment YAML, mentor reviews and saves. ~10 min per task vs writing from scratch.
+- Community YAMLs via PRs — mentors contribute enrichment files for other RS School tasks (puzzle, fun-chat, migration, etc.), Helga reviews.
+- Helga writes curated YAMLs for all ~6-8 existing stage2 tasks to ship with v1.0 package.
+
 **Deferred fixes (address in M4 before LLMOrchestrator):**
 - `llm/client.ts`: `LLMResponse.stopReason` typed as `string | null` but SDK never returns null — change to `string` or `FinishReason`
 - `llm/client.ts`: `LLMError.requestId` always `undefined` after Vercel AI SDK migration — recover via `APICallError.responseHeaders?.['x-request-id']` from `@ai-sdk/provider`
