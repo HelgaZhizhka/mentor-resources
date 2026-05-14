@@ -3,6 +3,8 @@ import OpenAI from 'openai';
 
 import { LLMError } from '../errors.js';
 
+import { withRetry, type RetryConfig } from './retry.js';
+
 // ─── Shared interface ────────────────────────────────────────────────────────
 
 export type LLMRequest = {
@@ -29,6 +31,7 @@ export type AnthropicLLMClientOptions = {
   readonly apiKey: string;
   readonly model?: string;
   readonly defaultMaxTokens?: number;
+  readonly retryConfig?: RetryConfig;
 };
 
 const ANTHROPIC_DEFAULT_MODEL = 'claude-sonnet-4-6';
@@ -38,14 +41,20 @@ export class AnthropicLLMClient implements LLMClient {
   private readonly client: Anthropic;
   private readonly model: string;
   private readonly defaultMaxTokens: number;
+  private readonly retryConfig: RetryConfig;
 
   constructor(options: AnthropicLLMClientOptions) {
     this.client = new Anthropic({ apiKey: options.apiKey });
-    this.model = options.model ?? ANTHROPIC_DEFAULT_MODEL;
+    this.model = options.model ?? process.env['ANTHROPIC_MODEL'] ?? ANTHROPIC_DEFAULT_MODEL;
     this.defaultMaxTokens = options.defaultMaxTokens ?? DEFAULT_MAX_TOKENS;
+    this.retryConfig = options.retryConfig ?? { maxAttempts: 3, baseDelayMs: 1000 };
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    return withRetry(async () => this.doComplete(request), this.retryConfig);
+  }
+
+  private async doComplete(request: LLMRequest): Promise<LLMResponse> {
     const message = await this.callAnthropic(request);
     const textBlock = message.content.find(
       (block): block is Anthropic.TextBlock => block.type === 'text'
@@ -87,6 +96,7 @@ export type OpenRouterLLMClientOptions = {
   readonly defaultMaxTokens?: number;
   readonly siteUrl?: string;
   readonly siteName?: string;
+  readonly retryConfig?: RetryConfig;
 };
 
 const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.5';
@@ -96,6 +106,7 @@ export class OpenRouterLLMClient implements LLMClient {
   private readonly client: OpenAI;
   private readonly model: string;
   private readonly defaultMaxTokens: number;
+  private readonly retryConfig: RetryConfig;
 
   constructor(options: OpenRouterLLMClientOptions) {
     const extraHeaders: Record<string, string> = {};
@@ -107,11 +118,16 @@ export class OpenRouterLLMClient implements LLMClient {
       apiKey: options.apiKey,
       defaultHeaders: extraHeaders,
     });
-    this.model = options.model ?? OPENROUTER_DEFAULT_MODEL;
+    this.model = options.model ?? process.env['OPENROUTER_MODEL'] ?? OPENROUTER_DEFAULT_MODEL;
     this.defaultMaxTokens = options.defaultMaxTokens ?? DEFAULT_MAX_TOKENS;
+    this.retryConfig = options.retryConfig ?? { maxAttempts: 3, baseDelayMs: 1000 };
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    return withRetry(async () => this.doComplete(request), this.retryConfig);
+  }
+
+  private async doComplete(request: LLMRequest): Promise<LLMResponse> {
     try {
       const completion = await this.client.chat.completions.create({
         model: this.model,
