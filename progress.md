@@ -53,6 +53,62 @@ Each session appends a new entry at the bottom. Newer entries below.
 
 ---
 
+## Session 3 — 2026-05-14 — M1: Engine core
+
+**Done this session:**
+- Updated M1 plan to include OpenRouter multi-provider support (Task 6 extended)
+- Installed engine runtime deps: zod, js-yaml, @octokit/rest, @anthropic-ai/sdk, openai, @octokit/request-error, @types/js-yaml
+- `errors.ts` — PocketMentorError hierarchy (8 typed error classes)
+- `types.ts` — shared domain types (Criterion, Violation, PRContext, Enrichment, ...)
+- `schemas.ts` — Zod schemas for enrichment YAML + LLM output (+ penaltySchema refine for kind=fixed)
+- `http.ts` — HttpClient interface + fetchHttpClient (native fetch)
+- `llm/client.ts` — LLMClient interface + AnthropicLLMClient + OpenRouterLLMClient
+- `enrichment/loader.ts` — EnrichmentLoader (YAML + Zod validation)
+- `rubric/fetcher.ts` — RubricFetcher (HTTP + disk cache at ~/.pocket-mentor/cache/)
+- `rubric/parser.ts` — RubricParser (LLM-driven markdown → Criterion[])
+- `pr/url.ts` — parsePRUrl helper
+- `pr/fetcher.ts` — PRFetcher (Octokit: metadata + paginated files + raw diff)
+- `index.ts` — public surface re-exports all of the above
+- feature-dev:code-reviewer on full M1 diff; applied all 5 fixes
+
+**Decisions this session (durable):**
+- OpenRouter support added to M1 (not deferred): `OpenRouterLLMClient` uses `openai` package pointed at `openrouter.ai/api/v1`. CLI selects provider from env var (ANTHROPIC_API_KEY vs OPENROUTER_API_KEY) — wired in M5.
+- OpenRouter default model: `anthropic/claude-sonnet-4.5` (dot separator, not hyphen)
+- GitHub diff media type: `application/vnd.github.diff` (not the legacy v3 variant)
+- `cachePathFor` in RubricFetcher guards against path traversal via `path.resolve` + startsWith check
+- `penaltySchema` now enforces `kind=fixed → points required` via Zod refine
+- `LLMOutputInvalidError` now accepts optional `cause` to preserve stack trace
+
+**Next session should:**
+- M2 is `in-progress`: write `rubrics/async-race.enrichment.yaml`
+- M2 is the Helga-expertise bottleneck — engine code is ~zero, output is one well-thought YAML file
+- Before starting: pin school commit SHA (open https://github.com/rolling-scopes-school/tasks/commits/master, copy latest SHA touching async-race non-functional-requirements.md)
+- YAML schema to follow: `enrichmentFileSchema` in `packages/engine/src/schemas.ts`
+- Per criterion: decide `method` (mech/llm/hybrid), set `checker_id` for mech, set `llm_focus` for llm/hybrid
+
+**Blockers / open items:**
+- None blocking M2
+- Helga to create `HelgaZhizhka/pocket-mentor-test-fixtures` private repo before M5 day 25
+- License decision (MIT vs Apache-2.0) before M6 tag
+- `no-console` rule will conflict with CLI stdout printing in M5 — add CLI-specific eslint override then
+
+**Files added / modified this session:**
+- `docs/superpowers/plans/2026-05-13-M1-engine-core.md` (new — M1 plan, updated for OpenRouter)
+- `packages/engine/package.json` (new deps)
+- `packages/engine/src/errors.ts` (new)
+- `packages/engine/src/types.ts` (new)
+- `packages/engine/src/schemas.ts` (new)
+- `packages/engine/src/http.ts` (new)
+- `packages/engine/src/llm/client.ts` (new)
+- `packages/engine/src/enrichment/loader.ts` (new)
+- `packages/engine/src/rubric/fetcher.ts` (new)
+- `packages/engine/src/rubric/parser.ts` (new)
+- `packages/engine/src/pr/url.ts` (new)
+- `packages/engine/src/pr/fetcher.ts` (new)
+- `packages/engine/src/index.ts` (updated — full public surface)
+
+---
+
 ## Session 2 — 2026-05-13 — M0: monorepo setup + tooling
 
 **Done this session:**
