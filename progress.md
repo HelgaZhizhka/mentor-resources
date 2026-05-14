@@ -79,6 +79,10 @@ Each session appends a new entry at the bottom. Newer entries below.
 - `penaltySchema` now enforces `kind=fixed → points required` via Zod refine
 - `LLMOutputInvalidError` now accepts optional `cause` to preserve stack trace
 
+**Deferred fixes (address in M4 before LLMOrchestrator):**
+- `llm/client.ts`: `LLMResponse.stopReason` typed as `string | null` but SDK never returns null — change to `string` or `FinishReason`
+- `llm/client.ts`: `LLMError.requestId` always `undefined` after Vercel AI SDK migration — recover via `APICallError.responseHeaders?.['x-request-id']` from `@ai-sdk/provider`
+
 **Next session should:**
 - M2 is `in-progress`: write `rubrics/async-race.enrichment.yaml`
 - M2 is the Helga-expertise bottleneck — engine code is ~zero, output is one well-thought YAML file
