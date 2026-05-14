@@ -1,0 +1,75 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import path from 'node:path';
+
+import { RubricFetchError } from '../errors.js';
+import { type HttpClient } from '../http.js';
+
+export type RubricFetcherOptions = {
+  readonly httpClient: HttpClient;
+  readonly cacheDir?: string;
+};
+
+const RAW_HOST = 'https://raw.githubusercontent.com';
+const SCHOOL_REPO = 'rolling-scopes-school/tasks';
+const HTTP_OK = 200;
+
+export class RubricFetcher {
+  private readonly httpClient: HttpClient;
+  private readonly cacheDir: string;
+
+  constructor(options: RubricFetcherOptions) {
+    this.httpClient = options.httpClient;
+    this.cacheDir = options.cacheDir ?? path.join(homedir(), '.pocket-mentor', 'cache');
+  }
+
+  async fetch(commitSha: string, repoPath: string): Promise<string> {
+    const cachePath = this.cachePathFor(commitSha, repoPath);
+    const cached = await readCached(cachePath);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const url = buildRawUrl(commitSha, repoPath);
+    const response = await this.requestRubric(url);
+    await writeCached(cachePath, response);
+    return response;
+  }
+
+  private async requestRubric(url: string): Promise<string> {
+    let httpResponse;
+    try {
+      httpResponse = await this.httpClient.get(url);
+    } catch (error) {
+      throw new RubricFetchError(`HTTP request failed for ${url}`, url, error);
+    }
+    if (httpResponse.status !== HTTP_OK) {
+      throw new RubricFetchError(
+        `Unexpected status ${httpResponse.status.toString()} fetching ${url}`,
+        url
+      );
+    }
+    return httpResponse.text;
+  }
+
+  private cachePathFor(commitSha: string, repoPath: string): string {
+    return path.join(this.cacheDir, commitSha, repoPath);
+  }
+}
+
+const buildRawUrl = (commitSha: string, repoPath: string): string => {
+  const normalisedPath = repoPath.startsWith('/') ? repoPath.slice(1) : repoPath;
+  return `${RAW_HOST}/${SCHOOL_REPO}/${commitSha}/${normalisedPath}`;
+};
+
+const readCached = async (cachePath: string): Promise<string | undefined> => {
+  try {
+    return await readFile(cachePath, 'utf8');
+  } catch {
+    return undefined;
+  }
+};
+
+const writeCached = async (cachePath: string, content: string): Promise<void> => {
+  await mkdir(path.dirname(cachePath), { recursive: true });
+  await writeFile(cachePath, content, 'utf8');
+};
