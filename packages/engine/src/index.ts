@@ -46,3 +46,15 @@ export type {
   Violation,
   ViolationSeverity,
 } from './types.js';
+
+export { OctokitRepoReader, type OctokitRepoReaderOptions } from './checkers/repo-reader.js';
+
+export { getChecker, listCheckerIds } from './checkers/registry.js';
+
+export type { CheckerContext, MechChecker, RepoReader } from './checkers/types.js';
+
+export {
+  buildViolation,
+  buildPenaltyViolation,
+  type ViolationInput,
+} from './checkers/violation-helpers.js';
