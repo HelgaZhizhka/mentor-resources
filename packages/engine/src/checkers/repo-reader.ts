@@ -1,6 +1,6 @@
 import { type Octokit } from '@octokit/rest';
 
-import { GitHubAuthError, PocketMentorError } from '../errors.js';
+import { describeError, GitHubAuthError, PocketMentorError } from '../errors.js';
 
 import { type RepoReader } from './types.js';
 
@@ -45,6 +45,7 @@ export class OctokitRepoReader implements RepoReader {
       return Buffer.from(data.content, 'base64').toString('utf8');
     } catch (error) {
       if (isNotFound(error)) return undefined;
+      if (error instanceof PocketMentorError) throw error;
       if (isAuthError(error)) {
         throw new GitHubAuthError(
           `GitHub auth failed reading ${path}: ${describeError(error)}`,
@@ -94,6 +95,3 @@ const isAuthError = (error: unknown): boolean => {
   const status = (error as { status: unknown }).status;
   return status === HTTP_UNAUTHORIZED || status === HTTP_FORBIDDEN;
 };
-
-const describeError = (value: unknown): string =>
-  value instanceof Error ? value.message : String(value);
