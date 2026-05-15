@@ -63,6 +63,5 @@ const scanFile = (
 const isMagicNumber = (node: Node, allowed: ReadonlySet<number>): boolean => {
   if (node.type !== 'NumericLiteral') return false;
   const value = (node as { value: number }).value;
-  if (typeof value !== 'number') return false;
   return !allowed.has(value);
 };
