@@ -93,6 +93,7 @@ export class EnrichmentLoader {
         method: entry.method,
         checkerId: entry.checker_id,
         llmFocus: entry.llm_focus,
+        checkerConfig: entry.checker_config,
       });
     }
     return {

@@ -21,6 +21,7 @@ export type EnrichmentEntry = {
   readonly method: CriterionMethod;
   readonly checkerId?: string;
   readonly llmFocus?: string;
+  readonly checkerConfig?: Readonly<Record<string, unknown>>;
 };
 
 export type Enrichment = {

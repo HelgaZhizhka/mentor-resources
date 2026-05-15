@@ -7,6 +7,7 @@ export const enrichmentEntrySchema = z
     method: criterionMethodSchema,
     checker_id: z.string().min(1).optional(),
     llm_focus: z.string().min(1).optional(),
+    checker_config: z.record(z.string(), z.unknown()).optional(),
   })
   .refine(
     (entry): boolean => {
