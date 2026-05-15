@@ -1,4 +1,4 @@
-import { parse, type HTMLElement } from 'node-html-parser';
+import { NodeType, parse, type HTMLElement } from 'node-html-parser';
 import { z } from 'zod';
 
 import { type Violation } from '../types.js';
@@ -79,5 +79,5 @@ const checkBody = (
 const isHtmlElement = (node: unknown): node is HTMLElement =>
   typeof node === 'object' &&
   node !== null &&
-  'tagName' in node &&
-  typeof (node as { tagName: unknown }).tagName === 'string';
+  'nodeType' in node &&
+  (node as { nodeType: unknown }).nodeType === NodeType.ELEMENT_NODE;
