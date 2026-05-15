@@ -2,15 +2,9 @@ rubric_id: async-race
 source_commit: bde2aad2cdcc64fc3e1e706dbf318d577772a550
 source_path: stage2/tasks/async-race/non-functional-requirements.md
 
-# M2: async-race enrichment
-# Each criterion maps to one entry in the school's non-functional-requirements.md.
-# criterion IDs must be stable kebab-case — RubricParser will generate the same IDs
-# when it parses the markdown (system prompt instructs it to use kebab-case).
-#
-# method:
-#   mech   — checkable by deterministic script; checker_id required
-#   llm    — requires expert judgment; llm_focus required
-#   hybrid — script narrows, LLM decides severity; both fields recommended
+# M2: async-race enrichment (parametrised, per M3 architecture).
+# All rubric-specific values (plugin names, max lines, allowed tags) live here.
+# Checker functions in packages/engine/src/checkers/ are generic.
 
 criteria:
 
@@ -32,10 +26,10 @@ criteria:
 
   js-generated-html:
     method: mech
-    checker_id: html-body-script-only
-    # Checks that index.html <body> contains only a single <script> tag.
-    # <noscript> and <link rel="stylesheet"> are allowed.
-    # No static <div>, no inline markup — all HTML content must be JS-generated.
+    checker_id: html-body-allowed-tags
+    checker_config:
+      allowed_tags: [script, noscript, link]
+      html_paths: [index.html, public/index.html, src/index.html]
 
   # ── SPA ─────────────────────────────────────────────────────────────────────
 
@@ -45,90 +39,108 @@ criteria:
       Verify the application implements client-side routing without full-page
       reloads. Check for History API usage (pushState/popstate) or hash-based
       routing. Flag use of <a href> links that trigger full navigation, or
-      any window.location.href assignments that reload the page. The garage
-      and winners views must switch without reloading the page.
+      any window.location.href assignments that reload the page.
 
   # ── Bundling ─────────────────────────────────────────────────────────────────
 
   use-bundler:
     method: mech
-    checker_id: bundler-presence
-    # Checks devDependencies / dependencies for vite, webpack, parcel, esbuild,
-    # rollup or similar. Also checks for a build script in package.json.
+    checker_id: dep-presence
+    checker_config:
+      packages: [vite, webpack, webpack-cli, parcel, esbuild, rollup]
+      location: any  # 'dependencies' | 'devDependencies' | 'any'
 
-  # ── ESLint ───────────────────────────────────────────────────────────────────
+  # ── ESLint config + lint script ──────────────────────────────────────────────
 
   eslint-unicorn:
     method: mech
-    checker_id: eslint-unicorn-config
-    # Checks that eslint config (eslint.config.js / .eslintrc.*) includes
-    # eslint-plugin-unicorn and that a lint script exists in package.json.
-    # Does NOT run the linter — checks config presence only.
+    checker_id: eslint-plugin-presence
+    checker_config:
+      plugin: unicorn
+      markers: [eslint-plugin-unicorn, 'unicorn/', '"unicorn"', "'unicorn'"]
 
   # ── Code Organisation ────────────────────────────────────────────────────────
 
   function-modularization:
     method: mech
-    checker_id: function-length
-    # Static analysis: counts body lines per function/method across all .ts files.
-    # Body = lines between opening and closing braces (braces themselves excluded).
-    # Violations = functions with body exceeding 40 lines.
-    # Reports file:line and function name for each violation.
+    checker_id: eslint-rule-configured
+    checker_config:
+      rule: max-lines-per-function
+      hint: "Should be configured to ≤ 40 lines per function body."
 
   no-magic-numbers:
     method: hybrid
     checker_id: magic-numbers-scan
+    checker_config:
+      allowed: [0, 1, -1]
+      file_suffixes: ['.ts', '.tsx']
     llm_focus: >
-      The mech checker has found numeric literals outside of constants.
-      Review each candidate: ignore 0, 1, -1, array indices, and well-known
-      constants (e.g. HTTP status 200, 404). Flag literals that represent
-      domain values without explanation — e.g. raw car count limits, speed
-      values, timing constants, pagination sizes — where a named constant
-      would make intent clear. Report file:line for each meaningful violation.
+      The mech checker has flagged numeric literals outside of 0, 1, -1.
+      For each candidate, decide if it represents a domain value where a
+      named constant would clarify intent. Ignore obvious cases like array
+      indices, default values, well-known constants (HTTP 200, 404),
+      timing values that are self-explanatory. Cite file:line for each
+      meaningful violation.
 
-  # ── Prettier ─────────────────────────────────────────────────────────────────
+  # ── Prettier setup ───────────────────────────────────────────────────────────
 
   prettier-setup:
     method: mech
-    checker_id: prettier-scripts
-    # Checks package.json scripts for both:
-    #   "format": "prettier --write ..."
-    #   "ci:format": "prettier --check ..."
-    # Also checks that prettier (or @prettier/*) appears in devDependencies.
+    checker_id: package-scripts-match
+    checker_config:
+      scripts:
+        - name: format
+          contains: [prettier, '--write']
+        - name: 'ci:format'
+          contains: [prettier, '--check']
+
+  # ── ESLint lint script ───────────────────────────────────────────────────────
 
   eslint-lint-script:
     method: mech
-    checker_id: eslint-lint-script
-    # Checks package.json scripts for a "lint" script that invokes eslint.
-    # Combined with eslint-unicorn-config this covers the full ESLint criterion.
+    checker_id: package-scripts-match
+    checker_config:
+      scripts:
+        - name: lint
+          contains: [eslint]
 
   # ── Overall Code Quality ─────────────────────────────────────────────────────
 
   overall-code-quality:
     method: llm
     llm_focus: >
-      Holistic assessment of code readability and professionalism (up to 35 points,
-      mentor discretion). Consider: consistent naming conventions (camelCase variables,
-      PascalCase classes/types), self-documenting names that reflect intent, absence
-      of dead code and commented-out blocks, appropriate use of TypeScript types
-      (no implicit any, meaningful interfaces), logical file and directory structure.
-      This criterion captures quality aspects not covered by the mechanical checks.
-      Be specific: cite file:line examples for both strengths and weaknesses.
+      Holistic assessment of code readability and professionalism (up to 35
+      points, mentor discretion). Consider: consistent naming conventions
+      (camelCase variables, PascalCase classes/types), self-documenting names,
+      absence of dead code and commented-out blocks, appropriate use of
+      TypeScript types, logical file structure. Cite file:line examples for
+      both strengths and weaknesses.
 
   # ── Penalties ────────────────────────────────────────────────────────────────
 
   no-libraries-penalty:
     method: mech
     checker_id: forbidden-imports
-    # Scans all .ts/.js files for imports of forbidden libraries:
-    # react, react-dom, angular, vue, jquery, lodash, lodash-es,
-    # @angular/*, @vue/*, material-ui, @mui/*, bootstrap (JS only — CSS allowed).
-    # A single confirmed import triggers the -100% zero-category penalty.
+    checker_config:
+      packages:
+        - react
+        - react-dom
+        - '@angular/core'
+        - angular
+        - vue
+        - '@vue/runtime-dom'
+        - jquery
+        - lodash
+        - lodash-es
+        - 'material-ui'
+        - '@mui/material'
+        - '@mui/core'
+        - antd
+      file_suffixes: ['.ts', '.tsx', '.js', '.jsx', '.mjs']
 
   typescript-usage-penalty:
     method: mech
-    checker_id: typescript-strict-usage
-    # Checks all .ts files for explicit "any" type annotations only.
-    # Type assertions (as Type) and non-null assertions (value!) are NOT penalised here.
-    # Presence of any "any" usage triggers the -100% zero-category penalty.
-    # Also checks tsconfig.json for strict: true as a baseline signal.
+    checker_id: typescript-any-usage
+    checker_config:
+      check_tsconfig_strict: true
+      file_suffixes: ['.ts', '.tsx']
