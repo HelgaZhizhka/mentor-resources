@@ -32,15 +32,15 @@
       "name": "Mech-checkers for async-race",
       "description": "Registry pattern: each checker is (prContext, criterion) => Violation[]. Implement each checker_id referenced from M2 enrichment. Likely set: react-imports, any-usage, eslint-config-presence, husky-presence, prettier-config-presence, tsconfig-strict, function-length, forbidden-deps.",
       "dependencies": ["M1", "M2"],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "commits a710b33..d5d2439; 8 generic parametrised checkers in registry; ./init.sh green; code-reviewer subagent ran after Task 13"
     },
     {
       "id": "M4",
       "name": "LLM orchestrator + aggregator",
       "description": "Prompt composer (criterion + diff slice + llm_focus + few-shot examples). Claude API client with retries and Zod validation of output. Aggregator merges mech + llm violations, computes score and breakdown, applies full-category penalties.",
       "dependencies": ["M1", "M2"],
-      "status": "pending",
+      "status": "in-progress",
       "evidence": ""
     },
     {

@@ -180,3 +180,15 @@ Each session appends a new entry at the bottom. Newer entries below.
 - `.gitignore` (removed pnpm-lock.yaml exclusion, added .env)
 
 ---
+
+## Session 4 — 2026-05-15 — M3: parametrised mech-checkers
+
+**Decisions:**
+- Variant C: trust ESLint config for non-penalty rules (function length, code style) — only verify rule is configured in ESLint config. For penalty checks (forbidden-imports, typescript-any-usage) always AST-scan since students can use eslint-disable.
+- `EnrichmentEntry.checkerConfig: Readonly<Record<string, unknown>>` — each checker validates its own config via Zod at call time.
+- 8 generic parametrised checkers replace 9 earlier specific ones — adding a new rubric is YAML-only work.
+- `function-length` → `eslint-rule-configured(max-lines-per-function)` — no AST scan, trust the lint config.
+- `html-body-allowed-tags` fix: use `NodeType.ELEMENT_NODE` instead of tagName duck-typing.
+- `repo-reader`: import `describeError` from errors.ts (dedup), guard PocketMentorError re-throw.
+
+**Next session:** M4 = LLM orchestrator + aggregator (prompt composer, Vercel AI SDK call, Zod output validation, score aggregation).
