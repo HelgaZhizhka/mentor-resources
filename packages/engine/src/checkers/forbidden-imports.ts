@@ -5,7 +5,7 @@ import { type Violation } from '../types.js';
 import { type CheckerContext, type MechChecker } from './types.js';
 import { buildPenaltyViolation } from './violation-helpers.js';
 
-const IMPORT_PATTERN = /(?:from|import)\s+['"]([^'"]+)['"]/g;
+const IMPORT_PATTERN = /(?:from|import|require)\s*\(?['"]([^'"]+)['"]\)?/g;
 const NEWLINE = '\n';
 
 const configSchema = z.object({
