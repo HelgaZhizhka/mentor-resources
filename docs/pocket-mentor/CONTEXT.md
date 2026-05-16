@@ -4,7 +4,7 @@
 
 ## What this product is
 
-**AI co-pilot for frontend mentors reviewing student PRs.** A mentor receives a student PR (GitHub URL), picks a rubric (per-task YAML), runs the engine. Output is a **draft PR review** pre-loaded with inline comments, summary, and estimated score — created via the GitHub API in `PENDING` state. The mentor curates in GitHub's native review UI (toggle/edit/discard each comment), then clicks **Submit review**.
+**AI co-pilot for frontend mentors reviewing student PRs.** A mentor passes a student PR URL (and optionally `--task <id>` for per-task courses). The engine composes the active rubric from up to four layers (common + auto-detected stack + optional task + mentor overrides) and produces a **draft PR review** pre-loaded with inline comments, summary, and estimated score — created via the GitHub API in `PENDING` state. The mentor curates in GitHub's native review UI (toggle/edit/discard each comment), then clicks **Submit review**.
 
 Combines mechanical checks (lint, deps, structure — ~60% of rubric) with LLM-driven analysis (architecture, naming, UX — ~20%) and hybrid checks (~20%).
 
@@ -47,34 +47,78 @@ RS School-specific terminology with two distinct review tracks per task:
 
 **MVP scope = Mentor Review only.** Cross-check (functional) is out of scope until v2 — would require headless-browser testing infrastructure (a whole separate product). This narrowing is deliberate: it matches exactly the role RS School mentors are vacating in the 2026 transition.
 
-### Rubric architecture — two layers, school as source of truth
+### Rubric architecture — four-layer composition, combined YAML, separate repo
 
-**Locked.** Rubrics are not duplicated into our repo. The school's official markdown files are the **single source of truth**.
+**Locked (revised 2026-05-16).** Final rubric is composed at review time from up to four layers, each a self-contained combined YAML file (criteria text + check config in one). Layers 1–3 live in a separate public git repo (`pocket-mentor-rubrics`); layer 4 is local to the mentor.
 
-**Layer 1 — School markdown (source of truth, not ours):**
-- `github.com/rolling-scopes-school/tasks/blob/master/stage2/tasks/<task>/non-functional-requirements.md` (or `MentorsCheckCriteria.md` depending on task)
-- Engine fetches at runtime (cached + version-pinned to commit SHA)
-- Contains criteria, points, penalties — the authoritative score sheet
+**Why four layers.** Different courses use different rubric paradigms:
+- **Flat-rubric courses** (e.g. RS School React — 25 pts mentor review, same criteria for every task) → layers 1 + 2 only.
+- **Per-task-rubric courses** (e.g. RS School Stage 2 — each task has its own criteria + points + penalties) → layers 1 + 2 + 3.
+- Personal preferences of the mentor (disable criteria, add custom ones) → layer 4.
 
-**Layer 2 — Our enrichment (metadata layer, ours):**
-- `rubrics/<task>.enrichment.yaml` in our repo
-- Per criterion in the school markdown: `method` (`mech` / `llm` / `hybrid`), pointer to mech-check script, LLM focus hint
-- Does NOT contain criterion text or point values — those come from layer 1
-- Tiny files (~30-50 lines per task)
+```
+Layer 4: Mentor overrides       ~/.pocket-mentor/overrides.yaml         (local, optional)
+Layer 3: Task rubric             pocket-mentor-rubrics/stage2/<id>.yaml  (opt-in via --task)
+Layer 2: Stack rubric            pocket-mentor-rubrics/<stack>.yaml      (auto-detected from package.json)
+Layer 1: Common review           pocket-mentor-rubrics/common-review.yaml (always)
+```
+
+Composition order: layer 1 is the base; higher layers add criteria, override fields on matching IDs, or disable IDs from below.
+
+**One combined YAML file contains:**
+- `rubric_id`, `title`, `description` — metadata
+- `applies_when` (for layer 2 stack rubrics) — e.g. `any_dependency: [react, react-dom]`
+- `criteria` — each with title, points_max, text (shown to student in PR comment), method (`mech` / `llm` / `hybrid`), and — for mech/hybrid — `checker_id` + `checker_config`; optional `llm_focus` for llm/hybrid
+- `penalty` (typically for layer 3 task rubrics) — point deductions for violations (e.g. "deadline missed: -25", "no cross-check: -15")
+- `reference` (optional) — link to upstream curriculum material
 
 **Method types:**
-- **Mechanical (`mech`)** — checkable by deterministic script, no AI. Examples: ESLint config presence, no forbidden deps in `package.json`, `any` usage, function length, file count. Two runs of the same input give the same output. Zero LLM tokens.
-- **LLM (`llm`)** — requires judgement. Examples: architecture quality, naming clarity, separation of concerns.
-- **Hybrid** — script narrows the question (finds candidates), LLM decides if they matter in context. Example: jscpd finds duplications, LLM judges if they're meaningful.
+- **Mechanical (`mech`)** — checkable by deterministic generic checker, configured via YAML. Examples: dependency present in `package.json`, ESLint rule configured, no forbidden imports, `any` usage scan. Two runs of the same input give the same output. Zero LLM tokens.
+- **LLM (`llm`)** — requires judgement. Engine calls Claude/OpenRouter with criterion text + diff slice + `llm_focus` hint. Examples: architecture quality, naming clarity, separation of concerns.
+- **Hybrid** — both run; violations merged. Example: component-line-count checker flags >300 LOC files, LLM judges whether they're truly god-components.
 
-Empirical split on async-race rubric: ~60% `mech`, ~20% `llm`, ~20% `hybrid`. This is the wedge over generic AI review — we don't ask LLMs what scripts can answer.
+**Don't duplicate the linter principle.** Layer 1 checks that ESLint is correctly configured (mech) and that lint passes (mech). It does NOT re-check rules ESLint already enforces. LLM is reserved for judgement work ESLint cannot do.
+
+**Output calibration for student level.** Each criterion declares `severity: error | warning | info` (already present in `ViolationSeverity`). The CLI flag `--level=junior | standard | senior` (default `junior`) filters by severity and adjusts the LLM-comment template's tone, length, and use of examples. Layer 1 `common-review.yaml` carries optional global `review_limits` (max comments per criterion / per file / total) so a single rule with 30 violations becomes "3 examples + summary of 27 more". The LLM-orchestrator enforces a structural comment template (≤3 sentences, mandatory "before/after" snippet, no jargon). The review body starts with a 3-point summary picked from highest-impact violations. Together these prevent overwhelming a beginner with 40 inline comments — which would defeat the pedagogical goal.
+
+**Repository structure:**
+
+```
+pocket-mentor-rubrics/                       (separate public git repo)
+├── README.md
+├── CONTRIBUTING.md                          (how to add a rubric)
+├── _template.yaml                           (scaffold for new authors)
+├── common-review.yaml                       (layer 1: always applied)
+├── react.yaml                               (layer 2: auto-applied on React projects)
+├── angular.yaml                             (layer 2: planned)
+└── stage2/                                  (layer 3: task rubrics)
+    ├── async-race.yaml
+    ├── rss-puzzle.yaml
+    └── ...
+```
+
+Filename = `rubric_id` (with directory prefix for task rubrics, e.g. `stage2/async-race`). No index file — the directory itself is the catalog.
+
+**Sources of truth (not invented):**
+- Layer 1 `common-review.yaml` — official RS School `pull-request-review-process.md` + `clean-code/*` curated material + `TypeScript.md`/`HTML.md`/`CSS.md`/`UI-UX.md`.
+- Layer 2 `react.yaml` — RS School `react/modules/tasks/README.md` (no props drilling, no god components, no direct DOM, tests pass) + `clean-code/React.md` + reference ESLint/TS configs.
+- Layer 3 `stage2/<id>.yaml` — README of the specific task (criteria, exact point allocations, penalty rules).
+- Layer 4 — mentor's personal experience.
+
+**Distribution:**
+- Authors commit combined YAML to `pocket-mentor-rubrics` via PR. Maintainer reviews and merges.
+- Mentor-users get rubrics via `pocket-mentor init` (initial clone) and `pocket-mentor rubrics sync` (update).
+- CLI reads rubrics from local clone at runtime — no HTTP per review.
+- Alternative source: `--rubrics-source <git-url>` lets mentors/teams point CLI at a fork or a separate repo of rubrics.
+
+**Open authoring model.** The rubrics repo is public from day 1. Initial baseline (common + react + stage2/async-race + template) is authored by the project initiator; further rubrics are open contributions via PR. Maintainer reviews, doesn't author everything. No infrastructure for `rubric from-readme` / multi-source / JSON Schema CI in v0.9 — added when real demand surfaces.
 
 **Versioning:**
-- Enrichment YAML pins `source_commit: <sha>` for reproducibility
-- CLI subcommand `pocket-mentor rubrics check-updates` shows diff vs school's current master
-- Mentor controls update cadence; no auto-pull in production
+- Rubric repo uses git tags (e.g. `v1.0`, `v1.1`) for release coordination
+- Per-rubric: optional `source.commit_sha` field for drift detection vs upstream markdown source
+- CLI subcommand `pocket-mentor rubrics check-drift` surfaces diffs (post-v0.9)
 
-**Why this matters (school confirmed 2026-05):** RS School has announced that stage 2 tasks **will change**. Layer-1-from-school architecture means: when school updates a task, we update the pinned commit, review the enrichment for breakage, ship a new rubric version. No content duplication, no race condition on what "the real rubric" is.
+**Why four layers (not one flat YAML per task):** the universe of criteria is multi-axial — universal (PR hygiene), stack-specific (React patterns), task-specific (async-race game logic), personal (mentor preference). Flattening into a single YAML per task means duplicating universal criteria across N task files; updating "PR formatting rules" then requires editing every rubric. Four-layer composition is DRY by construction. Layer 3 is opt-in so courses with flat rubrics (React-25) don't pay for unused complexity.
 
 ## Audience
 
@@ -123,11 +167,12 @@ The product = web automation layer over this existing manual workflow. Not a fro
 Lives in `github.com/HelgaZhizhka/mentor-resources` (extends existing repo). MIT or Apache-2.0.
 
 Contains:
-- **Claude Code skill + CLI** — wraps the founder's existing `reviewer.md` prompt as a packaged, callable tool. Single engine, multiple invocation modes.
-- **Per-task rubrics** (`rubrics/async-race.yaml`, `rubrics/puzzle.yaml`, etc.) — machine-readable scoring definitions derived from RS School TZs. Each criterion tagged `mech` | `llm` | `hybrid`.
-- **Mech-checker scripts** — already partially exist in `templates/scripts/`. Extended with rubric-driven runners.
+- **Engine + CLI** (`packages/engine`, `packages/cli`) — wraps the founder's existing `reviewer.md` prompt as a packaged, callable tool. Single engine, multiple invocation modes.
+- **Generic mechanical checkers** — parametrised, configured per-criterion via rubric YAML (dep-presence, eslint-rule-configured, forbidden-imports, magic-numbers-scan, typescript-any-usage, etc.). Extensible via registry.
 
-All three pieces work locally on the mentor's machine, using their personal Claude / OpenAI API key. **Zero hosting cost** for the school. **Zero infrastructure dependency** on the founder.
+Rubrics themselves live in a **separate repo** (`pocket-mentor-rubrics`) — see §"Rubric architecture" above. This keeps engine releases decoupled from rubric updates: adding support for a new task = adding one YAML file in the rubrics repo, no engine release needed.
+
+Both pieces work locally on the mentor's machine, using their personal Claude / OpenAI API key. **Zero hosting cost** for the school. **Zero infrastructure dependency** on the founder.
 
 ### Paid tier (the "web composer")
 
@@ -217,9 +262,10 @@ Server-side OAuth (GitHub App with installation tokens) is reserved for the **pa
 
 ## Repository structure
 
-- `HelgaZhizhka/mentor-resources` — public, open-source. Home of engine + rubrics + mech-checkers. Currently contains the founder's existing prompt and scripts; will be extended with `packages/skill`, `packages/cli`, `packages/rubrics`, `packages/mech-checkers`.
-- `HelgaZhizhka/pocket-mentor` — private. Home of the paid web composer. Not yet started.
-- This working directory (`pocket-mentor` local) — planning + spec docs during pre-MVP. Will become the home of the paid web composer once implementation starts.
+- `HelgaZhizhka/mentor-resources` — public, open-source. Home of engine + CLI + generic mechanical checkers. Already contains `packages/engine` and `packages/cli` workspaces, plus existing prompt/scripts under `templates/`.
+- `HelgaZhizhka/pocket-mentor-rubrics` — public (planned). Home of all rubric YAML files. Separate repo so adding rubrics doesn't require an engine release. Authors commit; mentors `pocket-mentor rubrics sync`.
+- `HelgaZhizhka/pocket-mentor` — private. Home of the paid web composer (deferred indefinitely).
+- This working directory (`pocket-mentor` local) — planning + spec docs.
 
 ## RS School AI club context — what the school is actually building (2026-05-12 lecture)
 

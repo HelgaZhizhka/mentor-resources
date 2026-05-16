@@ -1,152 +1,207 @@
-# Pocket Mentor v0.9-alpha — Implementation Spec
+# Pocket Mentor v0.9 — Implementation Spec
 
-> **Status:** locked, 2026-05-13.
-> **Scope:** v0.9-alpha. 28-day sprint to demo for the RS School AI club call (Dima/Andrey).
-> **Background:** strategic / product context in [CONTEXT.md](./CONTEXT.md). Outreach materials in [outreach/](./outreach/).
+> **Status:** UNDER REVISION (2026-05-16). Architecture aligned with [architecture-pivot-ru.md](./architecture-pivot-ru.md).
+> **Original scope (2026-05-13):** v0.9-alpha, single-rubric demo on async-race.
+> **Current scope (2026-05-16):** v0.9, production-usable on multiple courses via four-layer rubric composition + separate public rubrics repo. No fixed timeline.
+> **Background:** strategic / product context in [CONTEXT.md](./CONTEXT.md).
 > **Paid web composer:** deferred indefinitely. v0.9 is open-source only.
 
-This document is the canonical entry point for any Claude Code session resuming work on Pocket Mentor v0.9-alpha. Read it after `AGENTS.md`, before touching code.
+This document is the canonical entry point for any Claude Code session resuming work on Pocket Mentor v0.9. Read it after `AGENTS.md`, before touching code.
+
+**What changed vs original spec (2026-05-13):**
+- **Four-layer rubric composition** replaces single-rubric-per-task model. Active rubric = `common-review` + auto-detected stack + (optional `--task <id>`) + mentor overrides.
+- **Combined YAML format** replaces two-layer (markdown + enrichment) — one file contains both criterion text and check configuration.
+- **Rubrics move from `rubrics/` in this repo to separate public `pocket-mentor-rubrics` repo.** Open contribution model. CLI supports `--rubrics-source <git-url>` for alternative sources.
+- **`RubricParser` (LLM-driven markdown → criteria) deferred.** Bootstrap workflow `pocket-mentor rubrics generate` is post-v0.9 — initial rubrics authored manually by initiator with LLM assistance during planning.
+- **Stack auto-detection** added — engine reads student `package.json` to determine which layer-2 stack rubric(s) to apply.
+- **Penalty handling** required for layer-3 task rubrics (e.g. Stage 2 deadline miss, no cross-check).
+- **Timeline removed** — original 28-day sprint deprecated. Milestones remain as ordered scope, not dated.
+- **Stage 2 + Mentor Review** focus retained from original; **React-course flat rubric** added as supported pattern (layers 1+2 only, no `--task` flag).
+
+Sections below have been aligned with the four-layer architecture. Sections marked **[SUPERSEDED]** are kept for history but no longer authoritative.
 
 ---
 
-## 1. Goal
+## 1. Goal **[REVISED]**
 
-Ship a working demo of:
+Ship a CLI that mentors can use to review student PRs on **multiple active courses** (not a single demo task). The active rubric is composed at review time from up to four layers:
 
 ```
-pocket-mentor review <pr-url> --rubric async-race --as-draft
+pocket-mentor review <pr-url> --as-draft                          # flat: common + auto-detected stack
+pocket-mentor review <pr-url> --as-draft --task <id>              # adds layer 3: per-task rubric
+pocket-mentor review <pr-url> --as-draft --level senior           # full output, expert tone (default: junior)
 ```
 
-that fetches the `async-race` rubric directly from `rolling-scopes-school/tasks`, runs mech-checkers + LLM analysis on the student PR diff, and posts the result as a GitHub PR review in `PENDING` (draft) state. The mentor then curates in GitHub's native review UI and submits.
+Composition order: `common-review.yaml` (always) + auto-detected stack rubric (e.g. `react.yaml` from `package.json`) + optional task rubric (e.g. `stage2/async-race.yaml`) + local mentor overrides (`~/.pocket-mentor/overrides.yaml`). Engine reads layers from the local clone of the rubrics repo, merges them, runs mech-checkers + LLM analysis on the student PR diff, and posts the result as a GitHub PR review in `PENDING` (draft) state. The mentor curates in GitHub's native review UI and submits.
 
-**Definition of done for v0.9-alpha:**
+**Definition of done for v0.9:**
 
-- [ ] CLI installable: `pnpm install -g @pocket-mentor/cli` (workspace publish optional, local link OK for demo)
-- [ ] Engine reads `async-race` rubric markdown from school repo (pinned to commit SHA via enrichment YAML)
+- [ ] CLI installable: `npm install -g pocket-mentor-cli` (or runnable via `npx`)
+- [ ] `pocket-mentor init` wizard sets up: GitHub token, LLM API key, clones rubrics repo to `~/.pocket-mentor/rubrics/`, creates empty `overrides.yaml`
+- [ ] Engine reads rubric YAMLs from local clone (no runtime markdown parsing)
+- [ ] Stack auto-detection from student `package.json` works for React; falls back to common-only when stack unknown
+- [ ] Layer composition implemented: criteria merging by ID, override semantics, penalty handling for layer 3
+- [ ] **Starter rubric set** in `pocket-mentor-rubrics`: `common-review.yaml`, `react.yaml`, `stage2/async-race.yaml`, `_template.yaml`, `CONTRIBUTING.md`
 - [ ] Engine emits output conforming to schema in CONTEXT.md §"Engine output (structured)"
 - [ ] CLI posts result as GitHub draft review (`event: PENDING`), prints draft review URL
-- [ ] Smoke-tested end-to-end on 1–2 historical async-race PRs from Helga's prior cohorts
-- [ ] `mentor-resources` repo tagged `v0.9-alpha`, README updated with usage + install
-- [ ] Demo runnable in front of Dima/Andrey in ≤ 5 minutes
+- [ ] CLI flag `--rubrics-source <git-url>` works (alternative source for layers 1–3)
+- [ ] CLI flag `--level junior|standard|senior` works (default `junior`); filters violations by severity, adjusts LLM-comment tone and length
+- [ ] Comment caps (`max_per_criterion`, `max_per_file`, `max_total` in `common-review.yaml`'s `review_limits`) respected by Aggregator
+- [ ] Review body opens with summary of top-3 highest-impact violations
+- [ ] Smoke-tested on at least 1 historical PR for both modes (flat = React-course; with `--task` = Stage 2 async-race)
+- [ ] `mentor-resources` repo tagged `v0.9`, README updated with usage + install
+- [ ] `pocket-mentor-rubrics` repo public, README documents the layer model and contribution flow
 
 ---
 
-## 2. Out of scope for v0.9
+## 2. Out of scope for v0.9 **[REVISED]**
 
-The 28-day sprint deliberately excludes work that doesn't move the demo forward:
+The v0.9 release deliberately excludes:
 
-- **Other rubrics** — migration, puzzle, fun-chat, code-review meta-task, decision-making-tool. Architecture must support them; only `async-race` is implemented.
 - **`packages/skill`** — Claude Code skill packaging deferred to v1.0.
 - **Web composer / SaaS** — deferred indefinitely.
-- **Broad calibration** — only 1–2 historical PRs smoke-tested. Full calibration is v1.0 work after Dima/Andrey feedback.
+- **`pocket-mentor rubrics generate <markdown-url>`** — LLM-driven README → YAML scaffold. Deferred until real demand from second author. v0.9 rubrics authored manually with LLM assistance in planning.
+- **Multiple parallel rubrics sources** — `--rubrics-source` accepts ONE source URL at a time (replaces default). Multi-source merge is v1.0+.
+- **JSON Schema CI for rubric PRs** — informal review by maintainer in v0.9. Formal schema validation when contribution volume grows.
+- **Stack auto-detection beyond React** — `react.yaml` shipped; `angular.yaml` + `vue.yaml` etc. added as courses adopt the tool.
+- **Broad calibration** — minimum smoke-test per rubric only. Full calibration is v1.0 work after mentor feedback.
 - **Functional / runtime testing of the student's app** — out of scope for entire MVP. Pocket Mentor does **Mentor Review only** (static analysis of non-functional code quality: architecture, types, configs, conventions). It does **not** run the student's code or check whether features work. That track (RS School's "Cross-Check") needs headless-browser infra and is a separate product. See CONTEXT.md §"Cross-Check vs Mentor Review" for the school's terminology.
+- **Auto-pull of rubrics** — `pocket-mentor rubrics sync` is explicit, not automatic. Mentor controls update cadence.
+- **Rubric authoring UI** — authors edit YAML in their text editor. UI for rubric editing is paid-tier feature.
+- **TANDI integration** — Pocket Mentor is autonomous in v0.9. Any integration with the new RS School course-management system is a separate conversation.
 
-If a task feels in-scope but isn't on the M0–M6 list in §9, it is out of scope. Resist scope creep: every off-list hour pushes the demo past the cohort window.
+If a task feels in-scope but isn't on the milestone list in §10, it is out of scope. Resist scope creep.
 
 ---
 
-## 3. Architecture
+## 3. Architecture **[REVISED]**
+
+**Two repos:**
 
 ```
-mentor-resources/                          # existing repo, extended
-├── packages/                              # NEW — pnpm workspace
+mentor-resources/                          # this repo — engine + CLI + curated material
+├── packages/
 │   ├── engine/                            # library, all business logic
 │   │   ├── src/
-│   │   │   ├── rubric/                    # RubricFetcher, RubricParser
-│   │   │   ├── enrichment/                # EnrichmentLoader (Zod-validated)
+│   │   │   ├── rubric/                    # RubricLoader (reads combined YAML from local clone)
+│   │   │   ├── composer/                  # NEW — RubricComposer (merges layers 1–4)
+│   │   │   ├── detector/                  # NEW — StackDetector (reads student package.json)
 │   │   │   ├── pr/                        # PRFetcher (Octokit)
 │   │   │   ├── checkers/                  # MechChecker registry
-│   │   │   ├── llm/                       # LLMOrchestrator (Claude API)
-│   │   │   ├── aggregate/                 # Aggregator -> Output schema
+│   │   │   ├── llm/                       # LLMOrchestrator (Claude API / OpenRouter)
+│   │   │   ├── aggregate/                 # Aggregator → Output schema
 │   │   │   ├── deliver/                   # GitHubDeliverer (draft review)
+│   │   │   ├── types.ts
+│   │   │   ├── schemas.ts                 # Zod schemas (combined YAML, output)
 │   │   │   └── index.ts
-│   │   ├── package.json
-│   │   └── tsconfig.json
+│   │   └── package.json / tsconfig.json
 │   └── cli/                               # bin: pocket-mentor
-│       ├── src/index.ts                   # arg parsing, dispatches to engine
-│       ├── package.json
-│       └── tsconfig.json
-├── rubrics/                               # NEW
-│   └── async-race.enrichment.yaml         # method/checker/prompt mapping per criterion
-├── docs/pocket-mentor/                    # this directory
-│   ├── CONTEXT.md
-│   ├── SPEC.md                            # this file
-│   ├── SESSION-HANDOFF.md                 # session continuity template
-│   └── outreach/letter-to-dima-andrey-draft.md
-├── AGENTS.md                              # NEW — harness routing layer
-├── feature_list.json                      # NEW — M0..M6 state tracker
-├── progress.md                            # NEW — session log
-├── init.sh                                # NEW — pnpm install + lint + typecheck
-└── [existing: clean-code/, templates/, README.md, eslint.config.js, tsconfig.json, ...]
+│       └── src/index.ts                   # arg parsing, dispatches to engine
+├── docs/pocket-mentor/                    # planning + spec
+├── clean-code/, templates/                # existing — referenced from rubrics
+├── AGENTS.md, feature_list.json, progress.md, init.sh
+└── ...
+
+pocket-mentor-rubrics/                     # SEPARATE PUBLIC REPO — all rubric YAMLs
+├── README.md
+├── CONTRIBUTING.md
+├── _template.yaml
+├── common-review.yaml                     # layer 1
+├── react.yaml                             # layer 2
+└── stage2/                                # layer 3 (task rubrics)
+    └── async-race.yaml
+```
+
+**Local at mentor's machine:**
+
+```
+~/.pocket-mentor/
+├── token                                  # GitHub PAT (fallback to gh/env)
+├── rubrics/                               # clone of pocket-mentor-rubrics
+└── overrides.yaml                         # layer 4 — mentor personal customisation
 ```
 
 **Principles:**
 
 - Engine is pure business logic. Side-effects (HTTP, filesystem, GitHub API) are accessed through interfaces injected at the entry point. No `fetch()` deep inside a parser.
 - CLI is a thin wrapper: parse argv, build dependencies, call engine, render output. Zero business logic in `packages/cli`.
-- Rubrics are not vendored. The engine fetches school markdown at runtime, pinned to a commit SHA declared in `<rubric>.enrichment.yaml`.
+- Rubrics are external. The engine reads combined YAML from a local clone of `pocket-mentor-rubrics` (or a `--rubrics-source` alternative). No HTTP per review for rubric content.
+- Stack detection is data-driven: each layer-2 stack rubric declares `applies_when` (e.g. `any_dependency: [react, react-dom]`). Detector matches student's `package.json` against all stack rubrics.
 
 ---
 
-## 4. Modules (engine)
+## 4. Modules (engine) **[REVISED]**
 
 | Module | Location | Responsibility |
 |---|---|---|
-| `RubricFetcher` | `engine/src/rubric/fetcher.ts` | HTTP GET `rolling-scopes-school/tasks/<path>` at pinned SHA. Cache to `~/.pocket-mentor/cache/<sha>/<path>`. |
-| `RubricParser` | `engine/src/rubric/parser.ts` | Convert raw school markdown → typed `Criterion[]`. Uses LLM (not regex) for format tolerance. |
-| `EnrichmentLoader` | `engine/src/enrichment/loader.ts` | Load `rubrics/<id>.enrichment.yaml`. Validate via Zod. Returns `{ source_commit, criteria: Map<criterion_id, { method, checker_id?, llm_focus? }> }`. |
-| `PRFetcher` | `engine/src/pr/fetcher.ts` | Octokit: `pulls.get`, `pulls.listFiles`. Returns `{ diff, files[], base_sha, head_sha, repo, number }`. |
-| `MechChecker` | `engine/src/checkers/registry.ts` + `checkers/<id>.ts` | Registry of pure functions `(prContext, criterion) => Violation[]`. Examples: `react-imports`, `any-usage`, `eslint-config-presence`. |
-| `LLMOrchestrator` | `engine/src/llm/orchestrator.ts` | Compose prompt: criterion text + diff slice + enrichment `llm_focus`. Call Claude API. Validate JSON output via Zod. |
-| `Aggregator` | `engine/src/aggregate/aggregator.ts` | Merge mech + llm violations → final `Output` schema (CONTEXT.md §"Engine output"). Computes score, breakdown. Applies full-category penalties (e.g. async-race's `-100% for React` zeros the non-functional total). |
+| `RubricLoader` | `engine/src/rubric/loader.ts` | Read combined YAML files from local clone (or `--rubrics-source` directory). Validate via Zod. Returns `Rubric { rubric_id, criteria, penalties?, applies_when?, ... }`. **Note:** existing `RubricFetcher` + `EnrichmentLoader` are superseded — replaced by this loader on the new combined format. |
+| `StackDetector` | `engine/src/detector/stack.ts` | Read student PR's `package.json`, evaluate `applies_when` of each layer-2 stack rubric. Returns list of matching stack rubric IDs (may be empty → common-only). |
+| `RubricComposer` | `engine/src/composer/composer.ts` | Merge layers in order: common (layer 1) → matched stack rubrics (layer 2) → optional task rubric (layer 3 if `--task`) → mentor overrides (layer 4). Resolution: higher layer overrides matching criterion IDs; `disable` in overrides removes; `additional_criteria` in overrides adds. Returns final composed `Rubric`. |
+| `PRFetcher` | `engine/src/pr/fetcher.ts` | Octokit: `pulls.get`, `pulls.listFiles`, plus fetch student's `package.json` for `StackDetector`. Returns `{ diff, files[], base_sha, head_sha, repo, number, packageJson? }`. |
+| `MechChecker` | `engine/src/checkers/registry.ts` + `checkers/<id>.ts` | Registry of pure functions `(prContext, criterion) => Violation[]`. Generic & parametrised via `checker_config`. Existing eight checkers from M3 are kept and reused under the new format. |
+| `LLMOrchestrator` | `engine/src/llm/orchestrator.ts` | Compose prompt: criterion text + diff slice + `llm_focus` + level-specific template (junior/standard/senior — controls tone, length, example requirement). Call Claude/OpenRouter via Vercel AI SDK. Validate JSON output via Zod. Generate review-body summary picking top-3 highest-impact violations. |
+| `Aggregator` | `engine/src/aggregate/aggregator.ts` | Merge mech + llm violations → final `Output` schema (CONTEXT.md §"Engine output"). Computes score, breakdown. Filters violations by `--level` (severity threshold). Enforces `review_limits` caps (max per criterion / per file / total) — overflow becomes a single summary comment "+N similar". Applies layer-3 penalties (deadline miss, missing cross-check, etc.). |
 | `GitHubDeliverer` | `engine/src/deliver/github.ts` | Octokit: `pulls.createReview` with `event: PENDING`, `comments: [...]`. Returns draft review URL. |
 
 **Cross-cutting:**
 
-- `engine/src/types.ts` — shared types (`Criterion`, `Violation`, `Output`, ...). Single source for both engine and CLI.
-- `engine/src/schemas.ts` — Zod schemas. Engine boundaries validate runtime data (school markdown LLM output, enrichment YAML, LLM responses).
+- `engine/src/types.ts` — shared types (`Criterion`, `Penalty`, `Violation`, `Output`, `Rubric`, `StackMatch`, ...). Single source for both engine and CLI.
+- `engine/src/schemas.ts` — Zod schemas for the combined YAML format and the engine's output. Engine boundaries validate runtime data (rubric YAMLs, student `package.json`, LLM responses).
 
 ---
 
-## 5. Data Flow
+## 5. Data Flow **[REVISED]**
 
 ```
 1. CLI parses argv:
-     pocket-mentor review <pr-url> --rubric async-race --as-draft
+     pocket-mentor review <pr-url> --as-draft [--task async-race] [--rubrics-source <url>]
 
 2. CLI resolves auth:
      gh auth token  ||  GITHUB_TOKEN  ||  ~/.pocket-mentor/token
 
-3. CLI builds engine dependencies (HTTP client, GitHub client, LLM client)
-   and calls engine.review(prUrl, rubricId, deliveryMode).
+3. CLI builds engine dependencies (HTTP client, GitHub client, LLM client, rubrics dir)
+   and calls engine.review({ prUrl, task?, rubricsSource?, deliveryMode }).
 
-4. EnrichmentLoader.load("async-race")
-     → { source_commit: <sha>, criteria: Map<...>, ... }
+4. PRFetcher.fetch(prUrl)
+     → PRContext { diff, files[], base_sha, head_sha, packageJson?, ... }
 
-5. RubricFetcher.fetch(source_commit, "stage2/tasks/async-race/non-functional-requirements.md")
-     → raw markdown (from cache or HTTP)
+5. RubricLoader.loadCommon() → Rubric (layer 1)
 
-6. RubricParser.parse(markdown)
-     → Criterion[]  (typed: { id, title, points_max, penalty?, text, ... })
+6. StackDetector.detect(prContext.packageJson)
+     → ["react"]   (or ["angular"], or [] when stack unknown)
 
-7. PRFetcher.fetch(prUrl)
-     → PRContext { diff, files[], base_sha, head_sha, ... }
+7. For each matched stack:
+     RubricLoader.loadStack(stackId) → Rubric (layer 2)
 
-8. For each criterion (parallel where safe):
-     - method = "mech"
-         → MechChecker.run(checker_id, prContext, criterion) → Violation[]
-     - method = "llm"
-         → LLMOrchestrator.review(criterion, prContext, llm_focus) → Violation[]
-     - method = "hybrid"
-         → mech first; LLM enriches each mech violation with rationale + judgement
+8. If --task <id>:
+     RubricLoader.loadTask(id) → Rubric (layer 3, may include `penalty` block)
 
-9. Aggregator.aggregate(violations[])
-     → Output { comments[], summary { body, score, breakdown }, rubric }
+9. RubricLoader.loadOverrides("~/.pocket-mentor/overrides.yaml") → Rubric (layer 4, may be empty)
 
-10. Delivery:
-     - --as-draft   → GitHubDeliverer.createDraftReview(prUrl, output) → URL → stdout
-     - --output json     → write Output as JSON to stdout
-     - --output markdown → render Output as markdown to stdout
+10. RubricComposer.compose([layer1, ...layer2s, layer3?, layer4])
+      → Rubric  (final composed rubric: criteria merged, IDs deduplicated,
+                 disabled criteria removed, additional criteria appended,
+                 penalties carried through)
+
+11. For each criterion in composed rubric (parallel where safe):
+      - method = "mech"
+          → MechChecker.run(checker_id, prContext, criterion) → Violation[]
+      - method = "llm"
+          → LLMOrchestrator.review(criterion, prContext, llm_focus) → Violation[]
+      - method = "hybrid"
+          → mech first; LLM enriches each mech violation with rationale + judgement
+
+12. For each penalty in composed rubric (layer 3 typically):
+      - if method = "mech" → run checker, apply points_delta if violated
+      - if method = "llm"  → judge, apply points_delta if violated
+
+13. Aggregator.aggregate(violations[], penalties[])
+      → Output { comments[], summary { body, score, breakdown }, rubric }
+
+14. Delivery:
+      --as-draft        → GitHubDeliverer.createDraftReview(prUrl, output) → URL → stdout
+      --output json     → write Output as JSON to stdout
+      --output markdown → render Output as markdown to stdout
 ```
 
 ---
@@ -208,95 +263,75 @@ Built per the `harness-creator` skill's five-subsystem framework. Lives at `ment
 
 ---
 
-## 9. Calendar — 28 days
+## 9. Calendar **[SUPERSEDED]**
 
-Assumes Monday start, ~5 h/day, AI agents (Claude Code) doing the typing.
-
-| Day | Milestone | Notes |
-|---|---|---|
-| 1 | M0 — repo setup | Create `packages/`, update `pnpm-workspace.yaml`, write `AGENTS.md` / `init.sh` / `feature_list.json` / `progress.md`. Engine package skeleton. |
-| 2 | M0 finish | CLI package skeleton, types/schemas scaffolds, eslint override for engine (no react plugins). `init.sh` green. |
-| 3–4 | M1 — RubricFetcher + EnrichmentLoader | Zod schemas, HTTP cache, error types. Code review at end of M1. |
-| 5–6 | M1 — RubricParser | LLM-based markdown → Criterion[]. Test against actual `async-race/non-functional-requirements.md`. |
-| 7 | M1 — PRFetcher | Octokit wrapping. Auth cascade. Code review at end of M1. |
-| 8–9 | M2 — async-race enrichment YAML | **Helga's expertise bottleneck.** Classify all criteria of async-race rubric: mech / llm / hybrid. Define mech `checker_id` and llm `focus` per criterion. |
-| 10–13 | M3 — Mech-checkers | Implement registry + checkers for async-race. Likely 8–12 checkers (react-imports, any-usage, eslint-presence, husky-presence, etc.). |
-| 14 | M3 finish + milestone review | `/requesting-code-review` → subagent → `/receiving-code-review`. Apply fixes. |
-| 15–17 | M4 — LLMOrchestrator | Prompt composition, Claude API client, Zod validation of output, retry logic. |
-| 18 | M4 — Aggregator | Merge mech + llm violations. Score arithmetic. Output schema serialization. |
-| 19 | M4 milestone review | Full review pipeline. |
-| 20–22 | M5 — GitHubDeliverer | Octokit draft review, edge cases (multi-line comments, side: LEFT, empty review handling). |
-| 23 | M5 — CLI polish | Final arg parsing, error formatting, help text. |
-| 24 | M5 milestone review | Code review of full delivery pipeline. |
-| 25 | M5 — smoke test setup | Create `pocket-mentor-test-fixtures` repo with 2–3 historical async-race PRs (anonymized if needed). |
-| 26 | M5 — smoke test execution | Run engine against fixtures. Fix anything broken. |
-| 27 | M6 — README + tag | Update `mentor-resources/README.md` with v0.9 usage. Tag `v0.9-alpha`. |
-| 28 | M6 — demo rehearsal | Run end-to-end on a real historical PR. Record demo if useful. Send letter to Dima/Andrey. |
-
-Slack: 0 days. Any slip eats into M5 buffer.
+The original 28-day single-rubric calendar is no longer authoritative. Milestone scope (next section) is the source of truth. Timeline is open — set as work progresses, not fixed up front. See `feature_list.json` for current per-milestone state.
 
 ---
 
-## 10. Per-milestone scope
+## 10. Per-milestone scope **[REVISED]**
 
-### M0 — Monorepo setup + tooling
+**M0–M3 are complete** under the original architecture. Their outputs (pnpm workspace, types/schemas, eight generic mech-checkers with registry) are reused under the new architecture. The new format migration is part of M4 below.
 
-- Update `pnpm-workspace.yaml` with `packages: ['packages/*']`
-- Create `packages/engine/`, `packages/cli/` with `package.json`, `tsconfig.json` (extend root config)
-- Add eslint override for `packages/engine/**` and `packages/cli/**` removing react-specific rules (engine is Node-only)
-- Write `AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh` (+ `chmod +x`)
-- Verify `./init.sh` exits 0
+### M0 — Monorepo setup + tooling ✅ done
 
-**Out of M0:** any business logic. Pure scaffolding only.
+Repo scaffolding (`packages/`, eslint override, harness files, `init.sh`). No business logic.
 
-### M1 — Engine core
+### M1 — Engine core ✅ done (will be refactored in M4)
 
-- `RubricFetcher` with on-disk cache
-- `EnrichmentLoader` with Zod validation
-- `RubricParser` (LLM-driven)
-- `PRFetcher` (Octokit)
-- Shared types in `engine/src/types.ts`, Zod schemas in `engine/src/schemas.ts`
+Original outputs: `RubricFetcher` (HTTP + cache), `EnrichmentLoader` (Zod-validated `.enrichment.yaml`), `PRFetcher` (Octokit). Built for the old two-layer format. **Superseded by `RubricLoader` in M4** — the HTTP/cache mechanism and Zod-validation patterns are reused, but the format (combined YAML, single-source local clone) is different.
 
-**Out of M1:** mech checkers, LLM review orchestration, delivery. Just I/O + parsing.
+### M2 — Enrichment YAML for async-race ✅ done (output to be re-expressed in M4)
 
-### M2 — async-race enrichment YAML
+Original output: `rubrics/async-race.enrichment.yaml`. **Will be re-authored as `pocket-mentor-rubrics/stage2/async-race.yaml` in combined-YAML format in M4-bootstrap.**
 
-- Read `rolling-scopes-school/tasks/stage2/tasks/async-race/non-functional-requirements.md` at a chosen pinned SHA
-- For each criterion in that file, decide method (`mech` / `llm` / `hybrid`)
-- For `mech`: name the `checker_id` (need not exist yet — informs M3)
-- For `llm` / `hybrid`: write the `llm_focus` text (1–3 sentences guiding the LLM)
-- Output single `rubrics/async-race.enrichment.yaml`
+### M3 — Generic mech-checkers ✅ done
 
-**This is the Helga-expertise bottleneck.** Engine code is ~zero. Output is one well-thought YAML file.
+Eight generic, parametrised mech-checkers with registry pattern. Reusable as-is under the new architecture — `checker_id` + `checker_config` references in the new combined YAML format will resolve to the same checker functions.
 
-### M3 — Mech-checkers for async-race
+### M4 — Format migration + layer composition + LLM orchestrator
 
-- Implement registry: each checker is `(prContext, criterion) => Violation[]`
-- Implement each `checker_id` referenced from M2 enrichment
-- Likely set (subject to M2 decisions): `react-imports`, `any-usage`, `eslint-config-presence`, `husky-presence`, `prettier-config-presence`, `tsconfig-strict`, `function-length`, `forbidden-deps`
+Three streams:
 
-### M4 — LLM orchestrator + aggregator
+**M4a — Format migration:**
+- Create public `pocket-mentor-rubrics` repo (separate from this one)
+- Define combined-YAML Zod schema (criteria + check config in one file, with optional `applies_when`, `penalty`)
+- Implement `RubricLoader` (replaces `RubricFetcher` + `EnrichmentLoader`)
+- Author starter rubrics: `common-review.yaml`, `react.yaml`, `stage2/async-race.yaml`, `_template.yaml`
+- Add `CONTRIBUTING.md` to rubrics repo
 
-- Prompt composer: takes criterion + diff slice + `llm_focus` + few-shot examples
-- Claude API client (with retries, Zod validation of output)
-- Aggregator: merges violations from mech + llm, produces final `Output`
-- Score arithmetic: sum points_delta, clip per breakdown, total
+**M4b — Layer composition:**
+- `StackDetector` — reads student `package.json`, matches `applies_when` of stack rubrics
+- `RubricComposer` — merges layers 1+2+3+4 with override / disable / additional_criteria semantics
+- Mentor overrides format + loader (`~/.pocket-mentor/overrides.yaml`)
+
+**M4c — LLM orchestrator + aggregator + output calibration:**
+- Prompt composer: takes composed criterion + diff slice + `llm_focus` + level-specific template (junior/standard/senior); structural shape — ≤3 sentences, mandatory before/after example, no jargon
+- Vercel AI SDK client (Claude default, OpenRouter fallback) with retries, Zod validation
+- Aggregator: merges violations from mech + llm; filters by `--level` (severity threshold); enforces `review_limits` caps with "+N similar" summary on overflow; applies layer-3 penalties; produces `Output` schema
+- Summary generator: picks top-3 highest-impact violations for the review body header
+- CLI flag `--level=junior|standard|senior` plumbed end-to-end (default `junior`)
 
 ### M5 — GitHub draft delivery + CLI
 
 - `GitHubDeliverer.createDraftReview(prContext, output)` → URL
 - Handle GitHub API edge cases (multi-line comments require `start_line` + `start_side`)
-- CLI command `pocket-mentor review <pr-url> --rubric <id> --as-draft|--output json|--output markdown`
+- CLI commands:
+  - `pocket-mentor init` — wizard: GitHub token, LLM key, clone rubrics repo, create empty overrides
+  - `pocket-mentor review <pr-url> [--task <id>] [--rubrics-source <url>] --as-draft|--output json|--output markdown`
+  - `pocket-mentor rubrics sync` — explicit pull from rubrics repo
+  - `pocket-mentor overrides edit` — open `~/.pocket-mentor/overrides.yaml` in `$EDITOR`
 - Error formatting at CLI layer (engine throws typed errors; CLI prints friendly messages)
-- Smoke against `pocket-mentor-test-fixtures`
+- Smoke against `pocket-mentor-test-fixtures` — at least 1 PR for flat mode (React) + 1 PR for `--task=async-race`
 
 ### M6 — Polish + tag
 
-- README usage section
+- README usage section (both modes: flat + `--task`)
+- `pocket-mentor-rubrics` README documenting layer model, contribution workflow, template
 - Update `feature_list.json` to all-completed
-- `git tag v0.9-alpha`
-- Demo rehearsal on a real historical PR
-- (Helga) send letter to Dima/Andrey
+- `git tag v0.9` on `mentor-resources`; `git tag v0.9-baseline` on `pocket-mentor-rubrics`
+- Demo rehearsal on a real historical PR (both modes)
+- (Initiator) share with Dima for feedback
 
 ---
 
@@ -319,20 +354,23 @@ Slack: 0 days. Any slip eats into M5 buffer.
 | 2026-05-14 | LLM clients use Vercel AI SDK (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`) instead of direct provider SDKs | Single interface for all providers — adding Groq/Gemini/Mistral is one import line. `LLMClient` interface preserved for testability. Built-in `maxRetries` replaces custom retry module. |
 | 2026-05-14 | OpenRouter via `@ai-sdk/openai` with custom `baseURL: openrouter.ai/api/v1` | No dedicated `@openrouter/ai-sdk-provider` needed; OpenRouter is OpenAI-compatible; slash model strings like `anthropic/claude-sonnet-4.5` work verbatim. |
 | 2026-05-14 | LLM model selectable via `ANTHROPIC_MODEL` / `OPENROUTER_MODEL` env vars | Per SPEC §12 "allow override via env". No recompile needed to switch models at runtime. |
+| 2026-05-15 | Combined YAML format (criteria + check config in one file) | Removes runtime markdown parsing; eliminates ID drift between two layers; lets authors edit criterion text without touching upstream school file. |
+| 2026-05-15 | Rubrics move to separate public repo `pocket-mentor-rubrics` | Decouples rubric updates from engine releases. Adding a rubric = one PR, no engine rebuild. |
+| 2026-05-16 | Four-layer composition (common + stack + task + overrides) | One model covers both flat-rubric courses (React: layers 1+2) and per-task courses (Stage 2: layers 1+2+3). Layer 3 is opt-in via `--task`. |
+| 2026-05-16 | Open authoring model, public rubrics repo from day 1 | Removes single-author bottleneck. Initiator authors baseline; further rubrics via PR. No `from-readme` / multi-source infra until real demand. |
+| 2026-05-16 | `--rubrics-source <git-url>` CLI flag for alternative source | Lets teams/courses point CLI at their own rubrics repo. Minimum decentralisation with near-zero implementation cost (RubricFetcher already parameterised by repo). |
+| 2026-05-16 | Stage 2 included in v0.9 via layer 3 (not deferred to v1.0) | Async-race was the original starting use-case; deferring it would be regression. Layer 3 adds trivial complexity to the same composition model. |
+| 2026-05-16 | Original 28-day calendar deprecated; no fixed timeline | Scope shifted to multi-course usability; timeline reset to "set as work progresses, not up front". |
+| 2026-05-16 | Output calibration via `severity` + `--level` + `review_limits` + structural comment template + summary-first body | Strict rubric + linter will find more violations than a human flags. Without calibration, a beginner PR gets 40+ inline comments and the student demotivates. Calibration moves triage explicitly into the pipeline (LLMs don't triage well on their own). Default level `junior` because most course students are beginners. |
 
 ---
 
 ## 12. Open / deferred items
 
 - **`pocket-mentor-test-fixtures` private repo** — needs creation before M5 day 25. Owner: Helga. Should contain 2–3 anonymized historical async-race PRs.
-- **Pinned school SHA for M2** — `rolling-scopes-school/tasks` is a **public** repo, no access setup needed. But the engine must fetch rubric markdown from a *specific commit*, not from a moving `master` (otherwise reviews silently break when the school edits the file). Action at start of M2 (≤ 5 min):
-  1. Open https://github.com/rolling-scopes-school/tasks/commits/master
-  2. Verify the current `stage2/tasks/async-race/non-functional-requirements.md` looks correct
-  3. Copy the latest commit SHA
-  4. Write it into `rubrics/async-race.enrichment.yaml` as `source_commit: <sha>`
-
-  Engine is then pinned to that version. When the school later updates the rubric, `pocket-mentor rubrics check-updates` (future subcommand, post-v0.9) surfaces the diff so Helga can decide whether to bump.
-- **Penalty mechanism in Output schema** — full-category penalties (e.g. "-100% for React") need a representation. Candidates: a special `Violation.penalty_kind: "zero-category" | "fixed"` field, or a top-level `Output.applied_penalties[]`. Decide in M4 when Aggregator is implemented.
+- **Drift detection from upstream sources** — when a rubric criterion references an upstream RS School document (e.g. `pull-request-review-process.md`, task READMEs), the YAML may carry an optional `source: { url, commit_sha }`. Post-v0.9 subcommand `pocket-mentor rubrics check-drift` surfaces diffs between pinned and current upstream. v0.9: no drift checking, rubrics are pinned at authorship time.
+- **Penalty mechanism in Output schema** — layer-3 penalties (e.g. Stage 2 deadline miss `-25`, no cross-check `-15`) need a representation. Already partially specified in `types.ts` (`Penalty`, `PenaltyKind`). To finalise in M4c when Aggregator is implemented: top-level `Output.applied_penalties[]` vs `Violation.penalty_kind` on a synthetic violation.
+- **Override semantics edge cases** — what if mentor `overrides.yaml` disables a criterion that is part of a hybrid (mech + llm) pair? Spec: disable the criterion entirely (both mech and llm parts). What if overrides override a `points_max`? Spec: allowed, overriding wins. Validate at load time with clear error if structurally invalid.
 - **LLM model choice** — default to `claude-opus-4-7` for review quality; allow override via env. To be decided in M4.
 - **License** — MIT vs. Apache-2.0 for `mentor-resources`. Probably MIT (consistent with most of Helga's repos). Confirm before M6 tag.
 - **Anthropic API key handling** — read from env (`ANTHROPIC_API_KEY`). No support for OpenAI in v0.9. Document in README.
@@ -345,6 +383,7 @@ Slack: 0 days. Any slip eats into M5 buffer.
 - [CONTEXT.md](./CONTEXT.md) — full product context, glossary, validation signals, prior art, open-core history
 - [outreach/letter-to-dima-andrey-draft.md](./outreach/letter-to-dima-andrey-draft.md) — letter and anatomy
 - [Engine output schema (locked)](./CONTEXT.md#output-format--delivery)
-- [Rubric architecture (locked)](./CONTEXT.md#rubric-architecture--two-layers-school-as-source-of-truth)
+- [Rubric architecture — four-layer composition (locked)](./CONTEXT.md#rubric-architecture--four-layer-composition-combined-yaml-separate-repo)
+- [architecture-pivot-ru.md](./architecture-pivot-ru.md) — Russian-language presentation of the four-layer plan for Dima
 - Global CLAUDE.md (`~/.claude/CLAUDE.md`) — code style, response style, decision-making rules
 - harness-creator skill (`~/.claude/skills/harness-creator/`) — five-subsystem framework
