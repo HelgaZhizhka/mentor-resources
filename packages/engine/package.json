@@ -15,6 +15,7 @@
     "@ai-sdk/anthropic": "^3.0.77",
     "@ai-sdk/openai": "^3.0.63",
     "@babel/parser": "^7.29.3",
+    "@babel/types": "^7.29.0",
     "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^21.1.1",
     "ai": "^6.0.182",
