@@ -4,7 +4,7 @@
 
 ## What this product is
 
-**AI co-pilot for frontend mentors reviewing student PRs.** A mentor passes a student PR URL (and optionally `--task <id>` for per-task courses). The engine composes the active rubric from up to four layers (common + auto-detected stack + optional task + mentor overrides) and produces a **draft PR review** pre-loaded with inline comments, summary, and estimated score — created via the GitHub API in `PENDING` state. The mentor curates in GitHub's native review UI (toggle/edit/discard each comment), then clicks **Submit review**.
+**AI co-pilot for frontend mentors reviewing student PRs.** A mentor passes a student PR URL (and optionally `--stack <id>` and `--task <id>`). The engine composes the active rubric from up to four layers (common + explicit stack + optional task + mentor overrides) and produces a **draft PR review** pre-loaded with inline comments, summary, and estimated score — created via the GitHub API in `PENDING` state. The mentor curates in GitHub's native review UI (toggle/edit/discard each comment), then clicks **Submit review**.
 
 Combines mechanical checks (lint, deps, structure — ~60% of rubric) with LLM-driven analysis (architecture, naming, UX — ~20%) and hybrid checks (~20%).
 
@@ -59,7 +59,7 @@ RS School-specific terminology with two distinct review tracks per task:
 ```
 Layer 4: Mentor overrides       ~/.pocket-mentor/overrides.yaml         (local, optional)
 Layer 3: Task rubric             pocket-mentor-rubrics/stage2/<id>.yaml  (opt-in via --task)
-Layer 2: Stack rubric            pocket-mentor-rubrics/<stack>.yaml      (auto-detected from package.json)
+Layer 2: Stack rubric            pocket-mentor-rubrics/<stack>.yaml      (explicit via --stack or default_stack in overrides)
 Layer 1: Common review           pocket-mentor-rubrics/common-review.yaml (always)
 ```
 
@@ -67,10 +67,11 @@ Composition order: layer 1 is the base; higher layers add criteria, override fie
 
 **One combined YAML file contains:**
 - `rubric_id`, `title`, `description` — metadata
-- `applies_when` (for layer 2 stack rubrics) — e.g. `any_dependency: [react, react-dom]`
 - `criteria` — each with title, points_max, text (shown to student in PR comment), method (`mech` / `llm` / `hybrid`), and — for mech/hybrid — `checker_id` + `checker_config`; optional `llm_focus` for llm/hybrid
 - `penalty` (typically for layer 3 task rubrics) — point deductions for violations (e.g. "deadline missed: -25", "no cross-check: -15")
 - `reference` (optional) — link to upstream curriculum material
+
+Stack rubrics are selected by `rubric_id` matching `--stack <id>` (or `default_stack` in overrides) — there is no `applies_when` field, no auto-detection from `package.json`. Auto-detect was considered and dropped: it fails on Next.js / Remix / Astro / monorepo / workspace-deps cases. Explicit selection is simpler and more predictable.
 
 **Method types:**
 - **Mechanical (`mech`)** — checkable by deterministic generic checker, configured via YAML. Examples: dependency present in `package.json`, ESLint rule configured, no forbidden imports, `any` usage scan. Two runs of the same input give the same output. Zero LLM tokens.
@@ -89,8 +90,8 @@ pocket-mentor-rubrics/                       (separate public git repo)
 ├── CONTRIBUTING.md                          (how to add a rubric)
 ├── _template.yaml                           (scaffold for new authors)
 ├── common-review.yaml                       (layer 1: always applied)
-├── react.yaml                               (layer 2: auto-applied on React projects)
-├── angular.yaml                             (layer 2: planned)
+├── react.yaml                               (layer 2: applied via --stack=react)
+├── angular.yaml                             (layer 2: planned, --stack=angular)
 └── stage2/                                  (layer 3: task rubrics)
     ├── async-race.yaml
     ├── rss-puzzle.yaml
