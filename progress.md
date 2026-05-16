@@ -192,3 +192,50 @@ Each session appends a new entry at the bottom. Newer entries below.
 - `repo-reader`: import `describeError` from errors.ts (dedup), guard PocketMentorError re-throw.
 
 **Next session:** M4 = LLM orchestrator + aggregator (prompt composer, Vercel AI SDK call, Zod output validation, score aggregation).
+
+---
+
+## Session 5 — 2026-05-16 — Architectural pivot: four-layer rubric composition
+
+**Done this session (planning/spec only — no code changes):**
+- Wrote `docs/pocket-mentor/architecture-pivot-ru.md` — Russian-language plan finalised for sharing with Dima. Includes Mermaid flowchart of review pipeline, ASCII layer diagram, source-of-truth table for each layer, combined-YAML format example with `penalty` block, "не дублируем линтер" principle, two-role model (Mentor User / Rubric Author), open authorship model.
+- Aligned `docs/pocket-mentor/CONTEXT.md` §"Rubric architecture" with the four-layer model (was: combined-YAML single-file-per-task; now: layered composition + opt-in task layer + `--rubrics-source` for alternative sources).
+- Aligned `docs/pocket-mentor/SPEC.md` with the new architecture: §1 Goal, §2 Out of scope, §3 Architecture (two repos, layer diagram), §4 Modules (`RubricLoader` replaces `RubricFetcher` + `EnrichmentLoader`; added `StackDetector`, `RubricComposer`), §5 Data Flow (11-step layered pipeline), §10 Per-milestone scope (M4 split into M4a/M4b/M4c). Marked §9 Calendar as `[SUPERSEDED]` — no fixed timeline. Added decisions for 2026-05-15/16 to §11 log.
+- Restructured `feature_list.json`: M0–M3 retain status `done` with `carryover_under_new_architecture` notes. M4 split into M4a (format migration + RubricLoader + starter rubrics in new repo), M4b (StackDetector + RubricComposer + overrides), M4c (LLM orchestrator + aggregator + penalty handling). M5 expanded (init wizard, `--task`, `--rubrics-source`, `rubrics sync`, `overrides edit`, dual-mode smoke test). M6 expanded (second repo's README + tag).
+
+**Decisions this session (durable):**
+- **Four-layer composition** (locked): common (always) + auto-detected stack + optional task (--task flag) + mentor overrides. Covers both flat-rubric courses (React: layers 1+2) and per-task courses (Stage 2: layers 1+2+3) in one model.
+- **Combined YAML format** (re-confirmed): criteria + check config + optional `applies_when` + optional `penalty` in one file. Replaces legacy two-layer (markdown TZ + enrichment YAML) split.
+- **Rubrics in separate public repo** `HelgaZhizhka/pocket-mentor-rubrics`. Open contribution from day 1. Initial baseline authored by Helga; further rubrics via PR. Maintainer model, not single-author.
+- **`--rubrics-source <git-url>`** CLI flag — minimum decentralisation. Lets teams/courses point CLI at their own rubrics repo. Near-zero implementation cost (RubricFetcher already parameterised by repo).
+- **Stage 2 included in v0.9** via layer 3. Starter task rubric is `stage2/async-race.yaml` — keeps the original async-race use-case viable. Other Stage 2 tasks added by Helga as needed; not all-or-nothing.
+- **Sources of truth** are official + curated: RS School `pull-request-review-process.md` (Helga is author); RS School React tasks README; clean-code/* curated material; per-task READMEs. Не выдумываем критерии.
+- **"Не дублируем линтер"** principle re-locked: layer 1 checks that ESLint is configured correctly (mech) and that lint passes (mech). It does NOT re-check rules ESLint enforces. LLM only for judgement work.
+- **Author workflow for new YAMLs in v0.9:** Helga + LLM in planning chat (README → YAML draft → review → commit). Not a CLI command yet — `pocket-mentor rubrics generate` deferred until real demand from second author.
+- **Multi-source, JSON Schema CI, `from-readme` command** — all deferred. Build infrastructure when demand appears, not before.
+- **Original 28-day calendar** deprecated. Timeline open, scope-driven.
+- **TANDI integration** out of v0.9. Pocket Mentor is autonomous.
+- **Output calibration for student level** (new this session, late addition): `severity: error | warning | info` on each criterion (rubric author decides) + CLI flag `--level=junior | standard | senior` (mentor decides per student; default `junior`) + `review_limits` caps in `common-review.yaml` (`max_per_criterion`, `max_per_file`, `max_total`) + structural LLM-comment template (≤3 sentences, mandatory before/after example, no jargon, no external link unless via YAML `reference:`) + summary-first review body (top-3 highest-impact violations at the top). Rationale: a strict rubric + linter will find more violations than a human flags; without calibration, beginner students get 40+ comments and disengage. Calibration moves triage explicitly into the pipeline because LLMs don't triage well on their own. Implementation lands in M4c.
+
+**Documents in final state for sharing with Dima:**
+- `docs/pocket-mentor/architecture-pivot-ru.md` — self-contained, can be sent standalone.
+- `docs/pocket-mentor/CONTEXT.md` — aligned (audience, differentiation, distribution model unchanged).
+- `docs/pocket-mentor/SPEC.md` — aligned (architecture, modules, data flow, milestones updated).
+
+**Next session should:**
+- Decide go/no-go on starting M4a (creating `pocket-mentor-rubrics` repo) based on Dima's feedback on `architecture-pivot-ru.md`.
+- If proceeding: invoke `/writing-plans` to break M4a into specific tasks (repo creation, combined-YAML Zod schema, RubricLoader implementation, three starter rubric files, _template.yaml + CONTRIBUTING.md).
+- Re-author `rubrics/async-race.enrichment.yaml` (legacy) → `pocket-mentor-rubrics/stage2/async-race.yaml` (combined format) as part of M4a content lift.
+
+**Blockers / open items:**
+- Dima's feedback on `architecture-pivot-ru.md` (presentation pending).
+- License decision (MIT vs Apache-2.0) for both repos before M6 tag.
+- Helga to create `HelgaZhizhka/pocket-mentor-test-fixtures` private repo before M5 smoke test.
+- Helga to create `HelgaZhizhka/pocket-mentor-rubrics` public repo at start of M4a.
+
+**Files added / modified this session:**
+- `docs/pocket-mentor/architecture-pivot-ru.md` (new — written and iteratively refined this session)
+- `docs/pocket-mentor/CONTEXT.md` (updated §"What this product is" + §"Rubric architecture")
+- `docs/pocket-mentor/SPEC.md` (updated §1, §2, §3, §4, §5, §9 marked superseded, §10, §11 decisions log, §12 open items, §13 references)
+- `feature_list.json` (restructured: M4 → M4a/M4b/M4c, M5/M6 expanded, carryover notes on M0–M3)
+- `progress.md` (this entry)
