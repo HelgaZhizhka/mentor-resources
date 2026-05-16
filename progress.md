@@ -239,3 +239,33 @@ Each session appends a new entry at the bottom. Newer entries below.
 - `docs/pocket-mentor/SPEC.md` (updated §1, §2, §3, §4, §5, §9 marked superseded, §10, §11 decisions log, §12 open items, §13 references)
 - `feature_list.json` (restructured: M4 → M4a/M4b/M4c, M5/M6 expanded, carryover notes on M0–M3)
 - `progress.md` (this entry)
+
+---
+
+## Session 4 — 2026-05-16 — Post-review revisions to plan
+
+Triggered by two external reviews (Opus and ChatGPT) of the v0.9 plan. Agreed corrections applied to `SPEC.md`, `architecture-pivot-ru.md`, `CONTEXT.md`, and `feature_list.json`.
+
+**Decisions this session (durable):**
+- **Dropped stack auto-detection.** Stack is explicit: `--stack <id>` CLI flag, or `default_stack` field in `~/.pocket-mentor/overrides.yaml`. No `StackDetector`, no `applies_when` field, no `package.json` inspection for stack selection. Reason: auto-detect breaks on Next.js / Remix / Astro / monorepo / workspace-deps / transitive-deps. Rather than band-aid with `--stack` override, removed the whole class. Code is simpler; behavior is more predictable.
+- **Added `--language ru|en` flag** (default `en`); persistable via `overrides.yaml` (`language`). Comments don't mix languages in one review.
+- **Added `rubrics_version` footer** to draft review body (commit SHA of rubrics repo + applied layer IDs). Audit trail for reproducibility; semver deferred to v1.0.
+- **Inline-vs-body fallback in `GitHubDeliverer`** for findings whose line is outside the PR diff (e.g. `tsconfig.json` issues). Not a separate `ReviewAnchor` module — just a method on the deliverer.
+- **LLM cost is informational, not policy.** Each mentor uses own API key + own model; project doesn't dictate budget. README will document typical per-review usage. Mentor opts into hard cap via `max_llm_tokens` in `overrides.yaml`; on overflow remaining LLM criteria are marked `skipped_over_budget`. No default cap.
+- **Large-PR chunking is reliability** (context window), not cost. Per-file batches (≤10 files) for PRs > 20 changed files OR > 4000 diff lines.
+- **Mentor feedback collection is local-only.** Three mechanisms: history log at `~/.pocket-mentor/history/<repo>-<pr-number>.json`, CLI prints feedback-channel URL after each draft, private pilot channel (Telegram / GitHub Discussion). `pocket-mentor reflect <pr-url>` (draft-vs-published diff) is v1.0 — also local-only. Telemetry remains explicitly off.
+
+**Reviews considered:**
+- Opus: most points landed. Validated rubric versioning, cost-budget gap, `applies_when` brittleness, localization. Disagreed: hybrid semantics is actually defined (SPEC §5 step 12).
+- ChatGPT: ReviewAnchor / GitHub-position concern is real and now handled. Sandboxing concern is mooted (no code execution in scope). Repository IR / confidence scoring / telemetry were premature for v0.9 — recorded for v1.0 backlog.
+
+**Files modified this session:**
+- `docs/pocket-mentor/SPEC.md` — §1 DoD bullets, §3 architecture (removed `detector/`, principle reworded), §4 modules (`StackDetector` removed, `GitHubDeliverer` extended), §5 data flow (steps renumbered), §10 M4b reworded (explicit `--stack`, `default_stack`), §10 M4c (language flag, optional token cap, chunking framing), §10 M5 (inline/body fallback, rubrics_version footer, feedback channel print, history log), §11 decisions log (4 new entries: --stack flag, language, rubrics_version, inline-vs-body, cost reframe, stack auto-detect drop), §12 open items reframed.
+- `docs/pocket-mentor/architecture-pivot-ru.md` — §1 summary reworded ("явно через --stack"), §2 layer diagram & flow updated, §5 CLI examples + new "additional flags" block, §6 YAML format (removed `applies_when`), §8 rewritten ("Указание стека" — explicit selection), §9 roadmap (4 new rows: language, rubrics_version footer, inline/body fallback, mentor feedback; cost reframe), §11 risks row updated, §12 "Что прошу подтвердить" extended (auto-detect drop noted in #1, added #7-#10).
+- `docs/pocket-mentor/CONTEXT.md` — §"What this product is" reworded, layer diagram updated, "One combined YAML file contains" — removed `applies_when`, added explanation for explicit stack.
+- `feature_list.json` — M4a description (no `applies_when`, RubricLoader.listStacks()), M4b renamed and rewritten (no StackDetector, explicit `--stack` validation, overrides field list expanded).
+
+**Next session should:**
+- Helga reviews the diff across these four docs and confirms.
+- If approved → kick off M4a per the now-revised description (rubrics repo, combined YAML schema sans `applies_when`, RubricLoader with `listStacks()`).
+- Helga to create `HelgaZhizhka/pocket-mentor-rubrics` public repo at start of M4a.

@@ -12,7 +12,7 @@ Pocket Mentor — это AI-ассистент для менторов, кото
 Ключевая идея архитектуры: **четырёхслойная композиция рубрик**, где каждый слой имеет свой источник правды:
 
 1. **Базовый слой** — общие требования к фронтенд-коду (всегда применяется)
-2. **Стек-специфический слой** — детали под технологию (React / Angular / ...), подключается автоматически
+2. **Стек-специфический слой** — детали под технологию (React / Angular / ...), подключается явно через флаг `--stack` или через `default_stack` в overrides
 3. **Слой задания** — рубрика конкретного task (RSS Puzzle, async-race, ...), подключается по флагу `--task` (для курсов с per-task оценкой, как Stage 2)
 4. **Слой кастомизации ментора** — личные настройки (отключение критериев, добавление своих)
 
@@ -65,10 +65,10 @@ Pocket Mentor — это AI-ассистент для менторов, кото
 └──────────────────────────────────────────────────────────────────┘
                               ▲
 ┌──────────────────────────────────────────────────────────────────┐
-│  Слой 2: Специфика стека (auto-detect)                           │
+│  Слой 2: Специфика стека (--stack <id>)                          │
 │  pocket-mentor-rubrics/react.yaml                                │
 │  pocket-mentor-rubrics/angular.yaml                              │
-│  Подключается на основе содержимого package.json                 │
+│  Передаётся явно: --stack=react или default_stack в overrides    │
 └──────────────────────────────────────────────────────────────────┘
                               ▲
 ┌──────────────────────────────────────────────────────────────────┐
@@ -81,21 +81,23 @@ Pocket Mentor — это AI-ассистент для менторов, кото
 При запуске ревью CLI комбинирует слои:
 
 ```
-итоговая рубрика = common + (auto-detected stack) + (опционально task) + mentor overrides
+итоговая рубрика = common + (--stack или default_stack) + (опционально --task) + mentor overrides
 ```
 
 Слой задания **полностью опционален**. Если флаг `--task` не передан — работаем по плоской рубрике (common + stack). Это сценарий React-курса.
+
+Слой стека **тоже технически опционален**: если ни `--stack`, ни `default_stack` не заданы — ревью идёт только по common-рубрике. CLI выведет об этом одну строку в лог, чтобы ментор не удивился отсутствию React-специфичных комментариев.
 
 ### Как это работает в момент ревью
 
 ```mermaid
 flowchart TD
-    A["Ментор запускает<br/>pocket-mentor review &lt;pr-url&gt;<br/>(опционально --task=&lt;id&gt;)"] --> B["CLI получает PR<br/>через GitHub API"]
-    B --> C["Читает package.json<br/>студенческого проекта"]
-    C --> D{"Какой стек<br/>определился?"}
-    D -->|React| E["common-review.yaml<br/>+ react.yaml"]
-    D -->|Angular| F["common-review.yaml<br/>+ angular.yaml"]
-    D -->|Только TypeScript| G["только<br/>common-review.yaml"]
+    A["Ментор запускает<br/>pocket-mentor review &lt;pr-url&gt;<br/>--stack=&lt;id&gt; (опц. --task=&lt;id&gt;)"] --> B["CLI получает PR<br/>через GitHub API"]
+    B --> C["Резолвит стек по приоритету<br/>(флаг --stack → overrides.default_stack → common-only)"]
+    C --> D{"Какой стек<br/>задан?"}
+    D -->|react| E["common-review.yaml<br/>+ react.yaml"]
+    D -->|angular| F["common-review.yaml<br/>+ angular.yaml"]
+    D -->|не задан| G["только<br/>common-review.yaml"]
     E --> T{"Передан<br/>--task?"}
     F --> T
     G --> T
@@ -233,10 +235,11 @@ $ pocket-mentor init
 **Ежедневное использование (React-курс, плоская рубрика):**
 
 ```bash
+# Ментор один раз прописывает в overrides.yaml: default_stack: react
 $ pocket-mentor review https://github.com/student/repo/pull/42
 
   ✓ Получаю PR...
-  ✓ Определён стек: React (по package.json: react, react-dom)
+  ✓ Стек: react (из default_stack в overrides.yaml)
   ✓ Применяю рубрики:
       • common-review.yaml     (14 критериев)
       • react.yaml              (8 критериев)
@@ -246,13 +249,13 @@ $ pocket-mentor review https://github.com/student/repo/pull/42
   ✓ Черновик ревью создан: https://github.com/.../#pullrequestreview-...
 ```
 
-**Stage 2 с task-рубрикой:**
+**Stage 2 с task-рубрикой (TypeScript, без UI-фреймворка):**
 
 ```bash
 $ pocket-mentor review https://github.com/student/repo/pull/42 --task=async-race
 
   ✓ Получаю PR...
-  ✓ Определён стек: TypeScript (без UI-фреймворка)
+  ✓ Стек: не задан → ревью только по common-рубрике (--stack не передан, default_stack не задан)
   ✓ Применяю рубрики:
       • common-review.yaml          (14 критериев)
       • stage2/async-race.yaml       (12 критериев + 3 penalty правила)
@@ -260,7 +263,23 @@ $ pocket-mentor review https://github.com/student/repo/pull/42 --task=async-race
                                      = 26 активных критериев
   ✓ Запускаю проверки (mech 14, llm 8, hybrid 4)...
   ✓ Черновик ревью создан: https://github.com/.../#pullrequestreview-...
+  ℹ️ Нашёл проблемный комментарий? Сообщи: https://github.com/HelgaZhizhka/mentor-resources/discussions/N
 ```
+
+**Дополнительные флаги управления:**
+
+```bash
+# Сменить стек на конкретное ревью (перебивает default_stack):
+$ pocket-mentor review <pr-url> --stack=angular
+
+# Сменить язык генерируемых комментариев (default: en):
+$ pocket-mentor review <pr-url> --language=ru
+
+# Уровень фильтрации серьёзности (default: junior):
+$ pocket-mentor review <pr-url> --level=senior
+```
+
+`--stack`, `--language`, `--level` можно зафиксировать персистентно в `~/.pocket-mentor/overrides.yaml` (поля `default_stack`, `language`, `level`), чтобы не указывать каждый раз.
 
 **Опциональная кастомизация:**
 
@@ -296,7 +315,7 @@ additional_criteria:
 ```bash
 # 1. Скопировать шаблон
 $ cp _template.yaml vue.yaml
-# отредактировать: добавить критерии и applies_when
+# отредактировать: задать rubric_id (это будет значение для --stack), добавить критерии
 
 # 2. Положить в нужное место:
 #    - в свой форк pocket-mentor-rubrics → PR в основной репо
@@ -315,11 +334,7 @@ $ cp _template.yaml vue.yaml
 ```yaml
 rubric_id: react
 title: "React-специфика"
-description: "Применяется поверх common-review.yaml на React-проектах."
-
-# Когда подключается этот слой (только для stack-рубрик)
-applies_when:
-  any_dependency: [react, react-dom]
+description: "Применяется поверх common-review.yaml на React-проектах. Подключается через --stack=react."
 
 # Критерии — каждый со всей информацией для проверки
 criteria:
@@ -374,7 +389,7 @@ criteria:
 - Понятен ментору-человеку без чтения кода
 - Под git, ревьюется через PR, версионируется
 - Ссылки на reference материал — для педагогического контекста
-- `applies_when` — условие подключения слоя (для stack-рубрик)
+- Stack-рубрика подключается явно по своему `rubric_id` через `--stack` или `default_stack` — без магии на основе `package.json`
 - `method: mech / llm / hybrid` — где какой механизм используется
 
 ### Task-рубрика — penalty и точные баллы
@@ -464,26 +479,21 @@ LLM хорошо **находят** нарушения, но плохо **три
 
 ---
 
-## 8. Авто-детект стека
+## 8. Указание стека
 
-CLI определяет стек по содержимому `package.json` студенческого репозитория:
+Стек задаётся **явно**, не определяется автоматически. Это сознательное решение:
 
-```typescript
-// Псевдокод детектора
-const stack = detect(packageJson);
-// → читает dependencies + devDependencies
-// → проверяет applies_when каждой stack-рубрики
-// → возвращает список подходящих рубрик
+- На auto-detect ломаются Next.js / Remix / Astro (в `package.json` есть `react`, но стек не "обычный React"), монорепо, workspace-зависимости, transitive deps.
+- Чем гадать — лучше один раз спросить.
+- Меньше магического поведения: ментор видит «применилась `react.yaml`», потому что он сам её попросил.
 
-// Примеры:
-// { react, react-dom } → [react.yaml]
-// { @angular/core } → [angular.yaml]
-// { только typescript } → [] (стек не определён, применяется только common)
-```
+**Как задаётся:**
 
-**Что если стек не определён?** Применяется только `common-review.yaml`. Это корректное поведение для проектов на чистом TypeScript без UI-фреймворка (как, например, async-race).
+1. **Per-review через CLI-флаг:** `pocket-mentor review <pr-url> --stack=react`
+2. **Персистентно в overrides:** в `~/.pocket-mentor/overrides.yaml` указать `default_stack: react`. Тогда повседневный запуск без флага работает.
+3. **Можно не указывать вообще** — тогда ревью идёт только по `common-review.yaml`. Корректное поведение для проектов на чистом TypeScript без UI-фреймворка (как async-race). CLI выводит одну строку в лог, чтобы ментор не удивился.
 
-**Что если определилось несколько стеков?** Применяются все. Редкий, но возможный случай для гибридных приложений.
+**Валидация:** CLI проверяет, что переданный `--stack=<id>` существует среди рубрик в репо. На неизвестном id — печатает список доступных и выходит с non-zero exit code.
 
 ---
 
@@ -502,11 +512,17 @@ const stack = detect(packageJson);
 | **Загрузчик рубрик под новый формат** | Combined YAML (критерии + конфиг проверок в одном файле), новый источник (`pocket-mentor-rubrics`), обновление Zod-схемы. |
 | **Расширение чекеров** | Дополнительные чекеры под React-специфику (forbidden-patterns, component-line-count) и общие правила (eslint-rule-configured расширения) |
 | **LLM-проверки** | Интеграция с LLM API, обработка критериев с `method: llm`, объединение в hybrid |
-| **Композиция рубрик** | Слой 1 + Слой 2 (auto-detect) + Слой 3 (overrides). Загрузчик, мерджер, валидация конфликтов |
+| **Композиция рубрик** | Слой 1 + Слой 2 (по `--stack` / `default_stack`) + Слой 3 (по `--task`) + Слой 4 (overrides). Загрузчик, мерджер, валидация конфликтов. Валидация `--stack` против списка доступных rubric IDs. |
 | **CLI + GitHub draft reviews** | Команды `init`, `review`, `rubrics list/sync`, `overrides edit`. Создание draft review через GitHub API. |
 | **Публичный репо рубрик + стартовый набор** | Создать публичный `pocket-mentor-rubrics`. Реализовать `common-review.yaml`, `react.yaml`, `stage2/async-race.yaml` (как первая task-рубрика, наш изначальный use-case). Добавить `_template.yaml` + `CONTRIBUTING.md` для будущих авторов. `angular.yaml` — по мере появления Angular-курса в скоупе. |
 | **Композиция task-слоя** | Загрузчик `stage2/<task>.yaml` по флагу `--task`. Слияние с базой. Обработка `penalty` блока. |
 | **Поддержка альтернативных источников рубрик** | CLI-флаг `--rubrics-source <git-url>` для указания произвольного репо рубрик (форк или отдельный). Минимальная децентрализация — без сложной инфраструктуры, по мере появления интереса от других менторов. |
+| **Язык генерируемых комментариев** | CLI-флаг `--language=ru\|en` (default `en`). LLM-промпт получает language template (тон + местоимения). Комменты не смешивают языки в одном ревью. Персистится в `overrides.yaml` (`language: ru`). |
+| **`rubrics_version` footer в draft body** | В тело каждого draft review добавляется футер с commit SHA репо рубрик и списком применённых rubric IDs (с их хэшами). Аудитный след для воспроизводимости — ментор может повторно запустить с тем же SHA и получить идентичный результат. Полный semver для рубрик — задача v1.0. |
+| **Per-file батчинг для крупных PR** | Для PR с >20 файлами или diff >4000 строк — per-file батчинг (≤10 файлов на вызов). Это решение про надёжность (context-window), не про деньги. Mech-чекеры не затронуты. Пороги — в `common-review.yaml`. |
+| **LLM cost — informational, не product policy** | Каждый ментор использует свой API-ключ и выбирает свою модель. README документирует типичный расход токенов на ревью для распространённых моделей (Opus / Haiku / OpenRouter), ментор сам прикидывает. Опциональный cap — `max_llm_tokens` в `overrides.yaml`; при достижении — `skipped_over_budget` маркер. По дефолту cap отсутствует. |
+| **Inline-vs-body fallback в GitHub deliverer** | GitHub API отклоняет inline-комментарии на строках вне diff. Findings про `tsconfig.json` / отсутствующий `.gitignore` / общерепозиторные проблемы пушатся в секцию `Additional notes (outside diff)` в теле ревью. Не отдельный модуль, а поведение `GitHubDeliverer`. |
+| **Сбор отзывов от менторов (local-only)** | Три механизма без телеметрии: (1) каждый draft зеркалится в `~/.pocket-mentor/history/<repo>-<pr-number>.json`; (2) CLI печатает URL feedback-канала после draft; (3) приватный канал с пилотными менторами (Telegram / GitHub Discussion). Команда `pocket-mentor reflect <pr-url>` (диф draft vs опубликованный review) — v1.0, тоже local-only. |
 | **Калибровка на действующих курсах** | Прогон на исторических PR-ах. Оценка качества — что AI удержал, что отбросил ментор. Корректировка критериев и текстов комментариев. |
 
 ---
@@ -525,7 +541,7 @@ const stack = detect(packageJson);
 | Риск | Митигация |
 |---|---|
 | Одна common-рубрика "не лезет" на нестандартный проект | Stack-рубрики + override-механизм решают это by design. Common покрывает только то, что реально универсально. |
-| Авто-детект стека ошибается (монорепо, гибрид) | Можно указать стек вручную: `--stack=react`. Fallback на `common-only`. |
+| Ментор забыл указать `--stack` и не имеет `default_stack` в overrides | CLI выводит явную строку в лог: «Стек не задан, ревью только по common». Ментор видит и решает — нужно ли перезапустить со `--stack`. Fallback корректен (common-only — валидный режим). |
 | Override от ментора ломает hybrid-связку | Валидация при загрузке overrides. Понятная ошибка с подсказкой. |
 | Менторы не хотят ставить CLI | `npx pocket-mentor-cli` без install. `init` — 2 минуты. |
 | Все YAML на одном человеке (bottleneck) | Репо публичный с первого дня, есть `_template.yaml` и `CONTRIBUTING.md`. Любой ментор может добавить рубрику через PR. Альтернативно — указать свой источник через `--rubrics-source`. Расширенные команды (генерация из README, multi-source) — по мере реального запроса. |
@@ -538,10 +554,12 @@ const stack = detect(packageJson);
 ## 12. Что прошу подтвердить
 
 1. **Четырёхслойная архитектура рубрик** — base + stack + task (опционально) + mentor overrides. Покрывает курсы с плоской рубрикой (React) и курсы с per-task оценкой (Stage 2) в одной модели.
+   - Стек задаётся **явно** через `--stack=<id>` или `default_stack` в overrides. Auto-detect не используется (фейлит на Next.js / Remix / Astro / монорепо). Без стека — common-only ревью с пометкой в логе.
 2. **Целевая аудитория** — менторы, ревьюящие PR-ы студентов на действующих курсах.
 3. **Источники правды** — официальный RS School PR review process doc + наши clean-code материалы + RS School React tasks README + README отдельных Stage 2 заданий. Не выдумываем критерии.
 4. **Принцип "не дублируем линтер"** — LLM подключается только там, где он уникально полезен.
-5. **Автономность от TANDI** — Pocket Mentor работает независимо. Интеграция — отдельный разговор, если потребуется.
-6. **Открытая модель авторства рубрик** — публичный репо `pocket-mentor-rubrics` с первого дня, любой ментор может contributить через PR. Альтернативно — свой источник через флаг `--rubrics-source`. На старте базовые рубрики делает инициатор, дальше — open contribution. Без построения сложной инфраструктуры до появления реального интереса.
-7. **Калибровка вывода под уровень студента** — `severity` у критериев + `--level` у CLI (`junior` default) + caps на количество комментариев + структурный шаблон с обязательным примером + summary-first. Цель: ревью должно учить, а не вываливать 40 проблем разом.
+5. **Открытая модель авторства рубрик** — публичный репо `pocket-mentor-rubrics` с первого дня, любой ментор может contributить через PR. Альтернативно — свой источник через флаг `--rubrics-source`. На старте базовые рубрики делает инициатор, дальше — open contribution. Без построения сложной инфраструктуры до появления реального интереса.
+6. **Калибровка вывода под уровень студента** — `severity` у критериев + `--level` у CLI (`junior` default) + caps на количество комментариев + структурный шаблон с обязательным примером + summary-first. Цель: ревью должно учить, а не вываливать 40 проблем разом.
+7. **Воспроизводимость ревью** — `rubrics_version` футер в теле каждого draft (commit SHA репо рубрик + применённые rubric IDs). Без этого `git pull` в репо рубрик молча меняет результат повторного ревью. Полный semver — v1.0.
+8. **Сбор отзывов — local-only, без телеметрии** — `~/.pocket-mentor/history/` лог + ссылка на feedback-канал в выводе CLI + приватный пилотный канал. Команда `pocket-mentor reflect` (диф draft vs published) — v1.0.
 

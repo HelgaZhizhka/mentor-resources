@@ -9,11 +9,11 @@
 This document is the canonical entry point for any Claude Code session resuming work on Pocket Mentor v0.9. Read it after `AGENTS.md`, before touching code.
 
 **What changed vs original spec (2026-05-13):**
-- **Four-layer rubric composition** replaces single-rubric-per-task model. Active rubric = `common-review` + auto-detected stack + (optional `--task <id>`) + mentor overrides.
+- **Four-layer rubric composition** replaces single-rubric-per-task model. Active rubric = `common-review` + explicit stack via `--stack <id>` (or `default_stack` from overrides) + (optional `--task <id>`) + mentor overrides.
 - **Combined YAML format** replaces two-layer (markdown + enrichment) — one file contains both criterion text and check configuration.
 - **Rubrics move from `rubrics/` in this repo to separate public `pocket-mentor-rubrics` repo.** Open contribution model. CLI supports `--rubrics-source <git-url>` for alternative sources.
 - **`RubricParser` (LLM-driven markdown → criteria) deferred.** Bootstrap workflow `pocket-mentor rubrics generate` is post-v0.9 — initial rubrics authored manually by initiator with LLM assistance during planning.
-- **Stack auto-detection** added — engine reads student `package.json` to determine which layer-2 stack rubric(s) to apply.
+- **Stack is explicit, not auto-detected.** Mentor passes `--stack <id>` per invocation, or sets `default_stack: <id>` in `~/.pocket-mentor/overrides.yaml`. No `StackDetector`, no `applies_when` field, no `package.json` inspection for stack selection. Auto-detect was tempting but fails on Next.js / Remix / Astro / monorepo cases — explicit is simpler and more predictable.
 - **Penalty handling** required for layer-3 task rubrics (e.g. Stage 2 deadline miss, no cross-check).
 - **Timeline removed** — original 28-day sprint deprecated. Milestones remain as ordered scope, not dated.
 - **Stage 2 + Mentor Review** focus retained from original; **React-course flat rubric** added as supported pattern (layers 1+2 only, no `--task` flag).
@@ -27,27 +27,32 @@ Sections below have been aligned with the four-layer architecture. Sections mark
 Ship a CLI that mentors can use to review student PRs on **multiple active courses** (not a single demo task). The active rubric is composed at review time from up to four layers:
 
 ```
-pocket-mentor review <pr-url> --as-draft                          # flat: common + auto-detected stack
-pocket-mentor review <pr-url> --as-draft --task <id>              # adds layer 3: per-task rubric
-pocket-mentor review <pr-url> --as-draft --level senior           # full output, expert tone (default: junior)
+pocket-mentor review <pr-url> --stack react --as-draft                    # flat: common + react
+pocket-mentor review <pr-url> --stack react --task <id> --as-draft        # adds layer 3: per-task rubric
+pocket-mentor review <pr-url> --as-draft                                   # common-only (no stack arg, no default_stack)
+pocket-mentor review <pr-url> --stack react --level senior --as-draft     # full output, expert tone
 ```
 
-Composition order: `common-review.yaml` (always) + auto-detected stack rubric (e.g. `react.yaml` from `package.json`) + optional task rubric (e.g. `stage2/async-race.yaml`) + local mentor overrides (`~/.pocket-mentor/overrides.yaml`). Engine reads layers from the local clone of the rubrics repo, merges them, runs mech-checkers + LLM analysis on the student PR diff, and posts the result as a GitHub PR review in `PENDING` (draft) state. The mentor curates in GitHub's native review UI and submits.
+Composition order: `common-review.yaml` (always) + stack rubric from `--stack` or `default_stack` in overrides (e.g. `react.yaml`) + optional task rubric (e.g. `stage2/async-race.yaml`) + local mentor overrides (`~/.pocket-mentor/overrides.yaml`). Engine reads layers from the local clone of the rubrics repo, merges them, runs mech-checkers + LLM analysis on the student PR diff, and posts the result as a GitHub PR review in `PENDING` (draft) state. The mentor curates in GitHub's native review UI and submits.
 
 **Definition of done for v0.9:**
 
 - [ ] CLI installable: `npm install -g pocket-mentor-cli` (or runnable via `npx`)
 - [ ] `pocket-mentor init` wizard sets up: GitHub token, LLM API key, clones rubrics repo to `~/.pocket-mentor/rubrics/`, creates empty `overrides.yaml`
 - [ ] Engine reads rubric YAMLs from local clone (no runtime markdown parsing)
-- [ ] Stack auto-detection from student `package.json` works for React; falls back to common-only when stack unknown
+- [ ] CLI flag `--stack <id>` validates against available rubric IDs in the rubrics repo; missing/unknown stack prints available options and exits non-zero. If neither `--stack` nor `default_stack` (from overrides) is set, common-only review runs with a one-line notice in CLI output.
 - [ ] Layer composition implemented: criteria merging by ID, override semantics, penalty handling for layer 3
 - [ ] **Starter rubric set** in `pocket-mentor-rubrics`: `common-review.yaml`, `react.yaml`, `stage2/async-race.yaml`, `_template.yaml`, `CONTRIBUTING.md`
 - [ ] Engine emits output conforming to schema in CONTEXT.md §"Engine output (structured)"
 - [ ] CLI posts result as GitHub draft review (`event: PENDING`), prints draft review URL
 - [ ] CLI flag `--rubrics-source <git-url>` works (alternative source for layers 1–3)
 - [ ] CLI flag `--level junior|standard|senior` works (default `junior`); filters violations by severity, adjusts LLM-comment tone and length
+- [ ] `default_stack` field in `~/.pocket-mentor/overrides.yaml` honored when `--stack` is omitted
+- [ ] CLI flag `--language ru|en` works (default `en`); controls language of LLM-generated comments and summary
 - [ ] Comment caps (`max_per_criterion`, `max_per_file`, `max_total` in `common-review.yaml`'s `review_limits`) respected by Aggregator
 - [ ] Review body opens with summary of top-3 highest-impact violations
+- [ ] Review body includes `rubrics_version` footer: commit SHA of rubrics repo + list of applied layer rubric IDs (audit trail for reproducibility)
+- [ ] `GitHubDeliverer` falls back to body's "Additional notes" section when a violation's line is outside the PR diff (instead of failing 422)
 - [ ] Smoke-tested on at least 1 historical PR for both modes (flat = React-course; with `--task` = Stage 2 async-race)
 - [ ] `mentor-resources` repo tagged `v0.9`, README updated with usage + install
 - [ ] `pocket-mentor-rubrics` repo public, README documents the layer model and contribution flow
@@ -63,7 +68,7 @@ The v0.9 release deliberately excludes:
 - **`pocket-mentor rubrics generate <markdown-url>`** — LLM-driven README → YAML scaffold. Deferred until real demand from second author. v0.9 rubrics authored manually with LLM assistance in planning.
 - **Multiple parallel rubrics sources** — `--rubrics-source` accepts ONE source URL at a time (replaces default). Multi-source merge is v1.0+.
 - **JSON Schema CI for rubric PRs** — informal review by maintainer in v0.9. Formal schema validation when contribution volume grows.
-- **Stack auto-detection beyond React** — `react.yaml` shipped; `angular.yaml` + `vue.yaml` etc. added as courses adopt the tool.
+- **Additional stack rubrics beyond React** — `react.yaml` shipped in baseline; `angular.yaml` + `vue.yaml` etc. added as courses adopt the tool. Stack is selected explicitly via `--stack` flag.
 - **Broad calibration** — minimum smoke-test per rubric only. Full calibration is v1.0 work after mentor feedback.
 - **Functional / runtime testing of the student's app** — out of scope for entire MVP. Pocket Mentor does **Mentor Review only** (static analysis of non-functional code quality: architecture, types, configs, conventions). It does **not** run the student's code or check whether features work. That track (RS School's "Cross-Check") needs headless-browser infra and is a separate product. See CONTEXT.md §"Cross-Check vs Mentor Review" for the school's terminology.
 - **Auto-pull of rubrics** — `pocket-mentor rubrics sync` is explicit, not automatic. Mentor controls update cadence.
@@ -85,7 +90,6 @@ mentor-resources/                          # this repo — engine + CLI + curate
 │   │   ├── src/
 │   │   │   ├── rubric/                    # RubricLoader (reads combined YAML from local clone)
 │   │   │   ├── composer/                  # NEW — RubricComposer (merges layers 1–4)
-│   │   │   ├── detector/                  # NEW — StackDetector (reads student package.json)
 │   │   │   ├── pr/                        # PRFetcher (Octokit)
 │   │   │   ├── checkers/                  # MechChecker registry
 │   │   │   ├── llm/                       # LLMOrchestrator (Claude API / OpenRouter)
@@ -126,7 +130,7 @@ pocket-mentor-rubrics/                     # SEPARATE PUBLIC REPO — all rubric
 - Engine is pure business logic. Side-effects (HTTP, filesystem, GitHub API) are accessed through interfaces injected at the entry point. No `fetch()` deep inside a parser.
 - CLI is a thin wrapper: parse argv, build dependencies, call engine, render output. Zero business logic in `packages/cli`.
 - Rubrics are external. The engine reads combined YAML from a local clone of `pocket-mentor-rubrics` (or a `--rubrics-source` alternative). No HTTP per review for rubric content.
-- Stack detection is data-driven: each layer-2 stack rubric declares `applies_when` (e.g. `any_dependency: [react, react-dom]`). Detector matches student's `package.json` against all stack rubrics.
+- Stack selection is explicit (mentor passes `--stack <id>` or sets `default_stack` in overrides). No `applies_when` matching, no `StackDetector`, no `package.json` inspection for the purpose of choosing stack. Student's `package.json` is still fetched for mech-checkers that legitimately need it (dependency presence, version checks, etc.).
 
 ---
 
@@ -134,18 +138,17 @@ pocket-mentor-rubrics/                     # SEPARATE PUBLIC REPO — all rubric
 
 | Module | Location | Responsibility |
 |---|---|---|
-| `RubricLoader` | `engine/src/rubric/loader.ts` | Read combined YAML files from local clone (or `--rubrics-source` directory). Validate via Zod. Returns `Rubric { rubric_id, criteria, penalties?, applies_when?, ... }`. **Note:** existing `RubricFetcher` + `EnrichmentLoader` are superseded — replaced by this loader on the new combined format. |
-| `StackDetector` | `engine/src/detector/stack.ts` | Read student PR's `package.json`, evaluate `applies_when` of each layer-2 stack rubric. Returns list of matching stack rubric IDs (may be empty → common-only). |
-| `RubricComposer` | `engine/src/composer/composer.ts` | Merge layers in order: common (layer 1) → matched stack rubrics (layer 2) → optional task rubric (layer 3 if `--task`) → mentor overrides (layer 4). Resolution: higher layer overrides matching criterion IDs; `disable` in overrides removes; `additional_criteria` in overrides adds. Returns final composed `Rubric`. |
-| `PRFetcher` | `engine/src/pr/fetcher.ts` | Octokit: `pulls.get`, `pulls.listFiles`, plus fetch student's `package.json` for `StackDetector`. Returns `{ diff, files[], base_sha, head_sha, repo, number, packageJson? }`. |
+| `RubricLoader` | `engine/src/rubric/loader.ts` | Read combined YAML files from local clone (or `--rubrics-source` directory). Validate via Zod. Returns `Rubric { rubric_id, criteria, penalties?, ... }`. List available stack rubric IDs (for `--stack` validation in CLI). **Note:** existing `RubricFetcher` + `EnrichmentLoader` are superseded — replaced by this loader on the new combined format. |
+| `RubricComposer` | `engine/src/composer/composer.ts` | Merge layers in order: common (layer 1) → stack rubric from `--stack`/`default_stack` (layer 2, may be absent) → optional task rubric (layer 3 if `--task`) → mentor overrides (layer 4). Resolution: higher layer overrides matching criterion IDs; `disable` in overrides removes; `additional_criteria` in overrides adds. Returns final composed `Rubric`. |
+| `PRFetcher` | `engine/src/pr/fetcher.ts` | Octokit: `pulls.get`, `pulls.listFiles`. Returns `{ diff, files[], base_sha, head_sha, repo, number }`. `package.json` of student is fetched on-demand by mech-checkers that need it (e.g. dependency-presence checker), not as part of standard PR context. |
 | `MechChecker` | `engine/src/checkers/registry.ts` + `checkers/<id>.ts` | Registry of pure functions `(prContext, criterion) => Violation[]`. Generic & parametrised via `checker_config`. Existing eight checkers from M3 are kept and reused under the new format. |
 | `LLMOrchestrator` | `engine/src/llm/orchestrator.ts` | Compose prompt: criterion text + diff slice + `llm_focus` + level-specific template (junior/standard/senior — controls tone, length, example requirement). Call Claude/OpenRouter via Vercel AI SDK. Validate JSON output via Zod. Generate review-body summary picking top-3 highest-impact violations. |
 | `Aggregator` | `engine/src/aggregate/aggregator.ts` | Merge mech + llm violations → final `Output` schema (CONTEXT.md §"Engine output"). Computes score, breakdown. Filters violations by `--level` (severity threshold). Enforces `review_limits` caps (max per criterion / per file / total) — overflow becomes a single summary comment "+N similar". Applies layer-3 penalties (deadline miss, missing cross-check, etc.). |
-| `GitHubDeliverer` | `engine/src/deliver/github.ts` | Octokit: `pulls.createReview` with `event: PENDING`, `comments: [...]`. Returns draft review URL. |
+| `GitHubDeliverer` | `engine/src/deliver/github.ts` | Octokit: `pulls.createReview` with `event: PENDING`, `comments: [...]`. Returns draft review URL. **Inline-vs-body fallback:** for each violation, attempt an inline comment if its line is present in the PR diff (compute set of `(file, line)` positions from `pulls.listFiles`); otherwise push the violation into a body section "Additional notes (outside diff)" with `file:line` reference. Stamps a `rubrics_version` footer into the review body: rubrics-repo commit SHA + list of applied layer rubric IDs. |
 
 **Cross-cutting:**
 
-- `engine/src/types.ts` — shared types (`Criterion`, `Penalty`, `Violation`, `Output`, `Rubric`, `StackMatch`, ...). Single source for both engine and CLI.
+- `engine/src/types.ts` — shared types (`Criterion`, `Penalty`, `Violation`, `Output`, `Rubric`, ...). Single source for both engine and CLI.
 - `engine/src/schemas.ts` — Zod schemas for the combined YAML format and the engine's output. Engine boundaries validate runtime data (rubric YAMLs, student `package.json`, LLM responses).
 
 ---
@@ -154,36 +157,39 @@ pocket-mentor-rubrics/                     # SEPARATE PUBLIC REPO — all rubric
 
 ```
 1. CLI parses argv:
-     pocket-mentor review <pr-url> --as-draft [--task async-race] [--rubrics-source <url>]
+     pocket-mentor review <pr-url> --as-draft [--stack <id>] [--task <id>] [--rubrics-source <url>] [--language ru|en] [--level junior|standard|senior]
 
 2. CLI resolves auth:
      gh auth token  ||  GITHUB_TOKEN  ||  ~/.pocket-mentor/token
 
-3. CLI builds engine dependencies (HTTP client, GitHub client, LLM client, rubrics dir)
-   and calls engine.review({ prUrl, task?, rubricsSource?, deliveryMode }).
+3. CLI loads overrides (`~/.pocket-mentor/overrides.yaml`) early — needed to resolve `default_stack`, `language`, `level` when CLI flags are omitted.
 
-4. PRFetcher.fetch(prUrl)
-     → PRContext { diff, files[], base_sha, head_sha, packageJson?, ... }
+4. CLI resolves effective stack:
+     --stack <id>  ||  overrides.default_stack  ||  null (common-only)
+   Validates against available stack rubric IDs from RubricLoader.listStacks(); on mismatch prints available options and exits non-zero.
 
-5. RubricLoader.loadCommon() → Rubric (layer 1)
+5. CLI builds engine dependencies (HTTP client, GitHub client, LLM client, rubrics dir)
+   and calls engine.review({ prUrl, stack?, task?, rubricsSource?, language, level, deliveryMode }).
 
-6. StackDetector.detect(prContext.packageJson)
-     → ["react"]   (or ["angular"], or [] when stack unknown)
+6. PRFetcher.fetch(prUrl)
+     → PRContext { diff, files[], base_sha, head_sha, repo, number }
 
-7. For each matched stack:
-     RubricLoader.loadStack(stackId) → Rubric (layer 2)
+7. RubricLoader.loadCommon() → Rubric (layer 1)
 
-8. If --task <id>:
+8. If stack != null:
+     RubricLoader.loadStack(stack) → Rubric (layer 2)
+
+9. If --task <id>:
      RubricLoader.loadTask(id) → Rubric (layer 3, may include `penalty` block)
 
-9. RubricLoader.loadOverrides("~/.pocket-mentor/overrides.yaml") → Rubric (layer 4, may be empty)
+10. RubricLoader.loadOverrides("~/.pocket-mentor/overrides.yaml") → Rubric (layer 4, may be empty)
 
-10. RubricComposer.compose([layer1, ...layer2s, layer3?, layer4])
+11. RubricComposer.compose([layer1, layer2?, layer3?, layer4])
       → Rubric  (final composed rubric: criteria merged, IDs deduplicated,
                  disabled criteria removed, additional criteria appended,
                  penalties carried through)
 
-11. For each criterion in composed rubric (parallel where safe):
+12. For each criterion in composed rubric (parallel where safe):
       - method = "mech"
           → MechChecker.run(checker_id, prContext, criterion) → Violation[]
       - method = "llm"
@@ -191,14 +197,14 @@ pocket-mentor-rubrics/                     # SEPARATE PUBLIC REPO — all rubric
       - method = "hybrid"
           → mech first; LLM enriches each mech violation with rationale + judgement
 
-12. For each penalty in composed rubric (layer 3 typically):
+13. For each penalty in composed rubric (layer 3 typically):
       - if method = "mech" → run checker, apply points_delta if violated
       - if method = "llm"  → judge, apply points_delta if violated
 
-13. Aggregator.aggregate(violations[], penalties[])
+14. Aggregator.aggregate(violations[], penalties[])
       → Output { comments[], summary { body, score, breakdown }, rubric }
 
-14. Delivery:
+15. Delivery:
       --as-draft        → GitHubDeliverer.createDraftReview(prUrl, output) → URL → stdout
       --output json     → write Output as JSON to stdout
       --output markdown → render Output as markdown to stdout
@@ -295,27 +301,35 @@ Three streams:
 
 **M4a — Format migration:**
 - Create public `pocket-mentor-rubrics` repo (separate from this one)
-- Define combined-YAML Zod schema (criteria + check config in one file, with optional `applies_when`, `penalty`)
+- Define combined-YAML Zod schema (criteria + check config in one file, with optional `penalty` block for task rubrics)
 - Implement `RubricLoader` (replaces `RubricFetcher` + `EnrichmentLoader`)
 - Author starter rubrics: `common-review.yaml`, `react.yaml`, `stage2/async-race.yaml`, `_template.yaml`
 - Add `CONTRIBUTING.md` to rubrics repo
 
 **M4b — Layer composition:**
-- `StackDetector` — reads student `package.json`, matches `applies_when` of stack rubrics
+- `--stack <id>` CLI flag — explicit stack selection. Validated against available stack rubric IDs (`RubricLoader.listStacks()`). On unknown value: list options and exit non-zero. No `--stack` and no `default_stack` → common-only review (with one-line CLI notice).
+- `default_stack` field in `~/.pocket-mentor/overrides.yaml` — persistent fallback when `--stack` is omitted. Lets a mentor on one course type once and forget.
 - `RubricComposer` — merges layers 1+2+3+4 with override / disable / additional_criteria semantics
-- Mentor overrides format + loader (`~/.pocket-mentor/overrides.yaml`)
+- Mentor overrides format + loader (`~/.pocket-mentor/overrides.yaml`) — fields: `default_stack?`, `language?`, `level?`, `max_llm_tokens?`, `disable[]`, `additional_criteria{}`, `modify{}`
 
 **M4c — LLM orchestrator + aggregator + output calibration:**
-- Prompt composer: takes composed criterion + diff slice + `llm_focus` + level-specific template (junior/standard/senior); structural shape — ≤3 sentences, mandatory before/after example, no jargon
+- Prompt composer: takes composed criterion + diff slice + `llm_focus` + level-specific template (junior/standard/senior) + language template (ru/en); structural shape — ≤3 sentences, mandatory before/after example, no jargon
 - Vercel AI SDK client (Claude default, OpenRouter fallback) with retries, Zod validation
+- **Optional LLM token cap:** mentor can set `max_llm_tokens` in `~/.pocket-mentor/overrides.yaml`. When set, aggregator skips remaining `method: llm` criteria once the cap is reached, marks them `skipped_over_budget` in body footer. Not silent truncation. No product-level default cap — mentor brings own API key and decides.
+- **Large-PR chunking:** when PR has > 20 changed files OR diff > 4000 lines, `LLMOrchestrator` processes criteria per-file batches (each batch ≤ 10 files) instead of full diff per call. Reliability decision (context-window pressure), not a cost decision. Mech-only criteria unaffected. Thresholds tunable in `common-review.yaml`.
 - Aggregator: merges violations from mech + llm; filters by `--level` (severity threshold); enforces `review_limits` caps with "+N similar" summary on overflow; applies layer-3 penalties; produces `Output` schema
 - Summary generator: picks top-3 highest-impact violations for the review body header
 - CLI flag `--level=junior|standard|senior` plumbed end-to-end (default `junior`)
+- CLI flag `--language=ru|en` plumbed end-to-end (default `en`). Maps to language template in prompt composer. Same flag may also be set persistently via `~/.pocket-mentor/overrides.yaml` field `language`.
 
 ### M5 — GitHub draft delivery + CLI
 
 - `GitHubDeliverer.createDraftReview(prContext, output)` → URL
 - Handle GitHub API edge cases (multi-line comments require `start_line` + `start_side`)
+- **Inline-vs-body fallback:** compute set of diff positions from `pulls.listFiles`; for each violation try inline, on miss push into body section "Additional notes (outside diff)" with `file:line` reference. Avoids 422 errors for repo-wide findings (tsconfig, missing .gitignore, etc.).
+- **Reproducibility footer:** review body ends with `rubrics_version: <commit-sha>` and a list of applied layer rubric IDs + their hashes. Lets mentors (and CI) verify which rubric set produced this draft.
+- **Mentor feedback channel print:** after a successful draft, CLI prints a one-liner pointing to the project's GitHub Discussion thread / issue tracker for reporting bad comments. URL is configurable in `~/.pocket-mentor/overrides.yaml` (`feedback_url`), defaults to upstream `mentor-resources` Discussion.
+- **Local history log:** every draft is mirrored to `~/.pocket-mentor/history/<repo>-<pr-number>.json` (the full `Output` we generated). Local-only, not transmitted. Lets mentor manually share specific draft if asked.
 - CLI commands:
   - `pocket-mentor init` — wizard: GitHub token, LLM key, clone rubrics repo, create empty overrides
   - `pocket-mentor review <pr-url> [--task <id>] [--rubrics-source <url>] --as-draft|--output json|--output markdown`
@@ -362,6 +376,12 @@ Three streams:
 | 2026-05-16 | Stage 2 included in v0.9 via layer 3 (not deferred to v1.0) | Async-race was the original starting use-case; deferring it would be regression. Layer 3 adds trivial complexity to the same composition model. |
 | 2026-05-16 | Original 28-day calendar deprecated; no fixed timeline | Scope shifted to multi-course usability; timeline reset to "set as work progresses, not up front". |
 | 2026-05-16 | Output calibration via `severity` + `--level` + `review_limits` + structural comment template + summary-first body | Strict rubric + linter will find more violations than a human flags. Without calibration, a beginner PR gets 40+ inline comments and the student demotivates. Calibration moves triage explicitly into the pipeline (LLMs don't triage well on their own). Default level `junior` because most course students are beginners. |
+| 2026-05-16 | Dropped stack auto-detection entirely; stack is explicit via `--stack <id>` or persisted as `default_stack` in `overrides.yaml` | Initial plan had `applies_when` matching against `package.json`. Real-world cases (Next.js / Remix / Astro / monorepo / workspace deps / transitive deps) all break that. Rather than band-aid via `--stack` override-flag, removed the whole class: no `StackDetector`, no `applies_when` field, no `package.json` inspection for stack choice. Simpler code, more predictable behavior, mentor sets default once. |
+| 2026-05-16 | Added `--language ru\|en` CLI flag (default `en`); persistable via overrides | Generated comments need a deliberate language choice. RS School courses are bilingual; mentors should pick per-mentor language, not per-CLI-restart. Comments do not mix languages within one review. |
+| 2026-05-16 | Added `rubrics_version` footer in draft body + commit-SHA of rubrics repo + applied layer IDs | Without it, re-running a review after `git pull` in rubrics-repo silently changes results. Footer gives an audit trail and reproducibility without needing semver yet. |
+| 2026-05-16 | Inline-vs-body fallback in `GitHubDeliverer` instead of separate `ReviewAnchor` module | GitHub API rejects inline comments on lines outside the PR diff. Findings about `tsconfig.json` / missing `.gitignore` / repo-wide issues need a home. Method on the deliverer is simpler than introducing an abstraction; pure-summary mode kept as fallback config flag. |
+| 2026-05-16 | LLM cost is informational (README docs typical per-model usage); cap is opt-in per mentor (`max_llm_tokens` in `overrides.yaml`); per-file batching for large PRs (>20 files OR >4000 diff lines) is reliability, not cost | Mentors bring own API key + choose own model; product shouldn't impose a budget. README gives numbers so mentor can decide. Batching exists to keep within context windows on big PRs, not to save money. Cap is opt-in for mentors who want a safety net. |
+| 2026-05-16 | Mentor feedback via three local-only mechanisms (history log, CLI-printed feedback URL, private pilot channel); no telemetry | Privacy-by-default still stands. We need signal, but signal must stay opt-in and mentor-controlled. `pocket-mentor reflect <pr-url>` (draft vs published diff) deferred to v1.0 — same local-only model. |
 
 ---
 
@@ -372,9 +392,15 @@ Three streams:
 - **Penalty mechanism in Output schema** — layer-3 penalties (e.g. Stage 2 deadline miss `-25`, no cross-check `-15`) need a representation. Already partially specified in `types.ts` (`Penalty`, `PenaltyKind`). To finalise in M4c when Aggregator is implemented: top-level `Output.applied_penalties[]` vs `Violation.penalty_kind` on a synthetic violation.
 - **Override semantics edge cases** — what if mentor `overrides.yaml` disables a criterion that is part of a hybrid (mech + llm) pair? Spec: disable the criterion entirely (both mech and llm parts). What if overrides override a `points_max`? Spec: allowed, overriding wins. Validate at load time with clear error if structurally invalid.
 - **LLM model choice** — default to `claude-opus-4-7` for review quality; allow override via env. To be decided in M4.
+- **LLM cost — informational only** — each mentor uses their own API key and chooses their own model. Project does not impose a budget. README will document typical per-review token usage on common models (e.g. Opus vs Haiku vs OpenRouter mid-tier) so mentor can estimate. Mentor opts into a hard cap by setting `max_llm_tokens` in `~/.pocket-mentor/overrides.yaml`; on overflow remaining LLM criteria are skipped with `skipped_over_budget` marker. No default cap.
+- **Large-PR chunking** — reliability decision (not cost): for PRs > 20 changed files OR > 4000 diff lines, LLM calls run per-file batches (≤10 files each) to keep within context windows. Thresholds tunable in `common-review.yaml`.
+- **Language of generated comments** — default `en`. Mentor sets per-invocation via `--language=ru|en` or persistently via `language: ru` in `~/.pocket-mentor/overrides.yaml`. Prompt composer carries a small language-specific template (tone register + pronouns). Comments do not mix languages within one review.
 - **License** — MIT vs. Apache-2.0 for `mentor-resources`. Probably MIT (consistent with most of Helga's repos). Confirm before M6 tag.
 - **Anthropic API key handling** — read from env (`ANTHROPIC_API_KEY`). No support for OpenAI in v0.9. Document in README.
 - **Telemetry** — none in v0.9. Don't add it. Privacy + simplicity.
+- **Mentor feedback collection** — three local-only mechanisms in v0.9: (1) every draft is mirrored to `~/.pocket-mentor/history/<repo>-<pr-number>.json`; (2) CLI prints a feedback-channel URL after each draft (GitHub Discussion in `mentor-resources`); (3) pilot mentors invited to a private channel (Telegram / GitHub Discussion) for direct reports. Post-v0.9: `pocket-mentor reflect <pr-url>` command will diff the historical draft against the published review to surface accepted-vs-deleted comments — also local-only, opt-in share.
+- **Reproducibility / rubrics versioning** — every draft review body ends with a `rubrics_version` footer carrying the commit SHA of the rubrics repo and the list of applied layer rubric IDs. Lets a mentor re-run with the same SHA and get identical scope. Full semver for rubrics is v1.0 work.
+- **GitHub diff-position constraint** — inline comments may only target lines present in the PR diff. `GitHubDeliverer` handles overflow (repo-wide findings like `tsconfig.json` issues) by pushing into a body section "Additional notes (outside diff)". No separate `ReviewAnchor` module — fallback is a method on the deliverer. Pure-summary mode (no inline at all) is a config option for early calibration but defaults off.
 
 ---
 

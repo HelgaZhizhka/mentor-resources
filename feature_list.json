@@ -43,7 +43,7 @@
     {
       "id": "M4a",
       "name": "Format migration: combined-YAML + RubricLoader + pocket-mentor-rubrics repo",
-      "description": "Create separate public pocket-mentor-rubrics repo. Define combined-YAML Zod schema (criteria + check config + optional applies_when + optional penalty in one file). Implement RubricLoader (replaces RubricFetcher + EnrichmentLoader). Author starter rubrics: common-review.yaml, react.yaml, stage2/async-race.yaml. Add _template.yaml + CONTRIBUTING.md.",
+      "description": "Create separate public pocket-mentor-rubrics repo. Define combined-YAML Zod schema (criteria + check config + optional penalty block in one file; no applies_when — stack is selected explicitly). Implement RubricLoader (replaces RubricFetcher + EnrichmentLoader); exposes listStacks() for --stack validation. Author starter rubrics: common-review.yaml, react.yaml, stage2/async-race.yaml. Add _template.yaml + CONTRIBUTING.md.",
       "dependencies": ["M3"],
       "status": "pending",
       "evidence": "",
@@ -51,8 +51,8 @@
     },
     {
       "id": "M4b",
-      "name": "Layer composition: StackDetector + RubricComposer + overrides",
-      "description": "StackDetector reads student package.json, evaluates applies_when of each layer-2 stack rubric. RubricComposer merges layers 1+2+3+4 with override / disable / additional_criteria semantics. Overrides loader for ~/.pocket-mentor/overrides.yaml (may be missing — handle gracefully).",
+      "name": "Layer composition: explicit --stack + RubricComposer + overrides",
+      "description": "CLI flag --stack <id> validated against RubricLoader.listStacks(); on unknown id, print available options and exit non-zero. Persistent default via overrides.yaml field default_stack. No --stack and no default_stack → common-only review with one-line CLI notice. RubricComposer merges layers 1+2+3+4 with override / disable / additional_criteria semantics. Overrides loader for ~/.pocket-mentor/overrides.yaml (may be missing — handle gracefully) reads fields: default_stack?, language?, level?, max_llm_tokens?, disable[], additional_criteria{}, modify{}.",
       "dependencies": ["M4a"],
       "status": "pending",
       "evidence": "",
