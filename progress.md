@@ -269,3 +269,29 @@ Triggered by two external reviews (Opus and ChatGPT) of the v0.9 plan. Agreed co
 - Helga reviews the diff across these four docs and confirms.
 - If approved → kick off M4a per the now-revised description (rubrics repo, combined YAML schema sans `applies_when`, RubricLoader with `listStacks()`).
 - Helga to create `HelgaZhizhka/pocket-mentor-rubrics` public repo at start of M4a.
+
+---
+
+## Session 4 closing — 2026-05-18 — Dima feedback received, redesign triggered
+
+**External event:** Dima Varabei (RS School product) responded to the plan via Telegram with structural pushback. Verbatim feedback captured in `docs/pocket-mentor/redesign-brief-2026-05-18.md` §1. Three signals: (1) UX too complex for a mentor-newbie, (2) school moving to synchronous review sessions (away from async PR review), (3) RS APP rebuild coordinated with Andrey, Pocket Mentor needs to fit into that.
+
+**Decision:** Helga wants redesign **before** the call with Dima (Monday/Thursday morning), to come with a sharpened proposition rather than an unrevised plan. Existing work (current plan + repo creation + M0-M3 engine) remains as foundation; redesign tests how to repackage / refocus, not what to throw away.
+
+**Created:** `docs/pocket-mentor/redesign-brief-2026-05-18.md` — input doc for next session. Contains:
+- Dima's feedback verbatim (§1)
+- Helga's initial instinct: skill-only v0.9 (§2)
+- What stays as foundation, no matter the redesign (§3)
+- Constraints for redesign (§4)
+- Four hypotheses to brainstorm: H1 pure skill / H2 dual surface / H3 skill drives engine / H4 agent kit (§5)
+- Pre-call deliverable: one-sentence framing + diagram + keep/drop/defer + 3 diagnostic questions (§6)
+- Open questions for Dima (§7)
+
+**Next session should:**
+- Be a fresh session.
+- Open with: «Прочитай `docs/pocket-mentor/redesign-brief-2026-05-18.md` целиком, потом запусти `superpowers:brainstorming` для тестирования четырёх гипотез из §5».
+- Produce sharpened proposition for the Dima call. **Not** a SPEC rewrite — that's a follow-up session after the call validates direction.
+
+**Files modified this entry:**
+- `docs/pocket-mentor/redesign-brief-2026-05-18.md` (new)
+- `progress.md` (this entry)
