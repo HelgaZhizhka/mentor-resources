@@ -4,34 +4,97 @@
 
 ## 1. НАСТРОЙКА РЕПОЗИТОРИЯ
 
-### 1.1 Требования Pull Request
-
-**Описание PR содержит:**
-
-- [ ] Ссылка на задание
-- [ ] Скриншот приложения
-- [ ] Ссылка на Deploy (работает)
-- [ ] Даты (Done / Deadline)
-- [ ] Self-check от студента
+### 1.1 Требования Pull Request (PR)
 
 **Формат PR:**
 
 - [ ] PR из ветки `task-name` в `main`
 - [ ] PR **НЕ СЛИТА** с main
 - [ ] Название PR ясное и информативное
+- [ ] Не должен содержать закомментированный код
+- [ ] Не содержит лишних файлов (node_modules, .env, dist)
 
-[Требования к PR в RS School](https://rs.school/docs/en/pull-request-review-process#pull-request-requirements-pr)
 
+**Описание PR содержит:**
+
+- [ ] Ссылка на задание.
+- [ ] Скриншот результата выполнения задания
+- [ ] Ссылка на задеплоенную версию вашего приложения или сайта
+- [ ] Даты (Done / Deadline)
+- [ ] Self-check от студента
+
+**Пример оформления**
+
+```md
+1. Task: https://github.com/rolling-scopes-school/tasks/blob/master/tasks/fancy-weather.md
+2. Screenshot:
+   ![](https://docs.rs.school/images/fancy-weather.png)
+3. Deploy: https://chakapega-fancy-weather.netlify.com/
+4. Done 28.05.2020 / deadline 31.05.2020
+5. Score: 220 / 300
+- Вёрстка, дизайн, UI (15/30)
+  - [x] минимальная ширина страницы, при которой она отображается корректно – 320 рх (10)
+  - [±] внешний вид приложения внешне соответствует макету или является его улучшенной версией (5/10)   
+  - [ ] приложение корректно отображается для любого выбранного языка (0)
+- В блоке "Погода за сегодня" отображаются следующие данные (15/20)
+  - [x] данные о погоде и местоположении пользователя (10)
+  - [±] часы, обновляющие время каждую секунду (5/10) 
+ ...
+```
 ### 1.2 История коммитов
 
 **Conventional Commits:**
 
-[Требования к коммитам в RS School](https://rs.school/docs/en/git-convention)
+The names of the commits should be according to the guideline - https://www.conventionalcommits.org/en/v1.0.0-beta.2/
+The commit type MUST BE in lowercase only (init, feat, fix, refactor, docs etc.)
+Present tense ("add feature" not "added feature") should be used.
+Imperative mood ("move cursor to ..." not "moves cursor to ..." should be used).
 
-**В коммитах НЕ должно быть:**
+**Examples of commit names**
 
-- [ ] Закомментированного кода
-- [ ] Лишних файлов (node_modules, .env, dist)
+- init: - used to start the project / task. Example:
+
+```bash
+init: start youtube-task
+init: start mentor-dashboard task
+```
+- feat: - this is the implemented new functionality from the technical specifications (added zoom support, added footer, added product card). Example:
+
+```bash
+feat: add basic page layout
+feat: implement search box 
+feat: implement request to youtube API
+feat: implement swipe for horizontal list
+feat: add additional navigation button
+feat: add banner
+feat: add social links
+feat: add physical security section
+feat: add real social icons
+```
+- fix: - fixed a bug in previously implemented functionality. Example:
+
+```bash
+fix: implement correct loading data from youtube
+fix: change layout for video items to fix bugs
+fix: relayout header for firefox
+fix: adjust social links for mobile
+```
+
+- refactor: - did not add new functionality / behavior did not change. Files in other places put, deleted, added. Changed the code formatting (white-space, formatting, missing semi-colons, etc). Improved the algorithm, without changing the functionality. Example:
+
+```bash
+refactor: change structure of the project
+refactor: rename vars for better readability
+refactor: apply eslint
+refactor: apply prettier
+```
+
+- docs: - used when working with project documentation / readme. Example:
+
+```bash
+docs: update readme with additional information
+docs: update description of run() method
+```
 
 ---
 
@@ -82,87 +145,3 @@
 - [ ] Кликабельные элементы визуально выделены
 - [ ] Элементы не перекрываются
 - [ ] Обратная связь при взаимодействии (hover, active)
-
----
-
-## ПРОЦЕСС ПРОВЕРКИ
-
-### Шаг 1: PR и Deploy
-
-```bash
-# Открыть PR на GitHub
-# Проверить: скриншот, deploy URL, даты, self-check
-# Убедиться что PR НЕ слита
-```
-
-### Шаг 2: Клонировать и проверить
-
-```bash
-git clone <url-репозитория> && cd <название-папки>
-npm install
-npm run lint
-npm run build
-npm run dev
-```
-
-### Шаг 3: Проверка кода и архитектуры
-
-### Шаг 4: Финальная оценка
-
-- [ ] Посчитать баллы (согласно чеклисту задания)
-- [ ] Оставить комментарий в PR
-
----
-
-## АВТОМАТИЗАЦИЯ ПРОВЕРКИ
-
-Для ускорения проверки можно использовать:
-
-### Bash-скрипт
-
-```bash
-./auto-check.sh /path/to/student-project
-```
-
-Проверяет: tsconfig, ESLint, TypeScript features, console.log, коммиты, build.
-
-[Документация скрипта](../scripts/auto-check.md)
-
-### AI агент
-
-Используйте промпт из [`templates/agents/reviewer.md`](../agents/reviewer.md) для Claude, ChatGPT и т.д.
-
-#### Как использовать:
-
-1. Скопируйте файл `templates/agents/reviewer.md` в корень репозитория студента.
-4. Добавьте инструкции для AI. Укажите конкретные требования к анализу. Если у задания есть специфические требования, добавьте их в текстовом виде или в файл, например, task-requirements.md.
-
-#### Что делает агент:
-- Анализирует код по принципам Clean Code
-- Проверяет TypeScript типизацию и практики
-- Даёт рекомендации с примерами "плохо → хорошо"
-- Формирует структурированный отчёт в markdown
-- Сохраняет результаты в файл CODE_REVIEW_REPORT.md
-
-**Рекомендуемый workflow:**
-
-1. Скрипт или AI агент — автоматические проверки и базовые рекомендации
-2. Ручная проверка — PR, deploy, функциональность, дизайн, архитектура
-3. Финальный комментарий с окончательной оценкой и общими рекомендациями по улучшению
-
----
-
-## ШАБЛОН КОММЕНТАРИЯ МЕНТОРА
-
-```markdown
-### Хорошо выполнено:
-- [Список положительных моментов]
-
-### Критически важно исправить:
-- [Список проблем]
-
-### Можно улучшить (рекомендации):
-- [Список рекомендаций]
-
-### Оценка: XX / YY
-```
