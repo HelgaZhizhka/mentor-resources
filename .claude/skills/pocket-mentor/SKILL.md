@@ -20,6 +20,8 @@ Two channels:
 1. **The student repository** — current working directory (`$PROJECT_DIR = pwd`). The mentor cloned it before invoking you.
 2. **Optional task context** — `--context <path-to-md>` flag passed by the mentor. A markdown file describing the specific assignment, its acceptance criteria, scoring rubric, deadlines, or any task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
 
+The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor review --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
+
 ## Execution sequence
 
 Run these steps in order. Do not skip.
@@ -32,13 +34,17 @@ Run `bash $SKILL_DIR/scripts/init.sh` (where `$SKILL_DIR` is this skill's bundle
 - runs `lint` + `build` scripts from `package.json`
 - emits a single JSON object to stdout summarising config, lint, build outcomes
 
-Parse the JSON. Treat lint/build failures as **priority-1 findings** in the report.
+Before running `init.sh` for the first time in a fresh clone, check whether `node_modules` exists. If it does **not**, tell the mentor in one sentence that the script will install dependencies via the detected package manager, and wait for confirmation. If the mentor declines, re-invoke with `--no-install`.
+
+Parse the JSON. Treat lint/build failures as **priority-1 findings** in the report. If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
 
 ### 2. Focused checkers (scripts/checkers/*.sh)
 
 Run each available checker:
 - `bash $SKILL_DIR/scripts/checkers/check-ts-usage.sh` — `any`, `as Type`, `!` non-null assertions, parameter/return typing
 - `bash $SKILL_DIR/scripts/checkers/check-no-console.sh` — `console.log` in `src/`
+
+Only these two checkers ship in v0.9. Do not invoke other checker filenames even if they are referenced elsewhere in this document — additional checkers will appear in future versions.
 
 Each emits a JSON object (see contract below). Aggregate findings; deduplicate against lint output from step 1.
 
