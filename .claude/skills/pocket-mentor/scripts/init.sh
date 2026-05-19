@@ -62,6 +62,11 @@ fi
 HAS_SRC=false
 [[ -d "src" ]] && HAS_SRC=true
 
+HAS_README=false
+for f in README.md README.MD Readme.md readme.md README README.markdown; do
+  if [[ -f "$f" ]]; then HAS_README=true; break; fi
+done
+
 PROJECT_NAME=""
 if $HAS_PACKAGE_JSON; then
   PROJECT_NAME="$(grep '"name"' package.json | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/' | tr -d ',')"
@@ -168,6 +173,7 @@ cat <<EOF
     "package_manager": "$PM",
     "has_package_json": $HAS_PACKAGE_JSON,
     "has_src": $HAS_SRC,
+    "has_readme": $HAS_README,
     "has_tsconfig": $HAS_TSCONFIG,
     "ts_strict": $TS_STRICT,
     "ts_no_implicit_any": $TS_NO_IMPLICIT_ANY,

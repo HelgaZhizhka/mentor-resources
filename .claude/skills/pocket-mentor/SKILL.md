@@ -20,6 +20,19 @@ Two channels:
 1. **The student repository** — current working directory (`$PROJECT_DIR = pwd`). The mentor cloned it before invoking you.
 2. **Optional task context** — `--context <path-or-url>` flag passed by the mentor. Accepts either a local markdown path or an HTTP(S) URL pointing to a markdown file (e.g. GitHub README). For URLs, use `WebFetch`; for local paths, use `Read`. The content describes the specific assignment: acceptance criteria, scoring rubric, deadlines, task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
 
+### When `--context` loading fails
+
+If `WebFetch` or `Read` for the `--context` argument fails (network error, model unavailable, file not found), **DO NOT silently fall back to general-knowledge rubrics**. Instead, immediately call `AskUserQuestion` with three options:
+
+1. **Provide a local file path** — mentor pastes a path to a downloaded copy of the task README
+2. **Paste the content** — mentor pastes the rubric directly into chat
+3. **Proceed without context** — mentor accepts a generic review
+
+If the mentor chooses (3), the report **MUST**:
+- Open with a banner: `> ⚠️ **Task context not loaded.** Generic clean-code rules applied; the **Score section is omitted** because the task-specific rubric is unknown.`
+- **Omit the Score section entirely** — do NOT invent point categories from general knowledge. The mentor cannot tell invented categories from real ones, and a misleading score is worse than no score.
+- Keep all other sections (Stack, Strengths, Critical issues, Recommendations, Summary, Manual checks).
+
 The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
 
 ## Execution sequence
@@ -36,7 +49,11 @@ Run `bash $SKILL_DIR/scripts/init.sh` (where `$SKILL_DIR` is this skill's bundle
 
 Before running `init.sh` for the first time in a fresh clone, check whether `node_modules` exists. If it does **not**, tell the mentor in one sentence that the script will install dependencies via the detected package manager, and wait for confirmation. If the mentor declines, re-invoke with `--no-install`.
 
-Parse the JSON. The `ready_to_review` boolean is `true` only when `has_package_json` AND lint (if present) passed AND build (if present) passed — use it as a single check for "bootstrap is green". Treat lint/build failures as **priority-1 findings** in the report. If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
+Parse the JSON. The `ready_to_review` boolean is `true` only when `has_package_json` AND lint (if present) passed AND build (if present) passed — use it as a single check for "bootstrap is green". Treat lint/build failures as **priority-1 findings** in the report.
+
+The JSON also includes `project.has_readme`. If `false`, add a finding to the report's **Recommendations** section: "Repository has no README in the project root — RS School expects a README with task description, run instructions, deploy URL, screenshot, and author info." Do not score this; it is a process item.
+
+If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
 
 ### 2. Focused checkers (scripts/checkers/*.sh)
 
