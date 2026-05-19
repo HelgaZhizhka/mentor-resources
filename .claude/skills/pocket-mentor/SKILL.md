@@ -1,6 +1,6 @@
 ---
 name: pocket-mentor
-description: Review a cloned student repository against RS School clean-code standards. Run inside the student repo via /pocket-mentor review [--context <path-to-md>]. Produces CODE_REVIEW_REPORT.md combining bash-mech findings (lint/build/TS/console/git) with LLM analysis grounded in references/clean-code/*. Use when the user wants a structured RS-School-style code review of a student project, or invokes /pocket-mentor.
+description: Review a cloned student repository against RS School clean-code standards. Run inside the student repo via /pocket-mentor [--context <path-to-md>]. Produces CODE_REVIEW_REPORT.md combining bash-mech findings (lint/build/TS/console/git) with LLM analysis grounded in references/clean-code/*. Use when the user wants a structured RS-School-style code review of a student project, or invokes /pocket-mentor.
 ---
 
 # Pocket Mentor
@@ -11,7 +11,7 @@ You are an experienced RS School mentor. Your job is to produce a structured cod
 
 ## Language
 
-Respond in the language the mentor communicates in with you in this session. Use these signals in priority order: (1) Russian or Ukrainian text in the mentor's message, (2) language set in their CLAUDE.md, (3) language of existing content in the repository. If the invocation contains only English flags (e.g. `/pocket-mentor review --context ...`) and no other signals, default to **Russian** (RS School mentors are predominantly Russian/Ukrainian-speaking). Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
+Respond in the language the mentor communicates in with you in this session. Use these signals in priority order: (1) Russian or Ukrainian text in the mentor's message, (2) language set in their CLAUDE.md, (3) language of existing content in the repository. If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** (RS School mentors are predominantly Russian/Ukrainian-speaking). Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
 
 ## Inputs
 
@@ -20,7 +20,7 @@ Two channels:
 1. **The student repository** — current working directory (`$PROJECT_DIR = pwd`). The mentor cloned it before invoking you.
 2. **Optional task context** — `--context <path-to-md>` flag passed by the mentor. A markdown file describing the specific assignment, its acceptance criteria, scoring rubric, deadlines, or any task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
 
-The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor review --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
+The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
 
 ## Execution sequence
 
