@@ -11,7 +11,7 @@ You are an experienced RS School mentor. Your job is to produce a structured cod
 
 ## Language
 
-Respond in the language the mentor communicates in with you in this session. The mentor's first message determines the report language. Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
+Respond in the language the mentor communicates in with you in this session. Use these signals in priority order: (1) Russian or Ukrainian text in the mentor's message, (2) language set in their CLAUDE.md, (3) language of existing content in the repository. If the invocation contains only English flags (e.g. `/pocket-mentor review --context ...`) and no other signals, default to **Russian** (RS School mentors are predominantly Russian/Ukrainian-speaking). Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
 
 ## Inputs
 
@@ -40,11 +40,24 @@ Parse the JSON. Treat lint/build failures as **priority-1 findings** in the repo
 
 ### 2. Focused checkers (scripts/checkers/*.sh)
 
-Run each available checker:
-- `bash $SKILL_DIR/scripts/checkers/check-ts-usage.sh` — `any`, `as Type`, `!` non-null assertions, parameter/return typing
-- `bash $SKILL_DIR/scripts/checkers/check-no-console.sh` — `console.log` in `src/`
+**Always pass `--project-dir` using the `dir` value from the init.sh JSON** — checkers default to `$PWD`, which may be the repo root rather than the project root if `init.sh` descended into a subdirectory.
 
-Only these two checkers ship in v0.9. Do not invoke other checker filenames even if they are referenced elsewhere in this document — additional checkers will appear in future versions.
+```bash
+PROJECT_DIR="<dir from init JSON>"
+bash $SKILL_DIR/scripts/checkers/check-ts-usage.sh    --project-dir "$PROJECT_DIR"
+bash $SKILL_DIR/scripts/checkers/check-no-console.sh  --project-dir "$PROJECT_DIR"
+bash $SKILL_DIR/scripts/checkers/check-git-quality.sh --project-dir "$PROJECT_DIR"
+bash $SKILL_DIR/scripts/checkers/check-commented-code.sh --project-dir "$PROJECT_DIR"
+```
+
+| Checker | Finds |
+|---|---|
+| `check-ts-usage.sh` | `any`, `as Type` assertions, `!` non-null |
+| `check-no-console.sh` | `console.log` / `console.debug` in `src/` |
+| `check-git-quality.sh` | branch on main, forbidden tracked files (`node_modules`, `.env`, `dist`), non-Conventional-Commits subjects |
+| `check-commented-code.sh` | blocks of ≥3 consecutive commented-out code lines in `src/` |
+
+Only these four checkers ship in v0.9.1. Do not invoke other checker filenames.
 
 Each emits a JSON object (see contract below). Aggregate findings; deduplicate against lint output from step 1.
 
@@ -124,24 +137,34 @@ Does the name reflect intent? `data` → `users`, `temp` → `cachedResult`. Fun
 - No inline JS-driven styles except for genuinely dynamic values?
 - CSS nesting depth ≤2?
 
-## PR requirements (process — AI flags, mentor verifies)
+## PR requirements
 
-The mentor reviews these manually. Surface them in the report's **Manual checks** section verbatim — do NOT attempt to evaluate them yourself unless `check-git-quality.sh` produced relevant findings.
+### Automated (checker covers)
 
-- PR from branch `task-name` into `main`, **not** merged
+`check-git-quality.sh` detects and surfaces these as findings:
+- Branch is `main`/`master` (student should work on a feature branch)
+- Forbidden files tracked in git: `node_modules/`, `.env`, `dist/`, `build/`
+- Commit subjects that don't follow Conventional Commits
+
+`check-commented-code.sh` detects:
+- Blocks of commented-out code left in `src/`
+
+Treat these checker findings as **priority-2 findings** in the report. Explain the rule and show the fix.
+
+### Manual (mentor verifies after the report)
+
+Surface these in the **Manual checks** section of the report:
 - PR title is clear and informative
 - PR description contains: task link, screenshot, deploy URL, dates (done / deadline), student self-check
-- No extraneous files in git (`node_modules`, `.env`, `dist`) — partially checked by `check-git-quality.sh` when available
+- PR is not yet merged into `main`
 
-## Commit conventions (knowledge for explaining findings)
+## Commit conventions
 
 Conventional Commits — https://www.conventionalcommits.org/
 
-- Lowercase types: `init`, `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`
+- Lowercase types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`
 - Imperative mood, present tense: "add feature" — not "added feature"
 - One logical change per commit (no monolithic commits)
-
-`check-git-quality.sh` (when present) flags non-conformance. If absent, do not score commits in the report — mention conventions only when responding to a question or when commits are visibly broken.
 
 ## Reference materials
 
@@ -220,20 +243,18 @@ Output structure (translate section headers into the session language; keep code
 
 The agent did NOT evaluate these — review them yourself:
 
-**Pull Request:**
-- [ ] Branch `task-name` → `main`, not merged
-- [ ] Title clear and informative
-- [ ] Description: task link, screenshot, deploy URL, dates, student self-check
-- [ ] No extraneous files (node_modules, .env, dist)
+**Pull Request (requires opening GitHub):**
+- [ ] PR title clear and informative
+- [ ] Description contains: task link, screenshot, deploy URL, dates (done / deadline), student self-check
+- [ ] PR is not yet merged
 
 **Functional:**
 - [ ] App runs without console errors
 - [ ] Main features work as specified
 - [ ] Matches mockup (if provided)
 - [ ] Responsive (if required)
-- [ ] Interactive elements visually highlighted
+- [ ] Interactive elements visually highlighted (hover / active / focus)
 - [ ] No overlapping elements
-- [ ] Hover/active feedback
 ```
 
 ## Optional task checklist

@@ -35,16 +35,31 @@ cd "$PROJECT_DIR" || { echo "ERROR: cannot cd $PROJECT_DIR" >&2; exit 1; }
 
 log() { echo "[init] $*" >&2; }
 
-# --- detect package manager ---
+# --- locate package.json (may be in a subdirectory) ---
+DIR_CHANGED=false
+HAS_PACKAGE_JSON=false
+[[ -f "package.json" ]] && HAS_PACKAGE_JSON=true
+
+if ! $HAS_PACKAGE_JSON; then
+  CANDIDATE="$(find . -maxdepth 2 -name "package.json" -not -path "*/node_modules/*" | head -1)"
+  if [[ -n "$CANDIDATE" ]]; then
+    SUBDIR="$(dirname "$CANDIDATE")"
+    log "no package.json at root; descending into ${SUBDIR}"
+    cd "$SUBDIR" || { echo "ERROR: cannot cd $SUBDIR" >&2; exit 1; }
+    PROJECT_DIR="$(pwd)"
+    HAS_PACKAGE_JSON=true
+    DIR_CHANGED=true
+  fi
+fi
+
+# --- detect package manager (after possible descent) ---
 PM="npm"
 if [[ -f "pnpm-lock.yaml" ]]; then PM="pnpm"
 elif [[ -f "yarn.lock" ]];   then PM="yarn"
 elif [[ -f "package-lock.json" ]]; then PM="npm"
 fi
 
-HAS_PACKAGE_JSON=false
 HAS_SRC=false
-[[ -f "package.json" ]] && HAS_PACKAGE_JSON=true
 [[ -d "src" ]] && HAS_SRC=true
 
 PROJECT_NAME=""
@@ -78,7 +93,7 @@ if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
       DEPS_INSTALLED=false
       ;;
     yes|auto)
-      log "installing deps via $PM…"
+      log "installing deps via ${PM}..."
       if $PM install >/tmp/pocket-mentor-install.log 2>&1; then
         log "deps installed"
       else
@@ -125,15 +140,24 @@ status() {
 LINT_STATUS="$(status "$LINT_RAN" "$LINT_OK")"
 BUILD_STATUS="$(status "$BUILD_RAN" "$BUILD_OK")"
 
+INIT_OK=true
+$HAS_PACKAGE_JSON || INIT_OK=false
+
+SUMMARY="init: pm=${PM} lint=${LINT_STATUS} build=${BUILD_STATUS}"
+if ! $HAS_PACKAGE_JSON; then
+  SUMMARY="init: no package.json found in ${PROJECT_DIR} or its subdirectories"
+fi
+
 # --- emit JSON ---
 cat <<EOF
 {
   "checker": "init",
-  "ok": true,
-  "summary": "init: pm=$PM lint=$LINT_STATUS build=$BUILD_STATUS",
+  "ok": $INIT_OK,
+  "summary": "$SUMMARY",
   "project": {
     "name": "$PROJECT_NAME",
     "dir": "$PROJECT_DIR",
+    "dir_changed": $DIR_CHANGED,
     "package_manager": "$PM",
     "has_package_json": $HAS_PACKAGE_JSON,
     "has_src": $HAS_SRC,
