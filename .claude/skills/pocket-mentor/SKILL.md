@@ -18,11 +18,26 @@ Respond in the language the mentor communicates in with you in this session. Use
 Two channels:
 
 1. **The student repository** — current working directory (`$PROJECT_DIR = pwd`). The mentor cloned it before invoking you.
-2. **Optional task context** — `--context <path-or-url>` flag passed by the mentor. Accepts either a local markdown path or an HTTP(S) URL pointing to a markdown file (e.g. GitHub README). For URLs, use `WebFetch`; for local paths, use `Read`. The content describes the specific assignment: acceptance criteria, scoring rubric, deadlines, task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
+2. **Optional task context** — `--context <path-or-url>` flag passed by the mentor. Accepts either a local markdown path or an HTTP(S) URL pointing to a markdown file (e.g. GitHub README).
+   - **GitHub URLs** — prefer `gh api repos/<owner>/<repo>/contents/<path> --jq '.content' | base64 -d` via `Bash` (more reliable than `WebFetch` for raw content).
+   - **Other HTTP(S) URLs** — use `WebFetch`.
+   - **Local paths** — use `Read`.
+
+   The content describes the specific assignment: acceptance criteria, scoring rubric, deadlines, task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
 
 ### When `--context` loading fails
 
-If `WebFetch` or `Read` for the `--context` argument fails (network error, model unavailable, file not found), **DO NOT silently fall back to general-knowledge rubrics**. Instead, immediately call `AskUserQuestion` with three options:
+If `WebFetch` or `Read` for the `--context` argument fails for **any** reason (network error, model unavailable, 404, file not found, timeout, auth error), you **MUST** stop and call `AskUserQuestion`. This is non-negotiable.
+
+**Forbidden fallbacks** — do not use any of these to retrieve the context yourself:
+- `curl`, `wget`, `fetch`, `http`, or any other shell HTTP client via `Bash`
+- `gh api`, `gh repo view`, or any other CLI mirror of the failed URL
+- Retrying the same `WebFetch` with a different model
+- Proceeding to write the report from general knowledge of the task
+
+Why: the failure mode we are guarding against is the mentor being shown a Score / rubric that the agent **fabricated** from training data. Substituting `curl` for `WebFetch` may *succeed*, but it bypasses the mentor's decision about how to handle a missing rubric. Always escalate to the mentor first.
+
+Immediately call `AskUserQuestion` with exactly these three options:
 
 1. **Provide a local file path** — mentor pastes a path to a downloaded copy of the task README
 2. **Paste the content** — mentor pastes the rubric directly into chat
@@ -87,6 +102,12 @@ Read in this order:
 4. Relevant files in `./references/clean-code/` for areas with findings (only those needed for explanation)
 
 Then perform the analysis described in **Review rules** below.
+
+**Self-check before writing each Fix snippet.** Before finalising a `Fix:` code block in any Critical issue:
+- Does the snippet violate any rule you have flagged elsewhere in the same report? (Common traps: a memory-leak fix that uses `Function`; an `as Type` fix that becomes `as unknown as T`; an "unused variable" fix that keeps the field declared but still unused.)
+- Does the snippet compile under the project's `tsconfig.json` flags (`strict`, `noUnusedLocals`, `noImplicitAny`) as reported by `init.sh`?
+
+If a snippet fails either check, rewrite it or drop the code block and keep only the prose explanation. **Never emit a Fix that would re-fail the same lint/tsc rule it claims to address.**
 
 ### 4. Write CODE_REVIEW_REPORT.md
 
@@ -231,6 +252,8 @@ Output structure (translate section headers into the session language; keep code
 2. …
 
 ## Critical issues
+
+> ⚠️ **Fix snippets are illustrative.** Verify each snippet before pasting it to the student — code suggestions are generated and may contain mistakes (forbidden types reintroduced, double-casts, unused symbols left in place, etc.).
 
 ### <Issue title>
 
