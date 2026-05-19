@@ -18,7 +18,7 @@ Respond in the language the mentor communicates in with you in this session. Use
 Two channels:
 
 1. **The student repository** — current working directory (`$PROJECT_DIR = pwd`). The mentor cloned it before invoking you.
-2. **Optional task context** — `--context <path-to-md>` flag passed by the mentor. A markdown file describing the specific assignment, its acceptance criteria, scoring rubric, deadlines, or any task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
+2. **Optional task context** — `--context <path-or-url>` flag passed by the mentor. Accepts either a local markdown path or an HTTP(S) URL pointing to a markdown file (e.g. GitHub README). For URLs, use `WebFetch`; for local paths, use `Read`. The content describes the specific assignment: acceptance criteria, scoring rubric, deadlines, task-specific instructions. **If provided, treat it as authoritative over generic rules below.**
 
 The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
 
@@ -36,7 +36,7 @@ Run `bash $SKILL_DIR/scripts/init.sh` (where `$SKILL_DIR` is this skill's bundle
 
 Before running `init.sh` for the first time in a fresh clone, check whether `node_modules` exists. If it does **not**, tell the mentor in one sentence that the script will install dependencies via the detected package manager, and wait for confirmation. If the mentor declines, re-invoke with `--no-install`.
 
-Parse the JSON. Treat lint/build failures as **priority-1 findings** in the report. If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
+Parse the JSON. The `ready_to_review` boolean is `true` only when `has_package_json` AND lint (if present) passed AND build (if present) passed — use it as a single check for "bootstrap is green". Treat lint/build failures as **priority-1 findings** in the report. If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
 
 ### 2. Focused checkers (scripts/checkers/*.sh)
 
@@ -234,6 +234,16 @@ Output structure (translate section headers into the session language; keep code
 ## Recommendations
 1. <less critical>
 
+## Score (per task checklist — only if `--context` has a scoring rubric)
+
+| # | Criterion | Max | Awarded | Comment |
+|---|---|---|---|---|
+| 1 | <criterion from context> | NN | NN | brief justification |
+| ... | | | | |
+| **Total** | | **ZZZ** | **XXX** | |
+
+> Mentor-final-call note: "This is an agent estimate; final score is the mentor's."
+
 ## Summary
 <one-paragraph wrap-up>
 
@@ -250,23 +260,16 @@ The agent did NOT evaluate these — review them yourself:
 
 **Functional:**
 - [ ] App runs without console errors
-- [ ] Main features work as specified
-- [ ] Matches mockup (if provided)
-- [ ] Responsive (if required)
-- [ ] Interactive elements visually highlighted (hover / active / focus)
-- [ ] No overlapping elements
+- [ ] <derive each line from the functional/UI checklist in `--context` when present; otherwise list: main features work, responsive if required, hover/active/focus, no overlaps>
 ```
 
-## Optional task checklist
+## Building the Score and Manual-checks sections
 
-If `--context` is provided and the markdown contains a scored checklist (categories with points), use it. Add a **Score** section to the report:
+When `--context` is provided:
 
-```markdown
-## Score (per task checklist)
-- <Category 1>: XX / YY pts
-- <Category 2>: XX / YY pts
-- Penalties: -XX
-- **Total: XXX / ZZZ**
-```
+- **Score**: parse the rubric (categories with point values) and produce one row per criterion. Use a markdown table. Add a final `Penalties:` row when the rubric defines penalties (e.g. "−50% for X"). The agent's score is advisory — always include the mentor-final-call note.
+- **Manual checks → Functional**: replace the generic checklist with line items derived from the functional requirements in `--context` (e.g. "Login: validation, server errors, Enter submits"). Keep the **Pull Request** subsection generic — it depends on GitHub state, not the task.
+
+When `--context` is **not** provided, fall back to the generic Functional checklist (last bullet in the template above) and omit the Score section.
 
 Task-checklist criteria override generic rules above when they conflict.

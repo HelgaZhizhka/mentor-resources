@@ -43,7 +43,7 @@ while IFS= read -r path; do
   printf '%s\t%s\t%s\t%s\n' "$path" "0" "tracked in git" "forbidden-file" >>"$TMP"
   FORBIDDEN_COUNT=$((FORBIDDEN_COUNT + 1))
 done < <(git ls-files 2>/dev/null | grep -E \
-  '(^|/)node_modules/|(^|/)\.env($|\.[^.])|(^|/)dist/|(^|/)build/' \
+  '(^|/)(node_modules|dist|build)/|(^|/)\.env(\.(local|development|production|test|dev|prod|staging))?$' \
   | head -20)
 
 # --- conventional commits ---

@@ -143,6 +143,12 @@ BUILD_STATUS="$(status "$BUILD_RAN" "$BUILD_OK")"
 INIT_OK=true
 $HAS_PACKAGE_JSON || INIT_OK=false
 
+# ready_to_review: true only if bootstrap completed AND lint/build either passed or were not applicable
+READY_TO_REVIEW=true
+$HAS_PACKAGE_JSON || READY_TO_REVIEW=false
+$LINT_RAN  && ! $LINT_OK  && READY_TO_REVIEW=false
+$BUILD_RAN && ! $BUILD_OK && READY_TO_REVIEW=false
+
 SUMMARY="init: pm=${PM} lint=${LINT_STATUS} build=${BUILD_STATUS}"
 if ! $HAS_PACKAGE_JSON; then
   SUMMARY="init: no package.json found in ${PROJECT_DIR} or its subdirectories"
@@ -153,6 +159,7 @@ cat <<EOF
 {
   "checker": "init",
   "ok": $INIT_OK,
+  "ready_to_review": $READY_TO_REVIEW,
   "summary": "$SUMMARY",
   "project": {
     "name": "$PROJECT_NAME",
