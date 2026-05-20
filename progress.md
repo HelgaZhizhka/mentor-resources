@@ -18,14 +18,17 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 
 ---
 
-## 2026-05-20 — v0.9.7 fix: colored stderr output for lint/build failures
+## 2026-05-20 — v0.9.7 fix + remove obsolete GitHub Actions workflows
 
 **Done:**
 - Fixed init.sh to emit colored `[init] ✗ lint check failed` / `[init] ✗ build check failed` when lint or build fail. Previously the color output was only shown during dependency installation, not during lint/build execution.
 - Bumped version: v0.9.6 → v0.9.7 in `feature_list.json` and `README.md`.
+- Removed obsolete GitHub Actions workflows (`.github/workflows/claude-code-review.yml` and `claude.yml`). These were legacy from the engine+CLI architecture and required `CLAUDE_CODE_OAUTH_TOKEN` which was not configured. Skill-first v0.9.x runs locally via `/pocket-mentor`, not via GitHub Actions.
+- Added `CODE_REVIEW_REPORT.md` and `POCKET_MENTOR_EXECUTION_LOG.md` to `.gitignore` — these are local test artifacts.
 
 **Decisions:**
 - Patch-level change (bugfix) — no SKILL.md changes, only init.sh.
+- GitHub Actions workflows deleted rather than fixed — CI-based review was never part of v0.9.x architecture.
 
 **Next:**
 - Demo tomorrow (2026-05-21). Skill is stable at v0.9.7.
