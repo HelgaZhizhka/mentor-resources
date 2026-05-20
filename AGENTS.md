@@ -19,7 +19,7 @@ mentor-resources/
 ├── docs/pocket-mentor/            # Pocket Mentor design docs
 ├── templates/configs/             # ESLint + tsconfig reference configs for students
 ├── AGENTS.md                      # This file — routing + conventions
-├── CLAUDE.md                      # Pointer for Claude Code (→ AGENTS.md)
+├── CLAUDE.md                      # Symlink → AGENTS.md (Claude Code auto-loads this name)
 ├── feature_list.json              # Per-skill state tracker (id, version, status)
 ├── progress.md                    # Multi-session continuity log (newer entries at the bottom)
 ├── CONTRIBUTING.md                # Contribution guide
