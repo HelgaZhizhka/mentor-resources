@@ -49,3 +49,6 @@ Thumbs.db
 # Temp files
 *.tmp
 .temp/
+
+# Local issue tracker (Matt Pocock skills workflow)
+.scratch/
