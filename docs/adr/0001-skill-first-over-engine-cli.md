@@ -12,7 +12,7 @@ The original v0.9 design (May 2026) was a TypeScript monorepo: a `packages/engin
 
 Two signals triggered a redesign:
 
-1. **External feedback from Dima Varabei (RS School product):** the workflow was too complex for a mentor-newcomer; the school was also moving from async PR review toward synchronous review sessions, making the GitHub draft delivery less relevant.
+1. **External feedback from RS School product team:** the workflow was too complex for a mentor-newcomer; the school was also moving from async PR review toward synchronous review sessions, making the GitHub draft delivery less relevant.
 2. **Internal assessment:** the TypeScript engine was approximating in code what an LLM already does well — reading, grading, and explaining code. The engine added complexity without adding accuracy.
 
 ## Decision

@@ -37,7 +37,7 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 
 **Next:**
 - 2026-05-21 — live demo run of `/pocket-mentor` on a real student PR.
-- Post-demo — discussion with Dima/Andrey about positioning and next iteration.
+- Post-demo — discussion about positioning and next iteration.
 - Post-demo — triage + implement skill publish mechanism so mentors can install without cloning mentor-resources. Issue: `.scratch/skill-publish/issues/01-publish-pocket-mentor-skill.md`.
 
 **Blockers:**
@@ -72,7 +72,7 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Next:**
 - Test `/pocket-mentor` v0.9.6 on student repo (anastasiashlyk-JSFE2025Q3/fun-chat or new PR).
 - Open PR: `feature/pocket-mentor-v0.9-redesign` → `master`.
-- Post-demo (2026-05-21) — discuss with Dima/Andrey.
+- Post-demo (2026-05-21) — RS School positioning discussion.
 - Post-demo — triage skill publish issue (`.scratch/skill-publish/issues/01-...`).
 
 **Blockers:**
