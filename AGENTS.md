@@ -106,7 +106,7 @@ Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` and `docs/adr/` at repo root (neither file created yet). See `docs/agents/domain.md`.
+Single-context — `CONTEXT.md` at repo root (8-term glossary) and `docs/adr/` (ADR-0001, ADR-0002). See `docs/agents/domain.md`.
 
 ## End of session
 
