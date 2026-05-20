@@ -2,7 +2,7 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v0.9.5**
+Version: **v0.9.6**
 
 ## Install
 
@@ -107,4 +107,4 @@ When `mentor-resources/clean-code/*` changes, re-run `scripts/sync-references.sh
 
 ## Status
 
-v0.9.5 — feature-complete for the demo target. All four bash checkers shipped, `--context` URL support shipped, score-vs-penalty rules formalised. Deferred: GitHub PR auto-publish, per-line review comments, AST-level checkers.
+v0.9.6 — colored stderr output in init.sh (green ✓ / red ✗ / yellow ⊘). Auto-disabled when stderr is not a TTY or `NO_COLOR` is set. All four bash checkers shipped, `--context` URL support shipped, score-vs-penalty rules formalised. Deferred: GitHub PR auto-publish, per-line review comments, AST-level checkers.

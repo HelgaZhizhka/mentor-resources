@@ -5,6 +5,17 @@
 
 set -uo pipefail
 
+if [[ ! -t 2 || -n "${NO_COLOR:-}" ]]; then
+  RED="" GREEN="" YELLOW="" RESET=""
+else
+  RED=$'\e[31m'; GREEN=$'\e[32m'; YELLOW=$'\e[33m'; RESET=$'\e[0m'
+fi
+
+info() { echo "${RESET}[init] $*"              >&2; }
+ok()   { echo "${GREEN}[init] ✓ $*${RESET}"   >&2; }
+fail() { echo "${RED}[init] ✗ $*${RESET}"     >&2; }
+skip() { echo "${YELLOW}[init] ⊘ $*${RESET}"  >&2; }
+
 PROJECT_DIR=""
 INSTALL_MODE="auto"  # auto | yes | no
 
@@ -20,20 +31,17 @@ Emits a single JSON object describing config / lint / build outcomes.
 EOF
       exit 0
       ;;
-    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+    *) fail "unknown arg: $1"; exit 2 ;;
   esac
 done
 
 [[ -z "$PROJECT_DIR" ]] && PROJECT_DIR="$(pwd)"
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
-  echo "ERROR: not a directory: $PROJECT_DIR" >&2
-  exit 1
+  fail "not a directory: $PROJECT_DIR"; exit 1
 fi
 
-cd "$PROJECT_DIR" || { echo "ERROR: cannot cd $PROJECT_DIR" >&2; exit 1; }
-
-log() { echo "[init] $*" >&2; }
+cd "$PROJECT_DIR" || { fail "cannot cd $PROJECT_DIR"; exit 1; }
 
 # --- locate package.json (may be in a subdirectory) ---
 DIR_CHANGED=false
@@ -44,8 +52,8 @@ if ! $HAS_PACKAGE_JSON; then
   CANDIDATE="$(find . -maxdepth 2 -name "package.json" -not -path "*/node_modules/*" | head -1)"
   if [[ -n "$CANDIDATE" ]]; then
     SUBDIR="$(dirname "$CANDIDATE")"
-    log "no package.json at root; descending into ${SUBDIR}"
-    cd "$SUBDIR" || { echo "ERROR: cannot cd $SUBDIR" >&2; exit 1; }
+    info "no package.json at root; descending into ${SUBDIR}"
+    cd "$SUBDIR" || { fail "cannot cd $SUBDIR"; exit 1; }
     PROJECT_DIR="$(pwd)"
     HAS_PACKAGE_JSON=true
     DIR_CHANGED=true
@@ -94,15 +102,15 @@ DEPS_INSTALLED=true
 if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
   case "$INSTALL_MODE" in
     no)
-      log "node_modules missing, --no-install set; skipping install"
+      skip "node_modules missing, --no-install set"
       DEPS_INSTALLED=false
       ;;
     yes|auto)
-      log "installing deps via ${PM}..."
+      info "installing deps via ${PM}..."
       if $PM install >/tmp/pocket-mentor-install.log 2>&1; then
-        log "deps installed"
+        ok "deps installed"
       else
-        log "deps install FAILED (see /tmp/pocket-mentor-install.log)"
+        fail "deps install FAILED (see /tmp/pocket-mentor-install.log)"
         DEPS_INSTALLED=false
       fi
       ;;

@@ -8,10 +8,10 @@
       "name": "Pocket Mentor — student PR review",
       "description": "Claude Code skill that runs inside a cloned student repository: bash checkers (init.sh, check-ts-usage, check-no-console, check-git-quality, check-commented-code) + LLM analysis grounded in clean-code/*, optionally guided by a task rubric loaded via --context. Output: CODE_REVIEW_REPORT.md.",
       "path": ".claude/skills/pocket-mentor/",
-      "current_version": "v0.9.5",
+      "current_version": "v0.9.6",
       "status": "stable",
       "dependencies": [],
-      "evidence": "Three live smoke runs on student fun-chat PR (2026-05-19/20). Commits v0.9.1..v0.9.5 ship the iterative fixes (bash-3.2 compat, .env.example false-positive, --context failure-mode, self-check on Fix snippets, score-vs-penalty rules).",
+      "evidence": "Three live smoke runs on student fun-chat PR (2026-05-19/20). Commits v0.9.1..v0.9.6 ship iterative fixes (bash-3.2 compat, .env.example false-positive, --context failure-mode, self-check on Fix snippets, score-vs-penalty rules, colored stderr output).",
       "next": null
     }
   ]
