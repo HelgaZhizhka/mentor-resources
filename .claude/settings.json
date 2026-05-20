@@ -6,21 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '\n📋 Session end checklist:\n  1. Update progress.md (what was done, next step)\n  2. Update feature_list.json (mark items if DoD met)\n  3. Commit clean state\n  4. Smoke test the skill on a sample PR (or ./init.sh for non-skill changes)\n'"
+            "command": "echo '\n📋 Session end checklist:\n  1. Commit clean state with a descriptive message\n  2. If touching the skill: smoke-test /pocket-mentor in a student repo\n'"
           }
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE 'git commit|git push'; then echo '⚠️  Pre-commit: run ./init.sh first if not done yet'; fi"
-          }
-        ]
-      }
-    ]
+    "PreToolUse": []
   }
 }

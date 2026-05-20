@@ -40,52 +40,28 @@ good example with an explanation of why
 
 Explanation of the reasons and consequences
 
-### Checklists for mentors
-
-**What you can add:**
-
-- New checklists for other RS School assignments
-- Improvements to existing checklists
-- Additional review criteria
-
-**Where to find it:**
-
-- `templates/checklists/checklist.md` — general checklist
-- `templates/checklists/checklist-migration.md` — example for a specific assignment
-
-### Automation scripts
+### Pocket Mentor skill
 
 **What you can improve:**
 
-- Add new checks
-- Improve existing checks
-- Fix bugs
-- Add support for new tools
+- Tune the prompt in `SKILL.md` (rules for Critical issues / Recommendations / Score)
+- Add or refine bash checkers under `scripts/checkers/`
+- Add new entries to `references/clean-code/`
 
 **Where to find it:**
 
-- `templates/scripts/auto-check.sh` — main check script
-
-### AI agent for code review
-
-**What you can improve:**
-
-- Extend the prompt with new instructions
-- Add examples for specific scenarios
-- Improve the report structure
-- Add checks for new technologies
-
-**Where to find it:**
-
-- `templates/agents/reviewer.md` — AI agent prompt
+- `.claude/skills/pocket-mentor/` — skill bundle
+- `.claude/skills/pocket-mentor/README.md` — install and usage
+- `.claude/skills/pocket-mentor/SKILL.md` — prompt and rules
+- `.claude/skills/pocket-mentor/scripts/checkers/*.sh` — focused bash mechanics
 
 **Recommendations:**
 
-- Add concrete examples
-- Specify review priorities
-- Keep a balance between detail and readability
+- Run `shellcheck` on any changed bash script before opening a PR
+- Verify the JSON contract emitted by checkers stays stable (`checker`, `ok`, `summary`, `findings[]`, `stats{}`)
+- Smoke-test the skill against a real student PR after non-trivial changes
 
-### ESLint configuration
+### ESLint configuration for student projects
 
 **What you can add:**
 
@@ -95,8 +71,9 @@ Explanation of the reasons and consequences
 
 **Where to find it:**
 
-- `eslint.config.js` — ESLint configuration
-- `LINTER-README.md` — linter documentation
+- `templates/configs/eslint.config.js` — vanilla TS config
+- `templates/configs/eslint.react.config.js` — React variant
+- `templates/configs/LINTER-README.md` — linter documentation
 
 ## Pull Request process
 
