@@ -125,8 +125,10 @@ if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && grep -q '"lint"' package.json; then
   LINT_RAN=true
   if $PM run lint >/tmp/pocket-mentor-lint.log 2>&1; then
     LINT_OK=true
+    ok "lint passed"
   else
     LINT_TAIL="$(tail -40 /tmp/pocket-mentor-lint.log | sed 's/"/\\"/g; s/\\/\\\\/g' | awk 'BEGIN{ORS="\\n"} {print}')"
+    fail "lint check failed"
   fi
 fi
 
@@ -138,8 +140,10 @@ if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && grep -q '"build"' package.json; then
   BUILD_RAN=true
   if $PM run build >/tmp/pocket-mentor-build.log 2>&1; then
     BUILD_OK=true
+    ok "build passed"
   else
     BUILD_TAIL="$(tail -40 /tmp/pocket-mentor-build.log | sed 's/"/\\"/g; s/\\/\\\\/g' | awk 'BEGIN{ORS="\\n"} {print}')"
+    fail "build check failed"
   fi
 fi
 

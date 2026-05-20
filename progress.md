@@ -18,6 +18,23 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 
 ---
 
+## 2026-05-20 — v0.9.7 fix: colored stderr output for lint/build failures
+
+**Done:**
+- Fixed init.sh to emit colored `[init] ✗ lint check failed` / `[init] ✗ build check failed` when lint or build fail. Previously the color output was only shown during dependency installation, not during lint/build execution.
+- Bumped version: v0.9.6 → v0.9.7 in `feature_list.json` and `README.md`.
+
+**Decisions:**
+- Patch-level change (bugfix) — no SKILL.md changes, only init.sh.
+
+**Next:**
+- Demo tomorrow (2026-05-21). Skill is stable at v0.9.7.
+
+**Blockers:**
+- None.
+
+---
+
 ## 2026-05-20 — Repo cleanup + harness reset
 
 **Done:**
