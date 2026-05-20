@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 # mentor-resources — repo-level verifier.
-# 1) Smoke-test the pocket-mentor skill's init.sh against this repo.
-# 2) Warn if the working tree has uncommitted changes.
+# 1) shellcheck all bash scripts in .claude/skills/
+# 2) Smoke-test the pocket-mentor skill's init.sh against this repo.
+# 3) Warn if the working tree has uncommitted changes.
 
 set -euo pipefail
+
+echo "==> shellcheck: all skill bash scripts"
+while IFS= read -r script; do
+  shellcheck "$script" || { echo "ERROR: shellcheck failed on $script" >&2; exit 1; }
+done < <(find .claude/skills -name '*.sh' -type f | sort)
+echo "    OK"
 
 SKILL_INIT=".claude/skills/pocket-mentor/scripts/init.sh"
 

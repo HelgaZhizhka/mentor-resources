@@ -4,7 +4,7 @@
 
 ## Current skills
 
-- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v0.9.5, stable).
+- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v0.9.6, stable).
 
 When a new skill is added, list it here with a one-line description and a link to its `README.md`.
 
@@ -53,14 +53,33 @@ When changing a skill or curriculum:
 - **`feature_list.json` is per-skill, not per-task.** Internal skill scope lives in commit messages and the skill's own version log.
 - **Skill prompts and bash scripts stay in English.** Mentor-facing output language is decided at runtime by the skill (see `pocket-mentor/SKILL.md` language-detection block).
 
+## Definition of Done
+
+A change is done when ALL criteria for its type are met.
+
+### Изменение поведения скилла (feature / fix / prompt)
+- [ ] `shellcheck` на изменённых `.sh` скриптах — чист
+- [ ] `./init.sh` выходит 0 (включает shellcheck по всем скриптам + smoke)
+- [ ] Версия поднята в `README.md` скилла и `feature_list.json` (`current_version`)
+- [ ] Если изменён LLM-промпт (`SKILL.md`): `/pocket-mentor` проверен в реальном студенческом репо
+- [ ] Коммит с указанием версии в сообщении
+
+### Обновление curriculum (`clean-code/`)
+- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — синхронизирует изменения в skill bundle
+- [ ] `./init.sh` выходит 0
+
+### Изменение tooling / harness (`AGENTS.md`, `init.sh`, хуки и т.п.)
+- [ ] `./init.sh` выходит 0
+- [ ] Нет битых ссылок в `AGENTS.md`
+- [ ] Коммит с описанием зачем изменение
+
 ## Verification
 
-`./init.sh` performs two checks:
+`./init.sh` performs three checks in order:
 
-1. **Smoke test** — runs `.claude/skills/pocket-mentor/scripts/init.sh --no-install` against this repo and confirms the output is well-formed JSON with the expected fields (`checker`, `ok`, `summary`, `project`). Catches regressions in the bootstrap script. The smoke test does **not** require `"ok": true` — `mentor-resources` itself has no `package.json`, so `ok: false` with the "no package.json found" summary is the correct behaviour here.
-2. **Clean working tree** — warns (does not block) if `git status --porcelain` has output. Reminder to commit before ending the session.
-
-The skill's bash checkers are each verified individually with `shellcheck` at edit time. There is no aggregated shellcheck step in `init.sh` — keep that ritual close to the script being changed.
+1. **shellcheck** — runs `shellcheck` on every `*.sh` under `.claude/skills/`. Exits non-zero on the first failure. Catches bash syntax errors and common pitfalls in all skill scripts at once.
+2. **Smoke test** — runs `.claude/skills/pocket-mentor/scripts/init.sh --no-install` against this repo and confirms the output is well-formed JSON with the expected fields (`checker`, `ok`, `summary`, `project`). The smoke test does **not** require `"ok": true` — `mentor-resources` itself has no `package.json`, so `ok: false` is the correct result here.
+3. **Clean working tree** — warns (does not block) if `git status --porcelain` has output. Reminder to commit before ending the session.
 
 ## Adding a new skill
 
