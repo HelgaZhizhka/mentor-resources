@@ -75,6 +75,20 @@ When introducing a new skill:
 4. Add an entry to **Current skills** in this file with a one-line description.
 5. If the skill participates in `./init.sh` smoke checks, extend `init.sh` to include it.
 
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature-slug>/` — one feature per directory. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` and `docs/adr/` at repo root (neither file created yet). See `docs/agents/domain.md`.
+
 ## End of session
 
 Before stopping:
