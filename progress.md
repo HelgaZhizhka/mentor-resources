@@ -38,6 +38,7 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Next:**
 - 2026-05-21 — live demo run of `/pocket-mentor` on a real student PR.
 - Post-demo — discussion with Dima/Andrey about positioning and next iteration.
+- Post-demo — triage + implement skill publish mechanism so mentors can install without cloning mentor-resources. Issue: `.scratch/skill-publish/issues/01-publish-pocket-mentor-skill.md`.
 
 **Blockers:**
 - None. Demo-ready.
