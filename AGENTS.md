@@ -57,21 +57,21 @@ When changing a skill or curriculum:
 
 A change is done when ALL criteria for its type are met.
 
-### Изменение поведения скилла (feature / fix / prompt)
-- [ ] `shellcheck` на изменённых `.sh` скриптах — чист
-- [ ] `./init.sh` выходит 0 (включает shellcheck по всем скриптам + smoke)
-- [ ] Версия поднята в `README.md` скилла и `feature_list.json` (`current_version`)
-- [ ] Если изменён LLM-промпт (`SKILL.md`): `/pocket-mentor` проверен в реальном студенческом репо
-- [ ] Коммит с указанием версии в сообщении
+### Skill behaviour change (feature / fix / prompt)
+- [ ] `shellcheck` on changed `.sh` scripts — clean
+- [ ] `./init.sh` exits 0 (runs shellcheck on all scripts + smoke test)
+- [ ] Version bumped in the skill's `README.md` and in `feature_list.json` (`current_version`)
+- [ ] If `SKILL.md` (LLM prompt) changed: `/pocket-mentor` tested in a real student repo
+- [ ] Commit message includes the new version number
 
-### Обновление curriculum (`clean-code/`)
-- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — синхронизирует изменения в skill bundle
-- [ ] `./init.sh` выходит 0
+### Curriculum update (`clean-code/`)
+- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — syncs changes into the skill bundle
+- [ ] `./init.sh` exits 0
 
-### Изменение tooling / harness (`AGENTS.md`, `init.sh`, хуки и т.п.)
-- [ ] `./init.sh` выходит 0
-- [ ] Нет битых ссылок в `AGENTS.md`
-- [ ] Коммит с описанием зачем изменение
+### Tooling / harness change (`AGENTS.md`, `init.sh`, hooks, etc.)
+- [ ] `./init.sh` exits 0
+- [ ] No broken links in `AGENTS.md`
+- [ ] Commit message explains why the change was made
 
 ## Verification
 
