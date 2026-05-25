@@ -80,6 +80,26 @@ The JSON also includes `project.has_readme`. If `false`, add a finding to the re
 
 If `init.sh` exits non-zero or stdout is not valid JSON, abort the review: write a minimal `CODE_REVIEW_REPORT.md` containing the script's stderr tail and a short note that bootstrap failed, then stop.
 
+### 1b. Detect stack
+
+Read `has_package_json` and the dependency map from the init.sh JSON. Apply this decision tree top-to-bottom and stop at the first match:
+
+| Condition | Detected stack | References to load |
+|---|---|---|
+| `has_package_json: false` | HTML / CSS | `HTML.md`, `CSS.md` |
+| `has_package_json: true`, `@angular/core` in deps | Angular | **Stop — show banner** |
+| `has_package_json: true`, `react` + `typescript` in deps | React + TS | `React.md`, `TypeScript.md`, Fundamentals Part1–6 |
+| `has_package_json: true`, `typescript` in deps or devDeps | TypeScript | `TypeScript.md`, Fundamentals Part1–6 |
+| `has_package_json: true`, no TypeScript | Vanilla JS | Fundamentals Part1–6 |
+
+**Angular detected** — write to the conversation and stop:
+
+> ⚠️ **Angular project detected.** Angular projects are not supported in this version of pocket-mentor. Review this project manually.
+
+Do not run steps 2–4.
+
+**In step 3 (LLM analysis):** load **only** the reference files for the detected stack from `./references/clean-code/`. Do not load all references.
+
 ### 2. Focused checkers (scripts/checkers/*.sh)
 
 **Always pass `--project-dir` using the `dir` value from the init.sh JSON** — checkers default to `$PWD`, which may be the repo root rather than the project root if `init.sh` descended into a subdirectory.
@@ -109,7 +129,7 @@ Read in this order:
 1. `--context <path>` markdown (if provided) — task-specific rubric/checklist
 2. Aggregated JSON from steps 1–2
 3. The student's source code (focus: `src/`, configs, `README.md`, the most recent commit's diff)
-4. Relevant files in `./references/clean-code/` for areas with findings (only those needed for explanation)
+4. The reference files selected in step 1b for the detected stack (already narrowed — do not load all references)
 
 Then perform the analysis described in **Review rules** below.
 
