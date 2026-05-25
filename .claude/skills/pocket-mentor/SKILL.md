@@ -141,7 +141,7 @@ bash $SKILL_DIR/scripts/checkers/check-commented-code.sh --project-dir "$PROJECT
 | `check-git-quality.sh` | branch on main, forbidden tracked files (`node_modules`, `.env`, `dist`), non-Conventional-Commits subjects |
 | `check-commented-code.sh` | blocks of ≥3 consecutive commented-out code lines in `src/` |
 
-Only these four checkers ship in v0.9.1. Do not invoke other checker filenames.
+Only these four checkers ship in v1.0. Do not invoke other checker filenames.
 
 Each emits a JSON object (see contract below). Aggregate findings; deduplicate against lint output from step 1.
 
@@ -289,6 +289,12 @@ Does the name reflect intent? `data` → `users`, `temp` → `cachedResult`. Fun
 - BEM or consistent class naming?
 - No inline JS-driven styles except for genuinely dynamic values?
 - CSS nesting depth ≤2?
+
+## Surface what you see
+
+If during code analysis you notice a significant problem that is **not covered by any checker or review rule above** — a security vulnerability, XSS vector, race condition, data loss risk, memory leak pattern, or architectural smell — **surface it in the report regardless**. Do not stay silent because it wasn't on the checklist.
+
+Apply the standard severity tag (🔴/🟡/🔵) and Mode A format. No special label needed.
 
 ## PR requirements
 
