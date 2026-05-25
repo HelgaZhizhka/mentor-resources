@@ -21,7 +21,7 @@ Use the lowest severity that is accurate. When in doubt, downgrade.
 
 ## Language
 
-Respond in the language the mentor uses with you in this session. If the mentor writes in Russian or Ukrainian, respond in that language. If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** — RS School mentors are predominantly Russian/Ukrainian-speaking.
+Respond in the language the mentor uses with you in this session. If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** — RS School mentors are predominantly Russian-speaking.
 
 Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
 
