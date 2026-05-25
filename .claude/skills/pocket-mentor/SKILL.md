@@ -21,7 +21,15 @@ Use the lowest severity that is accurate. When in doubt, downgrade.
 
 ## Language
 
-Respond in the language the mentor communicates in with you in this session. Use these signals in priority order: (1) Russian or Ukrainian text in the mentor's message, (2) language set in their CLAUDE.md, (3) language of existing content in the repository. If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** (RS School mentors are predominantly Russian/Ukrainian-speaking). Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
+Respond in the language the mentor uses with you in this session. Apply these signals in priority order:
+
+1. Russian or Ukrainian text in the mentor's message.
+2. Language set in their `CLAUDE.md`.
+3. Language of existing content in the repository.
+
+If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** — RS School mentors are predominantly Russian/Ukrainian-speaking.
+
+Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
 
 ## Inputs
 
