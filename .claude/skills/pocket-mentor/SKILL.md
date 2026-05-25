@@ -21,12 +21,7 @@ Use the lowest severity that is accurate. When in doubt, downgrade.
 
 ## Language
 
-Respond in the language the mentor uses with you in this session. Apply these signals in priority order:
-
-1. Russian or Ukrainian text in the mentor's message.
-2. Language of existing content in the repository (README, comments, commit messages).
-
-If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** — RS School mentors are predominantly Russian/Ukrainian-speaking.
+Respond in the language the mentor uses with you in this session. If the mentor writes in Russian or Ukrainian, respond in that language. If the invocation contains only English flags (e.g. `/pocket-mentor --context ...`) and no other signals, default to **Russian** — RS School mentors are predominantly Russian/Ukrainian-speaking.
 
 Bash output and check-rule names stay in English; commentary and recommendations follow the session language.
 
