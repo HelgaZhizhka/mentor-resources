@@ -286,7 +286,7 @@ Output structure (translate section headers into the session language; keep code
 **File:** `src/components/Example.tsx:45`
 
 **What:** <one sentence — what is wrong>
-**Why bad:** <why this matters; cite a clean-code URL>
+**Why:** <why this matters; cite a clean-code URL>
 **How to fix:** <specific action>
 
 **Current:**
@@ -311,7 +311,25 @@ Output structure (translate section headers into the session language; keep code
 **Why:** <brief reason>
 **How:** <how to improve>
 
+**Current:** *(optional — include if a short before/after snippet helps)*
+```typescript
+// existing code
+```
+
+**Fix:** *(optional)*
+```typescript
+// improved code
+```
+
 > 📖 [Reference](…)
+
+## Notes
+
+### 🔵 <Note title>
+
+**File:** `src/utils/helpers.ts:22` *(omit if not file-specific)*
+
+**What:** <minor observation or informational point>
 
 ## Score (per task checklist — only if `--context` has a scoring rubric)
 
