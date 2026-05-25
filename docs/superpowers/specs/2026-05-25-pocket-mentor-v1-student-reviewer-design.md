@@ -48,7 +48,7 @@ Detected from `package.json` (via init.sh JSON). References loaded per stack:
 | Vanilla JS | `package.json`, no `typescript` | `Clean-Code-Fundamentals` (Part 1–6) |
 | TypeScript | `typescript` in deps | `TypeScript.md` + Fundamentals |
 | React + TS | `react` + `typescript` | `React.md` + `TypeScript.md` + Fundamentals |
-| Angular | `@angular/core` | ⚠️ banner: "Use JsPowWow's pr-review skill" → stop |
+| Angular | `@angular/core` | ⚠️ banner: "Angular projects are not supported in this version" → stop |
 
 React sub-rules (`react-hooks.md`, `react-testing.md`, `react-patterns.md`) deferred to v1.1.
 
