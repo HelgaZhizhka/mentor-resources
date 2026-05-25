@@ -99,3 +99,28 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 - None.
 
 ---
+
+## 2026-05-25 — pocket-mentor v1.0
+
+**Done:**
+- Tier 1 SKILL.md: severity system (🔴/🟡/🔵), Mode A formula (What/Why/How to fix/Reference), Notes template, anti-repetition rule, self-check
+- Stack detection: HTML/CSS / Vanilla JS / TS / React+TS; Angular guard with banner
+- Output modes: `--output inline` (line-specific PR comments + suggestions via gh api), `--output issues` (gh issue create per Critical)
+- New scripts: `post-pr-review.sh`, `create-issues.sh` (both shellcheck-clean)
+- Approval gate: mandatory before any gh posting, no auto-posting
+- Version: v0.9.7 → v1.0
+
+**Decisions:**
+- React sub-rules (react-hooks.md, react-testing.md) deferred to v1.1
+- Angular: unsupported guard with banner, no external skill reference
+- inline-draft.json + issues-draft.json as LLM→bash handoff format
+- 🔵 Notes section added to report template (quality review finding)
+- "Why bad" unified to "Why" across Critical and Recommendation templates
+
+**Next:**
+- Smoke test on a real student repo (manual)
+- Start student-reviewer GitHub Actions project (see plan: docs/superpowers/plans/2026-05-25-student-reviewer.md)
+
+**Blockers:** none
+
+---
