@@ -60,6 +60,28 @@ If the mentor chooses (3), the report **MUST**:
 
 The mentor passes these flags inside the invocation message (e.g. `/pocket-mentor --context ./task.md --output-path ./review.md`). Parse them from the message text — they are not delivered as separate tool arguments.
 
+### Output mode
+
+Parse `--output <mode>` from the invocation message. Accepted values:
+
+| Flag | Behaviour |
+|---|---|
+| *(absent)* or `--output local` | Write `CODE_REVIEW_REPORT.md` (default, current behaviour) |
+| `--output inline` | Write `inline-draft.json`, show approval gate, then run `post-pr-review.sh` |
+| `--output issues` | Write `issues-draft.json`, show approval gate, then run `create-issues.sh` |
+| `--output inline,issues` | Write both JSON files, show combined approval gate, run both scripts |
+
+**Approval gate** (mandatory for `inline` and `issues`):
+
+After writing the draft file(s), display a readable summary of the findings to the mentor. Then call `AskUserQuestion` with exactly these two options:
+
+1. **Post now** — run the `gh` script(s)
+2. **Cancel** — stop without posting
+
+Never run `post-pr-review.sh` or `create-issues.sh` without explicit written confirmation. Auto-posting is forbidden.
+
+**gh auth check** (before approval gate): run `bash -c "gh auth status"`. If it fails, stop and tell the mentor: `gh is not authenticated — run: gh auth login`
+
 ## Execution sequence
 
 Run these steps in order. Do not skip.
@@ -142,6 +164,69 @@ If a snippet fails either check, rewrite it or drop the code block and keep only
 ### 4. Write CODE_REVIEW_REPORT.md
 
 Write the report to `$PROJECT_DIR/CODE_REVIEW_REPORT.md` (override with `--output-path`). Follow the **Report format** at the end of this document.
+
+### 4b. Post to GitHub (inline and issues modes only)
+
+Skip this step if `--output local` (the default).
+
+**inline mode:**
+1. Write `$PROJECT_DIR/inline-draft.json` (format above).
+2. Display a preview of all comments to the mentor.
+3. Show approval gate (AskUserQuestion).
+4. On confirmation: `bash $SKILL_DIR/scripts/post-pr-review.sh --draft "$PROJECT_DIR/inline-draft.json" --project-dir "$PROJECT_DIR"`
+
+**issues mode:**
+1. Write `$PROJECT_DIR/issues-draft.json` (format above).
+2. Display the list of issue titles to the mentor.
+3. Show approval gate (AskUserQuestion).
+4. On confirmation: `bash $SKILL_DIR/scripts/create-issues.sh --draft "$PROJECT_DIR/issues-draft.json" --project-dir "$PROJECT_DIR"`
+
+**inline,issues mode:** produce both JSON files, show one combined approval gate, then run both scripts in sequence.
+
+## Output JSON formats (inline and issues modes)
+
+### inline-draft.json
+
+Written to `$PROJECT_DIR/inline-draft.json`. Structure:
+
+```json
+{
+  "comments": [
+    {
+      "path": "src/api.ts",
+      "line": 12,
+      "body": "🔴 **Critical**: Implicit `any` at fetch boundary.\n\n**What:** `response.json()` is typed as `any`.\n**Why:** Propagates `any` through the call chain, defeating strict mode.\n**How to fix:** Add an explicit return type.\n\n```suggestion\nconst data: UserResponse = await response.json() as UserResponse;\n```\n\n📖 [TypeScript.md](https://github.com/HelgaZhizhka/mentor-resources/blob/master/clean-code/TypeScript.md)"
+    }
+  ],
+  "general_body": "prose summary for findings without a specific line (architectural issues). Empty string if none."
+}
+```
+
+Rules:
+- `path`: relative path from repo root (e.g. `src/components/Button.tsx`)
+- `line`: integer line number in the file
+- Include a `suggestion` block in `body` only for simple single-line fixes (rename, add type annotation, remove `console.log`). For architectural changes: prose only, no suggestion.
+- Findings without a specific line → include in `general_body`, not in `comments`.
+
+### issues-draft.json
+
+Written to `$PROJECT_DIR/issues-draft.json`. Structure:
+
+```json
+{
+  "issues": [
+    {
+      "title": "🔴 Implicit any at fetch boundary (src/api.ts:12)",
+      "body": "**File:** `src/api.ts:12`\n\n**What:** `response.json()` is typed as `any`.\n\n**Why:** Propagates `any` through the call chain.\n\n**How to fix:** Add explicit return type annotation.\n\n**Reference:** [TypeScript.md](https://github.com/HelgaZhizhka/mentor-resources/blob/master/clean-code/TypeScript.md)"
+    }
+  ]
+}
+```
+
+Rules:
+- Create one issue per 🔴 **Critical** finding only. Do not create issues for Recommendations or Notes.
+- Title format: `🔴 <short description> (<file:line>)`
+- Body uses the same Mode A structure as inline comment body.
 
 ## What ESLint already covers (DO NOT duplicate)
 
