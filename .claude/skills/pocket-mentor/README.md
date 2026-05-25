@@ -2,7 +2,13 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v0.9.7**
+Version: **v1.0**
+
+## Prerequisites
+
+- [Claude Code](https://claude.ai/code) installed and authenticated
+- [gh CLI](https://cli.github.com/) installed and authenticated (`gh auth login`) — required only for `--output inline` and `--output issues` modes
+- [jq](https://jqlang.github.io/jq/) — required only for `--output inline` and `--output issues` modes (`brew install jq`)
 
 ## Install
 
@@ -62,6 +68,24 @@ Optional: override the output path (default is `./CODE_REVIEW_REPORT.md` in the 
 > /pocket-mentor --context ./task.md --output-path ./reviews/student-X.md
 ```
 
+Post review as inline PR comments (requires open PR + `gh auth login`):
+
+```
+> /pocket-mentor --output inline
+```
+
+Create GitHub issues for Critical findings:
+
+```
+> /pocket-mentor --output issues
+```
+
+Both inline comments and issues:
+
+```
+> /pocket-mentor --output inline,issues
+```
+
 ## What the skill does
 
 1. **Bootstrap (`scripts/init.sh`)** — detects `package.json` (including in subdirectories), package manager, TypeScript config, ESLint config, README presence; installs dependencies if missing; runs `lint` + `build` scripts. Emits a single JSON object summarising everything.
@@ -107,4 +131,4 @@ When `mentor-resources/clean-code/*` changes, re-run `scripts/sync-references.sh
 
 ## Status
 
-v0.9.7 — colored stderr output in init.sh (green ✓ / red ✗ / yellow ⊘). Auto-disabled when stderr is not a TTY or `NO_COLOR` is set. Fixed: color output now also shows during lint/build failures. All four bash checkers shipped, `--context` URL support shipped, score-vs-penalty rules formalised. Deferred: GitHub PR auto-publish, per-line review comments, AST-level checkers.
+v1.0 — severity system (🔴/🟡/🔵), Mode A finding formula (What/Why/How to fix/Reference), anti-repetition rule, pre-output self-check, stack detection (HTML/CSS/JS/TS/React; Angular guard), inline PR comments with suggestions via `gh api`, GitHub issues mode via `gh issue create`.
