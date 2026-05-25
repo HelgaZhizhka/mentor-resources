@@ -84,7 +84,7 @@ Never run `post-pr-review.sh` or `create-issues.sh` without explicit written con
 
 ## Execution sequence
 
-Run these steps in order. Do not skip.
+Steps have hard dependencies (checkers need `--project-dir` from init.sh; LLM analysis needs the stack from step 1b). Run them in sequence.
 
 ### 1. Bootstrap (init.sh)
 
@@ -94,7 +94,7 @@ Run `bash $SKILL_DIR/scripts/init.sh` (where `$SKILL_DIR` is this skill's bundle
 - runs `lint` + `build` scripts from `package.json`
 - emits a single JSON object to stdout summarising config, lint, build outcomes
 
-Before running `init.sh` for the first time in a fresh clone, check whether `node_modules` exists. If it does **not**, tell the mentor in one sentence that the script will install dependencies via the detected package manager, and wait for confirmation. If the mentor declines, re-invoke with `--no-install`.
+Do not install dependencies silently — tell the mentor first and use `--no-install` if they decline.
 
 Parse the JSON. The `ready_to_review` boolean is `true` only when `has_package_json` AND lint (if present) passed AND build (if present) passed — use it as a single check for "bootstrap is green". Treat lint/build failures as **priority-1 findings** in the report.
 
@@ -147,13 +147,7 @@ Each emits a JSON object (see contract below). Aggregate findings; deduplicate a
 
 ### 3. LLM analysis
 
-Read in this order:
-1. `--context <path>` markdown (if provided) — task-specific rubric/checklist
-2. Aggregated JSON from steps 1–2
-3. The student's source code (focus: `src/`, configs, `README.md`, the most recent commit's diff)
-4. The reference files selected in step 1b for the detected stack (already narrowed — do not load all references)
-
-Then perform the analysis described in **Review rules** below.
+Ground the analysis in: the task rubric (if provided via `--context`), checker outputs from steps 1–2, the student's source code (`src/`, configs, `README.md`, latest commit diff), and the stack-specific reference files from step 1b (already narrowed — do not load all references).
 
 **Self-check before writing each Fix snippet.** Before finalising a `Fix:` code block in any Critical issue:
 - Does the snippet violate any rule you have flagged elsewhere in the same report? (Common traps: a memory-leak fix that uses `Function`; an `as Type` fix that becomes `as unknown as T`; an "unused variable" fix that keeps the field declared but still unused.)
