@@ -259,6 +259,26 @@ For your own context (when grounding analysis), read the local files: `./referen
 - Show "before → after" snippets
 - Order findings: critical first, then improvements
 
+## Anti-repetition rule
+
+If the same issue pattern appears in 3 or more places:
+1. Write one full finding for the most egregious instance.
+2. Append: `(N more occurrences: \`file:line\`, \`file:line\`, …)`
+3. Do **not** write a separate finding per occurrence.
+
+Example: `console.log` in 12 files → one Critical finding with `(11 more occurrences: src/api.ts:5, src/utils.ts:8, …)` — not 12 separate findings.
+
+## Self-check (run before writing any output)
+
+Before writing the report or any JSON draft, verify each item:
+
+- [ ] No finding duplicates what ESLint already caught (if `ready_to_review: true`)
+- [ ] Every Critical finding cites a specific `file:line`
+- [ ] No Fix snippet introduces a violation flagged elsewhere in this report
+- [ ] Anti-repetition applied: no pattern written as separate findings more than twice
+- [ ] Every finding uses Mode A format: What / Why / How to fix / Reference
+- [ ] Severity is correctly assigned (Critical = RS School blocker, Recommendation = quality, Note = info)
+
 ## Report format
 
 Output structure (translate section headers into the session language; keep code block syntax labels in English):
