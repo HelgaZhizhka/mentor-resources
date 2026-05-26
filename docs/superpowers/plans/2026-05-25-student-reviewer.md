@@ -8,6 +8,21 @@
 
 **Tech Stack:** Node.js 20, `openai` npm SDK (GitHub Models is OpenAI-API-compatible), `@octokit/rest` for posting review comments, bash (`sync-references.sh` extension)
 
+## Open architectural question — multi-agent orchestration
+
+**Pocket-mentor is intentionally single-context** (ADR-0001 skill-first) — one model reads the curriculum + code + checker output and produces the report. This works because pocket-mentor is interactive, low-volume (1 repo per `/pocket-mentor` invocation), and the mentor sees and curates the result before forwarding to the student.
+
+**student-reviewer is a different scenario:** CI-triggered, runs autonomously on every PR open/update, latency and cost are observable to the student/maintainer, no human curation between AI output and the student. The pocket-mentor v1.0.2 testing surfaced two patterns relevant here: (1) one model can skip a reference file silently (the v1.0.1 React.md citation regression), and (2) Agent-First findings sometimes displace each other when both are valid (the v1.0.2 rest-client-app SSRF/auth-cookie alternation).
+
+A multi-agent topology fits here in a way it does not in pocket-mentor:
+- Specialised reviewer subagents — `security-reviewer`, `react-reviewer`, `typescript-reviewer`, `architecture-reviewer` — each grounded in exactly one curriculum file, run in parallel
+- An `evaluator` subagent aggregates findings, deduplicates, assigns severity without author bias
+- Stricter contract between subagents (JSON schema for findings) is acceptable in a CI tool where the audience is `@octokit/rest`, not a human reading a markdown file
+
+**Decision:** Defer until Task 5 (AI call). Reconsider then based on whether the single-pass GitHub Models call hits one of the v1.0.x literal-interpretation patterns (silent reference skip, finding displacement). If yes — split into orchestrator + 3–4 specialised subagents + evaluator. If single-pass produces consistent output across 5+ test PRs — stay single-pass for simplicity.
+
+The pocket-mentor experience makes the orchestration design easy to draft when needed: per-stack reference mapping and citation rules are already proven.
+
 ---
 
 ## File Map
