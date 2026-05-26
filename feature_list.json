@@ -12,7 +12,7 @@
       "status": "stable",
       "dependencies": [],
       "evidence": "Three live smoke runs on student fun-chat PR (2026-05-19/20). Commits v0.9.1..v0.9.6 ship iterative fixes (bash-3.2 compat, .env.example false-positive, --context failure-mode, self-check on Fix snippets, score-vs-penalty rules, colored stderr output).",
-      "next": null
+      "next": "Watch: rubric-violation-as-Critical severity escalation. v1.0.2 fun-chat test had magic numbers → 🔴 (may be correct per 'blocks pass' definition since RS School rubric blocks acceptance, or an over-correction from the pad-findings rule). Defer v1.0.3 fix until a 2nd observation on a project where the rubric violation is the only failing class (no build/lint/security blockers). If pattern confirms — add to Severity levels: 'Quantifiable rubric violation alone ≠ Critical; severity depends on impact (build/security/correctness → 🔴; quality/style → 🟡).'"
     }
   ]
 }
