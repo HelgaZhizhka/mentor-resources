@@ -44,22 +44,33 @@ Explanation of the reasons and consequences
 
 **What you can improve:**
 
-- Tune the prompt in `SKILL.md` (rules for Critical issues / Recommendations / Score)
+- Tune the prompt in `SKILL.md` (rules for Critical issues / Recommendations / Notes / severity / stack detection)
 - Add or refine bash checkers under `scripts/checkers/`
-- Add new entries to `references/clean-code/`
+- Add new entries to `references/clean-code/` (or edit the canonical files in `clean-code/` at repo root — see sync note below)
 
 **Where to find it:**
 
 - `.claude/skills/pocket-mentor/` — skill bundle
 - `.claude/skills/pocket-mentor/README.md` — install and usage
 - `.claude/skills/pocket-mentor/SKILL.md` — prompt and rules
+- `.claude/skills/pocket-mentor/scripts/init.sh` — bootstrap (stack detection, lint, build)
 - `.claude/skills/pocket-mentor/scripts/checkers/*.sh` — focused bash mechanics
+- `.claude/skills/pocket-mentor/scripts/sync-references.sh` — re-syncs `clean-code/*` from repo root into the skill bundle's `references/clean-code/`
+
+**Architectural decisions** are tracked under [`docs/adr/`](./docs/adr/) — read them before proposing structural changes:
+
+- [ADR-0001](./docs/adr/0001-skill-first-over-engine-cli.md) — why skill-first, not engine + CLI
+- [ADR-0002](./docs/adr/0002-bash-checkers-over-ast.md) — why bash + grep, not AST parsing
+- [ADR-0003](./docs/adr/0003-skills-sh-for-skill-publish.md) — why `npx skills add` for distribution
+
+**Curriculum sync:** when you edit any file under `clean-code/` (the canonical source), run `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` to propagate the change into the skill bundle. The skill bundle reads from its own `references/clean-code/` — without sync, mentor-side curriculum and skill-side references will drift.
 
 **Recommendations:**
 
-- Run `shellcheck` on any changed bash script before opening a PR
-- Verify the JSON contract emitted by checkers stays stable (`checker`, `ok`, `summary`, `findings[]`, `stats{}`)
-- Smoke-test the skill against a real student PR after non-trivial changes
+- Run `shellcheck` on any changed bash script before opening a PR (the repo-level `./init.sh` does this for all skill scripts automatically)
+- Verify the JSON contract emitted by checkers stays stable: `{ checker, ok, summary, findings[], stats{} }`. Breaking the contract requires a skill bundle version bump in `SKILL.md` + `README.md` + `feature_list.json`.
+- Smoke-test the skill against a real student PR after non-trivial prompt changes — testing on Opus 4.7 specifically is recommended for prompt rule changes (it interprets rules more literally than Opus 4.6 / Sonnet, so it surfaces under-specified rules earlier)
+- See [`AGENTS.md`](./AGENTS.md) "Definition of Done" for the full per-change-type checklist (skill behaviour change vs curriculum update vs tooling change)
 
 ### ESLint configuration for student projects
 
@@ -101,13 +112,23 @@ git checkout -b your-feature-name
 
 ### 4. Commit your changes
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
+Use [Conventional Commits](https://www.conventionalcommits.org/) with a **scope** that identifies the area touched. This repo's convention is `type(scope): subject` — the scope makes `git log` and the change history readable:
 
 ```bash
-git commit -m "docs: add example for async error handling"
-git commit -m "fix: correct typo in Clean-Code-Fundamental-Part1.md"
-git commit -m "feat: add checklist for TypeScript assignment"
+# Curriculum / clean-code changes
+git commit -m "docs(clean-code): add AbortController example to React.md §3.3"
+git commit -m "fix(clean-code): correct typo in Clean-Code-Fundamental-Part1.md"
+
+# Pocket Mentor skill changes
+git commit -m "feat(pocket-mentor): add severity downgrade rule for style-only findings"
+git commit -m "fix(pocket-mentor): handle pnpm-workspace projects in init.sh"
+
+# Architecture decisions and progress
+git commit -m "docs(adr): ADR-0004 — describe the decision title"
+git commit -m "chore(progress): close session entry"
 ```
+
+Common scopes used in this repo: `pocket-mentor`, `clean-code`, `adr`, `progress`, `student-reviewer` (planned).
 
 ### 5. Push and open a PR
 
