@@ -180,3 +180,29 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-26 — pocket-mentor v1.0.2 validated, closed
+
+**Done:**
+- Re-tested v1.0.2 on rest-client-app (React+Next.js+TS, no `--context`) and fun-chat (vanilla TS, with `--context`). Both v1.0.2 rules confirmed working with strong effect.
+- **References citation rule (`React.md` MUST appear for React stack)** — rest-client-app: `React.md` cited **~8 times** with specific section anchors (§1.3, §2.4, §3.5, §3.6, §3.8, §5.1, §5.2, §6.1, §8.2). Up from 0 in v1.0.1. The rule didn't just add citations — it forced the model to read `React.md` and surface React-specific findings that weren't there before: `index` as `key` in editable lists (§8.2), `form.tsx` rebuilding yup schema each render + `watch()` instead of `handleSubmit` (§5.2), default exports + barrel `index.ts` anti-pattern (§1.3), `autoComplete="off"` on password fields (§5.1). Curriculum-as-source-of-truth working as designed.
+- **Pad-findings exception for quantifiable rubric violations** — fun-chat: "functions >40 lines" returned as standalone Recommendation #1 with 5 files + line ranges + fix snippet (was compressed to a Score row in v1.0.1). Magic numbers became Critical #10 with detailed classification (timeouts, IDs, status strings, length thresholds). Code duplication split across `🔴 Critical #8` (duplicate WS handler) + `🟡 Recommendation #4` (6 send-factory wrappers in communicate-functions). Score table now cross-references the standalone findings — student gets "score → why → fix" in one package.
+
+**Decisions (durable):**
+- Two Opus-literal-prompt patterns confirmed and addressed by SKILL.md edits — `feedback_opus_literal_prompts.md` is validated by real-world test.
+
+**State of skills:**
+- `pocket-mentor` — **v1.0.2, stable**.
+
+**Observations / minor regressions noted for future:**
+- **rest-client-app**: SSRF finding from v1.0.1 was not surfaced in v1.0.2 — the model elevated the auth-cookie-not-verified finding (broken auth = more fundamental) and apparently treated SSRF as secondary. Both are valid; ideally both should appear. Local, not systemic.
+- **fun-chat**: magic numbers escalated from 🟡 → 🔴 Critical. Quantifiable rubric violation alone is not a build/security/correctness blocker — by our own severity definition this should be 🟡 (quality). This is an over-correction from the pad-findings rule, where the model conflated "rubric violation must appear" with "rubric violation is Critical". Worth a v1.0.3 clarification in Severity levels: "Quantifiable rubric violation alone ≠ Critical; severity depends on impact (build break / security / correctness → 🔴; quality / style → 🟡)."
+
+**Next:**
+- v1.0.3 (optional, not blocking) — Severity levels clarification to prevent rubric-violation-as-🔴 over-correction.
+- Student-reviewer GitHub Actions project (plan: docs/superpowers/plans/2026-05-25-student-reviewer.md) — still not started.
+- Open PR `feature/pocket-mentor-v0.9-redesign` → `master` when ready.
+
+**Blockers:** none
+
+---
