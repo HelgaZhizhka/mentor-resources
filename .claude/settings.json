@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\n📋 Session end checklist:\n  1. Commit clean state with a descriptive message\n  2. If touching the skill: smoke-test /pocket-mentor in a student repo\n'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": []
+  }
+}

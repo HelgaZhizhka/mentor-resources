@@ -8,7 +8,6 @@
 node_modules/
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
 .npmrc
 dist/
 build/
@@ -31,6 +30,11 @@ lint-*.txt
 coverage/
 .nyc_output/
 
+# Secrets
+.env
+.env.*
+!.env.example
+
 # IDE
 .vscode/
 .idea/
@@ -45,3 +49,6 @@ Thumbs.db
 # Temp files
 *.tmp
 .temp/
+
+# Local issue tracker (Matt Pocock skills workflow)
+.scratch/

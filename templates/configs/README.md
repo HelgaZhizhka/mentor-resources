@@ -4,9 +4,9 @@ Reference TypeScript + ESLint configs aligned with the RS School clean-code
 checklist. Students copy these into their own project repos as a starting
 point.
 
-These are **not** the configs used by `mentor-resources` itself. The repo
-root has its own minimal Node-only `eslint.config.js` and `tsconfig.base.json`
-for the Pocket Mentor `packages/engine` and `packages/cli`.
+These are reference configs for **students**, not for the `mentor-resources`
+repo itself. The repo has no top-level TypeScript build — the Pocket Mentor
+product is a Claude Code skill written in bash, see `.claude/skills/pocket-mentor/`.
 
 ## Available profiles
 

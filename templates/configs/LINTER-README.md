@@ -89,9 +89,9 @@ cp templates/configs/eslint.react.config.js your-project/
 cp templates/configs/tsconfig.react.json your-project/tsconfig.json
 ```
 
-> Note: starting from Pocket Mentor v0.9, the repo root holds its own
-> Node-only configs for `packages/engine` and `packages/cli`. Student-facing
-> reference configs now live in `templates/configs/`.
+> Note: these configs are reference material for students. The `mentor-resources`
+> repo itself has no TypeScript build; Pocket Mentor ships as a bash-based
+> Claude Code skill in `.claude/skills/pocket-mentor/`.
 
 ### Установить зависимости
 
