@@ -62,6 +62,14 @@ Manual symlink (the current Option A) remains documented for the **skill author*
 | **`curl \| bash` installer hosted by us** | We would maintain the install script, its hosting, and version-aware update logic. Reinvents what `npx skills` already does. Adds a security trust line (curl-pipe-to-bash) we do not need. |
 | **npm package** | Skill bundles are not npm packages — they have no `index.js`, no exported runtime API, and no Node.js dependency. Forcing them into the npm shape is an impedance mismatch. `npx skills` is shaped around skills specifically. |
 
+## Note on the open standard
+
+Our `SKILL.md` follows the open **Agent Skills** format documented at [agentskills.io](https://agentskills.io) — originally developed by Anthropic, released as an open standard on 2026-02, now adopted by 30+ agent products (Cursor, Gemini CLI, OpenCode, Goose, GitHub Copilot, Codex, Claude Code, and others). The format is: a folder with `SKILL.md` (YAML frontmatter requiring `name` + `description`, plus instructions), optional `scripts/`, optional `references/`, optional `assets/`.
+
+Our existing `.claude/skills/pocket-mentor/` matches this layout because we built it against Claude Code conventions, which are aligned with the open spec. **No changes required to claim compliance.** As a side benefit, pocket-mentor is structurally installable into any of the 30+ skills-compatible agents without modification.
+
+Claude Code remains our **primary target** — the skill is written assuming Claude Code's invocation model, tool names, and slash-command syntax. Cross-agent compatibility is a structural side-effect of using the open format, not a maintained product goal. If cross-agent support ever becomes a stated goal, that is a separate decision.
+
 ## Follow-up actions (not part of this ADR)
 
 1. Update `.claude/skills/pocket-mentor/README.md` "Install" section: add **Option 0 — `npx skills add` (recommended for mentors)** above the current Option A. Remove Option B (covered by `--copy` flag on Option 0).
