@@ -151,3 +151,32 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-26 — pocket-mentor v1.0.2 (Opus-literal hardening)
+
+**Done:**
+- Tested v1.0.1 on a real React+Next.js+Firebase student project (rest-client-app, prior year final). Two systemic Opus 4.7 literal-interpretation patterns confirmed:
+  - **References silently skipped** — stack detection correctly identified React+TS, but `React.md` was cited **0 times** in 14 findings. The model surfaced a valid React-hooks problem (`UserProvider` with 3 overlapping `useEffect`) but linked to `react.dev/learn/you-might-not-need-an-effect` instead of `React.md §3.6`. Curriculum-as-source-of-truth bypassed.
+  - **Pad-findings regression confirmed earlier on fun-chat** — quantifiable rubric finding ("functions >40 lines") schlopnut'sya into a Score row without a standalone finding. The `Forbidden: filling sections with weak findings` rule fired too aggressively because the rubric-violation carve-out was implicit.
+- v1.0.2 SKILL.md changes:
+  - **Strict rules → Required:** added explicit clause that quantifiable rubric violations (function length over limit, magic numbers count, duplication count, missing required feature) MUST have their own finding with `file:line` and fix snippet, even if also reflected in the Score row. Positive framing chosen over negative.
+  - **Step 3 LLM analysis:** added "Cite the references you loaded" block — every Critical/Recommendation touching a topic covered by a loaded reference file MUST cite that reference by name. React stack → `React.md` MUST appear in ≥1 Reference line if any finding touches hooks/components/JSX/lifecycle. TS stack → `TypeScript.md` MUST appear if any finding touches `any`/`as`/type guards. External links (react.dev, MDN, OWASP) are supplementary, not replacements.
+  - **Self-check:** added 2 new checklist items — reference citations gate (per-stack required filenames) and quantifiable-rubric-violation-as-finding gate.
+- Version: v1.0.1 → v1.0.2 (SKILL.md prompt-only change; bash mechanics unchanged).
+- New durable memory: `feedback_opus_literal_prompts.md` — Opus 4.7 reads prompts literally, exceptions in Forbidden/Required lists must be spelled out (not inferred).
+
+**Decisions (durable):**
+- **Opus 4.7 = literal model.** Prompt rules must spell out exceptions and per-case requirements; the skill cannot rely on the model inferring "obvious" carve-outs. Per-stack required reference filenames is an example of this discipline.
+- **References by filename, not external links.** The curriculum (`references/clean-code/*.md`) is the single source of truth; external links exist only to deepen what the curriculum already covers. This preserves the curriculum's role and lets mentor-resources curriculum changes propagate to skill output without rewriting prompts.
+
+**State of skills:**
+- `pocket-mentor` — **v1.0.2, stable**.
+
+**Next:**
+- Re-test v1.0.2 on the same rest-client-app React project. Verify: `React.md` appears in citations (not only react.dev); pad-findings rule does not drop quantifiable rubric violations (needs `--context` to surface).
+- Re-test v1.0.2 on fun-chat (vanilla TS) — verify "functions >40 lines" returns as a standalone finding.
+- Student-reviewer GitHub Actions project (plan: docs/superpowers/plans/2026-05-25-student-reviewer.md) — not started.
+
+**Blockers:** none
+
+---

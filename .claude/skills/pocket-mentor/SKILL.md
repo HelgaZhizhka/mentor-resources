@@ -151,6 +151,14 @@ Each emits a JSON object (see contract below). Aggregate findings; deduplicate a
 
 Ground the analysis in: the task rubric (if provided via `--context`), checker outputs from steps 1–2, the student's source code (`src/`, configs, `README.md`, latest commit diff), and the stack-specific reference files from step 1b (already narrowed — do not load all references).
 
+**Cite the references you loaded.** Every Critical and Recommendation that touches a topic covered by a loaded reference file MUST cite that reference file by name in the `Reference:` line (e.g. `React.md`, `TypeScript.md`, `Clean-Code-Fundamental-Part4.md`). When a more specific link helps the student, use a section anchor (`React.md §3.3 AbortController`, `TypeScript.md — type guards`). External links (react.dev, MDN, OWASP) are allowed as **supplementary** material, never as a replacement for the loaded curriculum reference. Specifically:
+
+- **React + TS** stack → `React.md` MUST appear in at least one Reference line if any finding touches hooks, components, JSX, lifecycle, performance, or any React-specific pattern. Silence on React.md in a React project is a self-check failure.
+- **Any TS** stack → `TypeScript.md` MUST appear in at least one Reference line if any finding touches `any`, `as`, type guards, generics, or boundary parsing.
+- **All stacks** → at least one `Clean-Code-Fundamental-Part*.md` reference must appear across the report (architecture, naming, performance, error handling, etc. — pick the most relevant Part).
+
+The reference file is the source of truth; external links exist only to deepen what the curriculum already covers.
+
 **Self-check before writing each Fix snippet.** Before finalising a `Fix:` code block in any Critical issue:
 - Does the snippet violate any rule you have flagged elsewhere in the same report? (Common traps: a memory-leak fix that uses `Function`; an `as Type` fix that becomes `as unknown as T`; an "unused variable" fix that keeps the field declared but still unused.)
 - Does the snippet compile under the project's `tsconfig.json` flags (`strict`, `noUnusedLocals`, `noImplicitAny`) as reported by `init.sh`?
@@ -364,6 +372,7 @@ For your own context (when grounding analysis), read the local files: `./referen
 - `file:line` for every finding
 - "Before → after" snippet for every Critical (skip if architectural)
 - Critical first, Recommendations second, Notes last
+- **Quantifiable rubric violations always get their own finding.** If the project breaks a measurable rubric requirement (function length over the limit, magic numbers count, duplication count, file size, missing required feature), write it as a separate finding with `file:line` and a fix snippet — even if the violation is also reflected in the Score table row. The Score table summarises impact in numbers; findings teach the student what to change. "Already shown in Score" is **not** a reason to drop the finding — that is the case where the finding is most needed.
 
 ## Anti-repetition rule
 
@@ -384,6 +393,8 @@ Before writing the report or any JSON draft, verify each item:
 - [ ] Anti-repetition applied: no pattern written as separate findings more than twice
 - [ ] Every finding uses Mode A format: What / Why / How to fix / Reference
 - [ ] Severity is correctly assigned (Critical = RS School blocker, Recommendation = quality, Note = info)
+- [ ] References from step 1b are cited by filename in at least one finding each: `React.md` for React stack, `TypeScript.md` for any TS stack, at least one `Clean-Code-Fundamental-Part*.md` for any stack. External links (react.dev, MDN, OWASP) do not satisfy this — the loaded curriculum file must be cited
+- [ ] Quantifiable rubric violations (function length over limit, magic numbers count, duplication count, missing required feature) appear as separate findings with `file:line`, not only as Score rows
 
 ## Report format
 
