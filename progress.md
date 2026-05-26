@@ -124,3 +124,30 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-26 — pocket-mentor v1.0.1 closed
+
+**Done:**
+- Applied 3 insights from 2026-05-25 LLM expert meeting to SKILL.md:
+  - **Agent-First Protocol** (#6) → new `## Surface what you see` section: model surfaces significant problems beyond the checker list (security, race conditions, memory leaks, architectural smells) with standard severity + Mode A format.
+  - **Goals vs Steps audit** (#3) → 3 over-specified spots simplified without losing constraints (step ordering, node_modules UX, reference loading).
+  - **Prompt optimization** (#5) → 4 substantive manual edits (Role priority order, Forbidden/Required lists, Severity examples, Language section); also adopted Language-as-numbered-list from OpenAI optimizer, later simplified to single signal (mentor's message) + Russian default. Ukrainian dropped from Language entirely (legacy from v0.9.1).
+- README severity bug fixed mid-cycle: Critical examples concretized from abstract "RS School process violations" → concrete categories (forbidden tracked files, missing required rubric feature). Stopped promoting missing README to Critical.
+- v1.0.1 validated on fun-chat (Opus 4.7): README correctly → 🟡; Agent-First produced 4 new valuable findings (About page missing as 🔴, JSON.parse boundary, password in sessionStorage, markMessageAsRead for own messages); duplicate WS handler correctly escalated 🟡→🔴; subscription accumulation returned and merged into stronger 🔴.
+
+**Decisions (durable):**
+- **No model recommendation in skills** — model choice belongs to the user; the skill must be robust across Sonnet/Opus. See `feedback_no_model_recommendation.md`.
+- **Opus 4.7 reads prompts literally** — exceptions in Forbidden/Required lists must be spelled out, not inferred. See `feedback_opus_literal_prompts.md`. Discovered via pad-findings regression: "functions >40 lines" rubric finding got dropped because rubric-violation exception was implicit.
+- Language section: single signal (mentor's message) + Russian default. CLAUDE.md and repo content rejected as language signals — explicit-only.
+
+**State of skills:**
+- `pocket-mentor` — **v1.0.1, stable**.
+
+**Next:**
+- v1.0.2 — pad-findings rule exception for quantifiable rubric violations (function length, magic numbers count, duplication count) → separate finding always, not only a Score row.
+- Test v1.0.x on a React+TS student project to validate that `React.md` is actually loaded by stack detection and referenced in findings (not only `TypeScript.md` / Fundamentals).
+- Student-reviewer GitHub Actions project (plan: docs/superpowers/plans/2026-05-25-student-reviewer.md) — not started.
+
+**Blockers:** none
+
+---
