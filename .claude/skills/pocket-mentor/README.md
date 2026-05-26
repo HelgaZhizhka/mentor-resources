@@ -12,22 +12,30 @@ Version: **v1.0.2**
 
 ## Install
 
-### Option A — manual symlink (recommended for development)
+### Option 0 — `npx skills add` (recommended for mentors)
+
+One command, no repo clone, no manual file handling. The [`vercel-labs/skills`](https://github.com/vercel-labs/skills) CLI downloads only the skill bundle (~80 KB) and places it in `~/.claude/skills/pocket-mentor/`.
+
+```bash
+npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill pocket-mentor
+```
+
+- `-g` — install globally to `~/.claude/skills/` (drop the flag to install into the current project's `.claude/skills/` instead).
+- `-a claude-code` — install only the Claude Code variant (skip Cursor, Gemini CLI, OpenCode, etc.).
+- `--skill pocket-mentor` — install only this skill from the repo (rather than every `SKILL.md` it finds).
+
+Update later with `npx skills update pocket-mentor`. Remove with `npx skills remove pocket-mentor`.
+
+See [ADR-0003](https://github.com/HelgaZhizhka/mentor-resources/blob/master/docs/adr/0003-skills-sh-for-skill-publish.md) for the reasoning behind this choice.
+
+### Option A — manual symlink (for skill development)
+
+Use this if you intend to edit the skill yourself — changes in the repo propagate to Claude Code instantly, no `npx skills update` round-trip required.
 
 ```bash
 git clone https://github.com/HelgaZhizhka/mentor-resources.git ~/Projects/mentor-resources
 mkdir -p ~/.claude/skills
 ln -s ~/Projects/mentor-resources/.claude/skills/pocket-mentor ~/.claude/skills/pocket-mentor
-```
-
-A symlink lets you edit the skill in the repo and have changes picked up by Claude Code immediately.
-
-### Option B — manual copy (snapshot install)
-
-```bash
-git clone https://github.com/HelgaZhizhka/mentor-resources.git /tmp/mentor-resources
-mkdir -p ~/.claude/skills
-cp -R /tmp/mentor-resources/.claude/skills/pocket-mentor ~/.claude/skills/
 ```
 
 ### Verify

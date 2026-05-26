@@ -68,10 +68,17 @@
 
 Ментор склонировал PR студента и из этой директории запускает `/pocket-mentor` в Claude Code. Skill:
 
-- запускает bash-чекеры (lint, build, TypeScript-usage, console, git-quality, commented-code)
-- читает исходники студента и материалы [`clean-code/`](./clean-code/)
-- опционально подтягивает rubric задания через `--context <path-or-url>`
-- пишет `CODE_REVIEW_REPORT.md` с секциями Stack, Strengths, Critical issues, Recommendations, Score, Summary и Manual checks
+- определяет стек проекта (HTML/CSS, Vanilla JS, TypeScript, React+TS) и подтягивает только релевантные материалы из [`clean-code/`](./clean-code/)
+- запускает `init.sh` (lint + build + tsc) и четыре фокусных bash-чекера: `check-ts-usage` (`any`, `as`, `!`), `check-no-console`, `check-git-quality` (ветка, запрещённые файлы, Conventional Commits), `check-commented-code`
+- читает исходники студента и опционально подтягивает rubric задания через `--context <path-or-url>` (локальный файл или GitHub URL)
+- пишет `CODE_REVIEW_REPORT.md` с секциями Stack / Strengths / 🔴 Critical issues / 🟡 Recommendations / 🔵 Notes / Score (только при `--context` с rubric) / Summary / Manual checks. Каждая находка в формате What / Why / How to fix / Reference со ссылкой на конкретный раздел `clean-code/*`
+- поддерживает режимы публикации: отчёт в файл (по умолчанию), inline-комментарии в PR (`--output inline`), GitHub Issues для критических находок (`--output issues`)
+
+**Установка (одной командой):**
+
+```bash
+npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill pocket-mentor
+```
 
 Ментор редактирует отчёт и решает, что отправлять студенту.
 
