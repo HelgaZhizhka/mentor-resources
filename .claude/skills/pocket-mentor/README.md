@@ -132,3 +132,7 @@ When `mentor-resources/clean-code/*` changes, re-run `scripts/sync-references.sh
 ## Status
 
 v1.0 — severity system (🔴/🟡/🔵), Mode A finding formula (What/Why/How to fix/Reference), anti-repetition rule, pre-output self-check, stack detection (HTML/CSS/JS/TS/React; Angular guard), inline PR comments with suggestions via `gh api`, GitHub issues mode via `gh issue create`.
+
+v1.0.1 — Agent-First protocol (surface significant problems beyond the checker list), Goals-vs-Steps audit, Language section simplified.
+
+v1.0.2 — Opus-literal hardening: per-stack mandatory reference citation (e.g. `React.md` must be cited for React projects), quantifiable rubric violations always get a standalone finding (not only a Score row).
