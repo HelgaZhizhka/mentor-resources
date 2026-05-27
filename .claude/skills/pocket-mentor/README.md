@@ -2,7 +2,17 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v1.0.2**
+Version: **v1.0.3**
+
+## Model selection
+
+Starting with v1.0.3, `SKILL.md` declares `model: claude-sonnet-4-6` in its frontmatter. When you invoke `/pocket-mentor`, Claude Code switches to **Claude Sonnet 4.6** for the duration of that single turn, then returns to whatever model you had active in the session. The override does not modify your settings; it is scoped to the skill invocation only.
+
+**Why this is set:** A 5-model comparison test (Opus 4.7, Sonnet 4.6, Kimi K2, a GPT model, and a free-tier baseline) on the same student project showed that on weaker models the skill **fabricates facts** (e.g. wrong git branch, wrong Conventional-Commits compliance) and **misses structural rubric violations** (routing absence, body content, memory leaks). A mentor forwarding a hallucinated review to a student causes more harm than the friction of a model switch. Sonnet 4.6 was chosen over Opus 4.7 because it produced the most complete report (8 critical findings vs. 6) and is cheaper.
+
+**To override:** Edit `SKILL.md` and change the `model:` line. Use `inherit` to fall back to your session's active model, or set a specific identifier (`claude-opus-4-7`, etc.). Any change is local to your install — the `npx skills update` step will reapply the upstream default unless you keep a local fork.
+
+> ℹ️ The `model:` field is a Claude Code extension to the open Agent Skills standard. Other agents (Cursor, Gemini CLI, OpenCode, …) that support the standard will silently ignore this field.
 
 ## Prerequisites
 
@@ -144,3 +154,5 @@ v1.0 — severity system (🔴/🟡/🔵), Mode A finding formula (What/Why/How 
 v1.0.1 — Agent-First protocol (surface significant problems beyond the checker list), Goals-vs-Steps audit, Language section simplified.
 
 v1.0.2 — Opus-literal hardening: per-stack mandatory reference citation (e.g. `React.md` must be cited for React projects), quantifiable rubric violations always get a standalone finding (not only a Score row).
+
+v1.0.3 — Turn-scoped model lock to Claude Sonnet 4.6 via the `model:` frontmatter field, after a 5-model comparison test established that weaker models fabricate facts and miss structural rubric violations. See [Model selection](#model-selection) above.
