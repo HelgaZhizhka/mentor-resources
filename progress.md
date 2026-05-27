@@ -206,3 +206,40 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-27 — pocket-mentor v1.0.3 (turn-scoped model lock)
+
+**Done:**
+- PR #2 (`feature/pocket-mentor-v0.9-redesign` → `master`) merged via Squash and Merge — 125 commits collapsed into `a820c74` "pocket-mentor v1.0.2: skill-first redesign + Opus-literal hardening". master is now the canonical v1.0.2 state.
+- Verified end-to-end install path: `npx skills@latest add HelgaZhizhka/mentor-resources` in a clean `/tmp` directory discovered the skill via GitHub Trees API, downloaded SKILL.md + 4 checkers + init.sh + sync-references.sh + 13 reference files in `references/clean-code/`. Dev symlink at `~/.claude/skills/pocket-mentor` left intact during the test.
+- ADR-0003 added: `vercel-labs/skills` (`npx skills add`) chosen as the publish path. Note added on compliance with the open Agent Skills standard at agentskills.io (no layout changes required).
+- PR #3 (`docs/sync-readme-contributing-to-v1.0.2`) opened and merged — root README, root CONTRIBUTING, and pocket-mentor README updated to reflect v1.0.2 reality (4 actual checkers vs lint/build, severity system, conditional Score, stack detection, output modes). Added `npx skills add` as the recommended install path.
+- Cross-model capability test executed by the user on the fun-chat student project across five models (Opus 4.7, Sonnet 4.6, Kimi K2, a GPT model, free-tier baseline). Results showed weaker models fabricate facts (wrong branch, wrong Conventional-Commits compliance, missed `<div id="app">` body violation) while Sonnet 4.6 produced the most comprehensive report (8 critical findings vs Opus's 6, including a unique architectural bug in `UsersAside.getHtml()` no other model caught).
+- PR #4 opened and merged via Squash and Merge — `feat(pocket-mentor): v1.0.3 — turn-scoped model lock to Claude Sonnet 4.6` (squash commit `3a6cd20` on master). SKILL.md frontmatter now sets `model: claude-sonnet-4-6` (a Claude Code extension to the open standard, turn-scoped — does not modify user session settings) and a `compatibility:` empirical disclaimer.
+- pocket-mentor README updated with a new `## Model selection` section explaining the lock, the rationale, and the override path. `feature_list.json` bumped to v1.0.3 with restructured watch-items.
+- Memory: `feedback_no_model_recommendation.md` refined — the original "no prose prescription" rule still holds, but turn-scoped `model:` frontmatter is now allowed and recommended when output quality has an empirical capability floor. New `observation_model_capability_pocket_mentor.md` records the 5-model test results.
+
+**Decisions (durable):**
+- **Open-standard compliance is structural, not a maintained product goal.** Claude Code remains pocket-mentor's primary target. Cross-agent compatibility (Cursor, Gemini CLI, OpenCode, etc.) is a side-effect of following the open format documented at agentskills.io. ADR-0003 makes this explicit.
+- **Turn-scoped `model:` field is the right tool when capability matters empirically.** Prose model prescriptions remain forbidden (friction, unenforceable). The `model:` field is enforceable, turn-scoped (doesn't touch user's session), and is the Claude Code extension designed for exactly this case. See `feedback_no_model_recommendation.md` refinement.
+- **Sonnet 4.6 > Opus 4.7 on this task.** Empirically, Sonnet found 8 critical issues vs Opus's 6 (including a unique architectural bug) and is cheaper. Counter-intuitive but supported by the 2026-05-27 test data. v1.0.3 locks to Sonnet 4.6 explicitly.
+
+**Process learning:**
+- **Don't extend an open PR with new behaviour-change commits without explicit alignment.** I started v1.0.3 work on the v1.0.2 doc-sync branch, then PR #3 was squash-merged while my v1.0.3 push was in flight — the v1.0.3 commit was orphaned on the feature branch and had to be cherry-picked onto a new branch (`feat/pocket-mentor-v1.0.3-model-lock`) and opened as PR #4. Result: clean separation, but added churn. Future: behaviour-change commits go to a fresh branch from master, doc fixes can live alongside if scope is identical.
+- **Stale GitHub references are visible even after merge.** PR #3 title was updated mid-flight to claim "v1.0.3" then restored to v1.0.2 after the merge — historical record now points to the right scope.
+
+**State of skills:**
+- `pocket-mentor` — **v1.0.3, stable**, locked to Sonnet 4.6 for invocations.
+
+**Watch-items for v1.0.4+** (recorded in `feature_list.json` `next`):
+1. Rubric-violation-as-Critical severity escalation — v1.0.2 fun-chat had magic numbers → 🔴. Defer Severity-levels clarification until a 2nd observation on a project where the rubric violation is the only failing class.
+2. Opus 4.7 tendency to place findings only in the Score table without a standalone Mode A finding (observed in v1.0.3 5-model test: routing absence went into Score but not into the Critical issues section on Opus, while Sonnet surfaced it correctly). If pattern persists across 2+ further Opus runs, tighten Strict rules to require a standalone Mode A finding for every non-zero Score-table deduction.
+
+**Next:**
+- Post-merge verification: run `/pocket-mentor` from a session that has Opus active, confirm Claude Code switches to Sonnet 4.6 for the skill turn and returns to Opus afterwards.
+- Student-reviewer GitHub Actions project (plan: `docs/superpowers/plans/2026-05-25-student-reviewer.md`) — still not started; the multi-agent architecture question is deferred to Task 5 of that plan per ADR-0003 follow-up notes.
+- Optional cleanup: delete remote branches `feature/pocket-mentor-v0.9-redesign`, `docs/sync-readme-contributing-to-v1.0.2`, `feat/pocket-mentor-v1.0.3-model-lock` via GitHub UI (all merged).
+
+**Blockers:** none
+
+---

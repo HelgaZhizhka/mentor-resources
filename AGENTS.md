@@ -4,7 +4,7 @@
 
 ## Current skills
 
-- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.0.2, stable).
+- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.0.3, stable).
 
 When a new skill is added, list it here with a one-line description and a link to its `README.md`.
 
