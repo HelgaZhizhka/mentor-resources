@@ -1,6 +1,8 @@
 ---
 name: pocket-mentor
 description: Review a cloned student repository against RS School clean-code standards. Run inside the student repo via /pocket-mentor [--context <path-to-md>]. Produces CODE_REVIEW_REPORT.md combining bash-mech findings (lint/build/TS/console/git) with LLM analysis grounded in references/clean-code/*. Use when the user wants a structured RS-School-style code review of a student project, or invokes /pocket-mentor.
+model: claude-sonnet-4-6
+compatibility: Designed for Claude Code. Review quality validated on Claude Opus 4.7 and Claude Sonnet 4.6 — output may degrade or hallucinate on weaker models.
 ---
 
 # Pocket Mentor
