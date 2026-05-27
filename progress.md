@@ -236,9 +236,9 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 2. Opus 4.7 tendency to place findings only in the Score table without a standalone Mode A finding (observed in v1.0.3 5-model test: routing absence went into Score but not into the Critical issues section on Opus, while Sonnet surfaced it correctly). If pattern persists across 2+ further Opus runs, tighten Strict rules to require a standalone Mode A finding for every non-zero Score-table deduction.
 
 **Next:**
-- Post-merge verification: run `/pocket-mentor` from a session that has Opus active, confirm Claude Code switches to Sonnet 4.6 for the skill turn and returns to Opus afterwards.
+- ~~Post-merge verification~~ — ✓ verified by user 2026-05-27 by running `/pocket-mentor` on a real student project; Sonnet 4.6 turn-scoped lock works end-to-end.
 - Student-reviewer GitHub Actions project (plan: `docs/superpowers/plans/2026-05-25-student-reviewer.md`) — still not started; the multi-agent architecture question is deferred to Task 5 of that plan per ADR-0003 follow-up notes.
-- Optional cleanup: delete remote branches `feature/pocket-mentor-v0.9-redesign`, `docs/sync-readme-contributing-to-v1.0.2`, `feat/pocket-mentor-v1.0.3-model-lock` via GitHub UI (all merged).
+- ~~Optional cleanup~~ — ✓ user cleaned merged branches via GitHub UI 2026-05-27; only `feature/pocket-mentor-v0.9-spec` remains as an intentional archive of the pre-pivot engine+CLI design.
 
 **Blockers:** none
 
