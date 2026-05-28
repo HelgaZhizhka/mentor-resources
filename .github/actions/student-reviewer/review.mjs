@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import OpenAI from 'openai';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -57,4 +58,78 @@ function buildReferences(stack) {
   }
 }
 
-export { detectStack, buildReferences };
+// ── AI provider ──────────────────────────────────────────────────────────────
+
+function buildClient() {
+  const baseURL = process.env.AI_BASE_URL || 'https://models.inference.ai.azure.com';
+  const apiKey  = process.env.AI_API_KEY  || process.env.GITHUB_TOKEN;
+  return new OpenAI({ baseURL, apiKey });
+}
+
+const SYSTEM_PROMPT = (stack, references) => `
+You are an RS School code reviewer. Review the student's pull request and produce inline review comments.
+
+## Stack
+${stack}
+
+## Rules — apply ONLY these to the detected stack
+${references}
+
+## Severity levels
+- 🔴 Critical — must fix before merge
+- 🟡 Recommendation — should improve
+- 🔵 Note — minor / informational
+
+## Finding format (Mode A — use for every finding)
+**What:** one sentence describing the problem
+**Why bad:** why this matters (cite rule from references above)
+**How to fix:** specific action
+
+Include a suggestion block only for simple single-line fixes:
+\`\`\`suggestion
+corrected line here
+\`\`\`
+
+## Anti-repetition
+If the same pattern appears 3+ times: write one full finding for the worst instance, append "(N more occurrences: file:line, …)". Do NOT write a separate finding per occurrence.
+
+## Output format
+Respond with a JSON object ONLY — no markdown wrapper, no explanation:
+{
+  "comments": [
+    {
+      "path": "src/api.ts",
+      "line": 12,
+      "body": "🔴 **Critical**: ...\\n\\n**What:** ...\\n**Why bad:** ...\\n**How to fix:** ..."
+    }
+  ],
+  "general_body": "prose for architectural findings without a specific line, or empty string"
+}
+`.trim();
+
+async function callAI(stack, references, prDiff) {
+  const client = buildClient();
+  const model  = process.env.AI_MODEL || 'gpt-4o';
+
+  const response = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT(stack, references) },
+      { role: 'user',   content: `Review this pull request diff:\n\n${prDiff}` },
+    ],
+    temperature: 0.2,
+    max_tokens: 4096,
+  });
+
+  const raw = response.choices[0]?.message?.content ?? '{}';
+  const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error('AI response was not valid JSON:', raw.slice(0, 200));
+    return { comments: [], general_body: '' };
+  }
+}
+
+export { detectStack, buildReferences, callAI };
