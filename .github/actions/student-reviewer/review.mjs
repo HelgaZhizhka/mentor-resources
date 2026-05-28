@@ -133,3 +133,81 @@ async function callAI(stack, references, prDiff) {
 }
 
 export { detectStack, buildReferences, callAI };
+
+// ── GitHub API ───────────────────────────────────────────────────────────────
+
+import { Octokit } from '@octokit/rest';
+
+function buildOctokit() {
+  return new Octokit({ auth: process.env.GITHUB_TOKEN });
+}
+
+async function fetchPRDiff(owner, repo, pullNumber) {
+  const octokit = buildOctokit();
+  const { data } = await octokit.request(
+    'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+    {
+      owner,
+      repo,
+      pull_number: Number(pullNumber),
+      headers: { accept: 'application/vnd.github.v3.diff' },
+    }
+  );
+  return String(data);
+}
+
+async function postReview(owner, repo, pullNumber, reviewData) {
+  const octokit = buildOctokit();
+
+  const lineComments = (reviewData.comments ?? [])
+    .filter(c => c.path && c.line)
+    .map(c => ({ path: c.path, line: c.line, side: 'RIGHT', body: c.body }));
+
+  await octokit.pulls.createReview({
+    owner,
+    repo,
+    pull_number: Number(pullNumber),
+    body: reviewData.general_body || '',
+    event: 'COMMENT',
+    comments: lineComments,
+  });
+
+  console.log(`Posted review with ${lineComments.length} inline comment(s) to PR #${pullNumber}`);
+}
+
+// ── Entry point ──────────────────────────────────────────────────────────────
+
+async function main() {
+  const owner     = process.env.REPO_OWNER;
+  const repo      = process.env.REPO_NAME;
+  const prNumber  = process.env.PR_NUMBER;
+  const workspace = process.env.WORKSPACE || process.cwd();
+
+  if (!owner || !repo || !prNumber) {
+    console.error('ERROR: REPO_OWNER, REPO_NAME, PR_NUMBER must be set');
+    process.exit(1);
+  }
+
+  const stack = detectStack(workspace);
+  console.log(`Detected stack: ${stack}`);
+
+  if (stack === 'angular') {
+    console.log('Angular projects are not supported in this version. Skipping review.');
+    process.exit(0);
+  }
+
+  const references = buildReferences(stack);
+  console.log('Fetching PR diff...');
+  const diff = await fetchPRDiff(owner, repo, prNumber);
+
+  console.log('Calling AI for review...');
+  const reviewData = await callAI(stack, references, diff);
+
+  console.log(`Posting ${reviewData.comments?.length ?? 0} comment(s)...`);
+  await postReview(owner, repo, prNumber, reviewData);
+}
+
+main().catch(err => {
+  console.error('Review failed:', err.message);
+  process.exit(1);
+});
