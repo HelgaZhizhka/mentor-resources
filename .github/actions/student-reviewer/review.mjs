@@ -96,7 +96,7 @@ function buildClient() {
   return new OpenAI({ baseURL, apiKey });
 }
 
-const SYSTEM_PROMPT = (stack, references) => `
+const SYSTEM_PROMPT = (stack, references, taskRequirements) => `
 <role>
 You are an RS School educational mentor reviewing a student pull request. Your goal is to help the student grow as a developer — not to produce a compliance report. You care about what concept the student is missing, not just which rule they broke.
 </role>
@@ -109,16 +109,23 @@ Detected stack: ${stack}
 <curriculum>
 ${references}
 </curriculum>
+${taskRequirements ? `
+<task_requirements>
+The student was assigned the following task. Use it to identify which technical requirements are missing or not correctly implemented (e.g. SPA routing, empty body, explicit types, function length limits).
+
+${taskRequirements}
+</task_requirements>
+` : ''}
 </context>
 
 <instructions>
 Work through these steps internally before producing output. Do NOT output your reasoning — these steps are your private thinking process. Your only output is the JSON object described in <output_format>.
 
 <steps>
-<step number="1">UNDERSTAND — Read the full diff. What was the student trying to build? What mental model did they use?</step>
+${taskRequirements ? `<step number="1">CHECK REQUIREMENTS — Go through each technical requirement in <task_requirements>. Mark which ones are missing or broken in the diff. These become 🔴 Critical findings.</step>` : '<step number="1">UNDERSTAND — Read the full diff. What was the student trying to build? What mental model did they use?</step>'}
 <step number="2">DIAGNOSE — For each issue, name the underlying knowledge gap, not just the symptom.</step>
-<step number="3">PRIORITIZE — Select the 3–5 issues that will teach the most.</step>
-<step number="4">WRITE — Draft each comment as a mentor explaining a concept, citing the rule from <curriculum>.</step>
+<step number="3">PRIORITIZE — Select the 3–5 issues that will teach the most. Missing requirements always take priority over style issues.</step>
+<step number="4">WRITE — Draft each comment as a mentor explaining a concept, citing the rule from <curriculum> or the requirement from <task_requirements>.</step>
 <step number="5">SUMMARIZE — Draft general_body: one thing done well + the single most important concept to internalize.</step>
 </steps>
 
@@ -126,7 +133,7 @@ Once you have completed all steps internally, output ONLY the JSON object. No pr
 </instructions>
 
 <constraints>
-- Apply ONLY rules from <curriculum>. Do not invent rules not present in the curriculum.
+- Apply ONLY rules from <curriculum>${taskRequirements ? ' and requirements from <task_requirements>' : ''}. Do not invent rules not present in those sources.
 - Maximum 5–7 inline comments. A student learns more from 3 well-explained findings than from 12 lint complaints.
 - Never just cite a rule number or say "this violates X". Explain the concept the rule is protecting.
 - Tone: direct and honest, but respectful. Frame mistakes as learning opportunities.
@@ -167,7 +174,7 @@ function extractPaths(diff) {
   return [...new Set([...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1]))];
 }
 
-async function callAI(stack, references, prDiff) {
+async function callAI(stack, references, prDiff, taskRequirements = null) {
   const client = buildClient();
   const model  = process.env.AI_MODEL || 'gpt-4o';
 
@@ -183,7 +190,7 @@ async function callAI(stack, references, prDiff) {
     response = await client.chat.completions.create({
       model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT(stack, references) },
+        { role: 'system', content: SYSTEM_PROMPT(stack, references, taskRequirements) },
         { role: 'user',   content: `Review this pull request diff.\n\nChanged files (use ONLY these exact paths in your JSON):\n${paths.map(p => `- ${p}`).join('\n')}\n\n<diff>\n${diff}\n</diff>` },
       ],
       temperature: 0.2,
@@ -274,6 +281,35 @@ async function postReview(owner, repo, pullNumber, reviewData) {
   }
 }
 
+// ── Task requirements ────────────────────────────────────────────────────────
+
+const TASK_URL_PATTERN = /https:\/\/github\.com\/rolling-scopes-school\/tasks\/[^\s)>\]]+/;
+const MAX_TASK_CHARS = 20000;
+
+async function fetchTaskRequirements(owner, repo, pullNumber) {
+  try {
+    const octokit = buildOctokit();
+    const { data } = await octokit.pulls.get({ owner, repo, pull_number: Number(pullNumber) });
+    const body = data.body ?? '';
+    const urlMatch = body.match(TASK_URL_PATTERN);
+    if (!urlMatch) return null;
+
+    const rawUrl = urlMatch[0]
+      .replace('github.com', 'raw.githubusercontent.com')
+      .replace('/blob/', '/');
+
+    const response = await fetch(rawUrl, { signal: AbortSignal.timeout(10000) });
+    if (!response.ok) return null;
+
+    const text = await response.text();
+    return text.length > MAX_TASK_CHARS
+      ? text.slice(0, MAX_TASK_CHARS) + '\n\n[task requirements truncated]'
+      : text;
+  } catch {
+    return null;
+  }
+}
+
 // ── Entry point ──────────────────────────────────────────────────────────────
 
 async function main() {
@@ -300,8 +336,13 @@ async function main() {
   }
 
   const references = buildReferences(stack);
+
+  console.log('Fetching task requirements from PR description...');
+  const taskRequirements = await fetchTaskRequirements(owner, repo, prNumber);
+  console.log(taskRequirements ? 'Task requirements loaded.' : 'No task requirements found — general review mode.');
+
   console.log('Calling AI for review...');
-  const reviewData = await callAI(stack, references, diff);
+  const reviewData = await callAI(stack, references, diff, taskRequirements);
 
   const commentCount = reviewData.comments?.length ?? 0;
   if (commentCount === 0 && !reviewData.general_body) {
