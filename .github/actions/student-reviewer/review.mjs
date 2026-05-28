@@ -180,7 +180,7 @@ async function callAI(stack, references, prDiff) {
         { role: 'user',   content: `Review this pull request diff:\n\n${diff}` },
       ],
       temperature: 0.2,
-      max_tokens: 2048,
+      max_tokens: 8192,
     });
   } catch (err) {
     if (err.status === 413) {
