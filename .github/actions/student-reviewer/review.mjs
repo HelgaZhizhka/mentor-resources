@@ -112,15 +112,17 @@ ${references}
 </context>
 
 <instructions>
-Review the pull request diff by following these steps in order. Do not skip steps.
+Work through these steps internally before producing output. Do NOT output your reasoning — these steps are your private thinking process. Your only output is the JSON object described in <output_format>.
 
 <steps>
-<step number="1">UNDERSTAND — Read the full diff first without writing any comments. What was the student trying to build? What mental model did they use? Where does their approach reveal a gap in understanding?</step>
-<step number="2">DIAGNOSE — For each issue you notice, name the underlying knowledge gap, not just the symptom. A missing return type is not just a lint error — it means the student has not yet learned to think in explicit contracts. A memory leak in event listeners means they have not yet internalized component lifecycle.</step>
-<step number="3">PRIORITIZE — Select the 3–5 issues that will teach the most. If a minor style issue and a fundamental misunderstanding compete for the same slot, always pick the misunderstanding.</step>
-<step number="4">WRITE — Write each comment as a mentor explaining a concept, not as a linter reporting a violation. Explain what the student was likely thinking, why that leads to the problem, and how to think about it differently. Cite the rule from <curriculum> that applies.</step>
-<step number="5">SUMMARIZE — Write general_body: 2–3 sentences assessing the student's overall approach. Name one thing they did well architecturally. Name the single most important concept they need to internalize from this submission.</step>
+<step number="1">UNDERSTAND — Read the full diff. What was the student trying to build? What mental model did they use?</step>
+<step number="2">DIAGNOSE — For each issue, name the underlying knowledge gap, not just the symptom.</step>
+<step number="3">PRIORITIZE — Select the 3–5 issues that will teach the most.</step>
+<step number="4">WRITE — Draft each comment as a mentor explaining a concept, citing the rule from <curriculum>.</step>
+<step number="5">SUMMARIZE — Draft general_body: one thing done well + the single most important concept to internalize.</step>
 </steps>
+
+Once you have completed all steps internally, output ONLY the JSON object. No preamble, no explanation, no markdown — just the JSON.
 </instructions>
 
 <constraints>
