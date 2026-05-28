@@ -324,3 +324,32 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-28 — pocket-mentor v1.1.0 — inline-mode filter
+
+**Done:**
+- Added student-facing filter rule for `--output inline` mode in `SKILL.md` (inline-draft.json Rules section).
+- Cap: 7 findings total in `comments[]` — all 🔴 + top 3–4 🟡 by teaching value + ≤1 🔵.
+- Anti-repetition rule still applies (3+ occurrences = one detailed + brief mentions, counts as 1).
+- Architectural findings without a line still go to `general_body` unlimited.
+- Local `CODE_REVIEW_REPORT.md` unchanged — full picture for the mentor.
+- Bumped version to v1.1.0 in README.md and feature_list.json.
+
+**Decisions:**
+- Rule-based filter in the prompt itself (no second AI call) — cheap, deterministic, transparent.
+- 🔴 never dropped (blockers must reach student).
+- 🟡 capped to 3–4 with explicit "by teaching value" — depth over breadth.
+- 🔵 capped to 1 — a taste of craft, not a list.
+- For `--output issues` no new filter needed — existing rule already says "🔴 only".
+
+**Rationale:**
+- Mentor confirmed that running `pocket-mentor --output inline` on fun-chat produced many comments. 30+ student-facing comments overwhelm and lose pedagogical impact.
+- Student-perspective analysis: 5–7 mixed-severity findings with deep explanation > 30 lint-style flags.
+
+**Next:**
+- Test v1.1.0 on a real student PR with `--output inline` and verify the cap is respected.
+- Consider whether `--output local` should also surface "what was filtered out of inline" hint for the mentor.
+
+**Blockers:** none
+
+---

@@ -2,7 +2,7 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v1.0.3**
+Version: **v1.1.0**
 
 ## Model selection
 
@@ -156,3 +156,5 @@ v1.0.1 — Agent-First protocol (surface significant problems beyond the checker
 v1.0.2 — Opus-literal hardening: per-stack mandatory reference citation (e.g. `React.md` must be cited for React projects), quantifiable rubric violations always get a standalone finding (not only a Score row).
 
 v1.0.3 — Turn-scoped model lock to Claude Sonnet 4.6 via the `model:` frontmatter field, after a 5-model comparison test established that weaker models fabricate facts and miss structural rubric violations. See [Model selection](#model-selection) above.
+
+v1.1.0 — Inline-mode filter: when `--output inline`, the student-facing PR comments are capped at 7 findings (all 🔴 Critical + top 3–4 🟡 + at most 1 🔵), prioritized by teaching value. The full `CODE_REVIEW_REPORT.md` is still written with everything for the mentor. Rationale: 30+ inline comments on a student PR overwhelm and lose pedagogical impact — depth over breadth. Local mode unchanged.
