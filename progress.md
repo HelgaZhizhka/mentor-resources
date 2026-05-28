@@ -301,3 +301,26 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-28 — student-reviewer v1.2 — judge agent
+
+**Done:**
+- Removed artificial `Maximum 5–7` finder limit — judge now controls count.
+- Added `fetchPreviousReviews()` — reads all `github-actions[bot]` reviews on the PR, extracts topic summaries (120 chars each).
+- Added `callJudge()` — second AI call (temperature 0.0) that filters finder output: drops semantically duplicate findings and low-confidence findings.
+- Safety net: judge dropping all findings falls back to unfiltered. Any judge error also falls back unfiltered (fail-open).
+- Logs every judge decision to Actions stdout with reason.
+- Fixed prompt: removed "3–5 issues" numeric target from step 3, tightened constraint wording.
+
+**Decisions:**
+- Judge uses same AI_MODEL as finder — no extra config needed.
+- body_preview (200 chars) sent to judge instead of full body — tokens saved.
+- Fail-open on all judge errors — a broken judge never silences a valid review.
+
+**Next:**
+- Trigger a re-review on a PR that already has bot reviews and verify judge dedup log appears.
+- v1.3 candidate: configurable task URL pattern (not hardcoded to RS School).
+
+**Blockers:** none
+
+---
