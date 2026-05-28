@@ -144,9 +144,8 @@ async function callAI(stack, references, prDiff) {
     response = await client.chat.completions.create({
       model,
       messages: [
-        { role: 'system',    content: SYSTEM_PROMPT(stack, references) },
-        { role: 'user',      content: `Review this pull request diff:\n\n${diff}` },
-        { role: 'assistant', content: '{' },
+        { role: 'system', content: SYSTEM_PROMPT(stack, references) },
+        { role: 'user',   content: `Review this pull request diff:\n\n${diff}` },
       ],
       temperature: 0.2,
       max_tokens: 2048,
@@ -161,7 +160,7 @@ async function callAI(stack, references, prDiff) {
     throw err;
   }
 
-  const raw = '{' + (response.choices[0]?.message?.content ?? '}');
+  const raw = response.choices[0]?.message?.content ?? '{}';
   const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
 
   try {
