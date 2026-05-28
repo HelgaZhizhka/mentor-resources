@@ -21,11 +21,11 @@
       "name": "Student Reviewer — GitHub Actions",
       "description": "GitHub Actions workflow that automatically reviews student PRs using clean-code references. Stack detection (HTML/CSS/JS/TS/React). GitHub Models default (zero-friction, uses GITHUB_TOKEN). Override via AI_BASE_URL + AI_API_KEY + AI_MODEL for any OpenAI-compatible provider. Posts line-specific inline comments with suggestions via Octokit.",
       "path": ".github/actions/student-reviewer/",
-      "current_version": "v1.0.0",
+      "current_version": "v1.1.0",
       "status": "stable",
       "dependencies": ["openai", "@octokit/rest"],
-      "evidence": null,
-      "next": "End-to-end test: create a test PR in a student repo and verify comments post. v1.1: React sub-rules (react-hooks.md, react-testing.md, react-patterns.md)."
+      "evidence": "End-to-end tested on fun-chat student PR with Anthropic Sonnet 4.6. v1.0.0: base implementation — stack detection, GitHub Models default, OpenAI-compatible provider override, inline PR comments. v1.1.0 (2026-05-28): reads RS School task README from PR description URL and passes as <task_requirements> to the AI — enables catching missing features (routing, empty body, explicit types). Graceful fallback to general review when no URL found.",
+      "next": "v1.2: support configurable task URL patterns beyond rolling-scopes-school/tasks so other schools/orgs can use the action."
     }
   ]
 }

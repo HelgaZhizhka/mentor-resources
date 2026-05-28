@@ -271,3 +271,33 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-28 — student-reviewer v1.1 + Prompting 101 prompt rewrite
+
+**Done:**
+- `student-reviewer` PR #5 merged. Full end-to-end test on fun-chat student repo revealed issues:
+  - 401 GitHub Models → fixed: added `models: read` permission to workflow template.
+  - 413 request too large → fixed: `GITHUB_MODELS_MAX_CHARS = 12000` truncation (GitHub Models only; custom providers send full diff).
+  - 400 Anthropic prefill rejected → removed `{ role: 'assistant', content: '{' }` from messages.
+  - Wrong stack detection (monorepo) → fixed: subdirectory `package.json` search + diff-based fallback.
+  - AI outputting reasoning as text → fixed: "Work through these steps internally... Do NOT output your reasoning".
+  - `max_tokens: 2048` truncated JSON → increased to 8192.
+  - 422 wrong file paths → fixed: `extractPaths(diff)` + pass path list in user message + 422 fallback to general body.
+  - Comments only on linter config → diff was 185k chars, truncated at 6000. Fixed: truncation only for GitHub Models; custom providers get full diff.
+- SYSTEM_PROMPT fully rewritten using Prompting 101 framework (XML tags, internal reasoning steps, confidence guard, educational mentor tone).
+- v1.1: `fetchTaskRequirements()` — reads RS School task README URL from PR description, fetches raw content, passes as `<task_requirements>` to AI. AI uses CHECK REQUIREMENTS step to surface missing features as 🔴 Critical. Graceful fallback when URL absent or fetch fails.
+- `feature_list.json` bumped to v1.1.0.
+- `docs/test-reviews/` added to `.gitignore`.
+
+**Decisions:**
+- Task URL pattern: `rolling-scopes-school/tasks` GitHub URLs only (narrowly scoped to avoid false positives).
+- Truncation at 20 000 chars for task requirements (most README files are < 5k).
+- Prompting 101 framework: role / context / curriculum / task_requirements / steps / constraints / output_format / reminder.
+
+**Next:**
+- Trigger a new action run with a PR that has a task URL in the description and verify 🔴 Critical findings for missing requirements appear.
+- v1.2: make task URL pattern configurable (not hardcoded to RS School) for broader adoption.
+
+**Blockers:** none
+
+---
