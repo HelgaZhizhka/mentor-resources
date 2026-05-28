@@ -49,5 +49,8 @@ Thumbs.db
 *.tmp
 .temp/
 
+# Test review reports (local experiments, not for version control)
+docs/test-reviews/
+
 # Local issue tracker (Matt Pocock skills workflow)
 .scratch/
