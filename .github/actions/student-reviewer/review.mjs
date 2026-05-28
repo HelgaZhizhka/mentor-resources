@@ -163,6 +163,10 @@ If you are not confident about a finding — skip it. Do not guess. Only report 
 
 const MAX_DIFF_CHARS = 6000;
 
+function extractPaths(diff) {
+  return [...new Set([...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1]))];
+}
+
 async function callAI(stack, references, prDiff) {
   const client = buildClient();
   const model  = process.env.AI_MODEL || 'gpt-4o';
@@ -171,13 +175,15 @@ async function callAI(stack, references, prDiff) {
     ? prDiff.slice(0, MAX_DIFF_CHARS) + '\n\n[diff truncated — too large for free tier]'
     : prDiff;
 
+  const paths = extractPaths(diff);
+
   let response;
   try {
     response = await client.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(stack, references) },
-        { role: 'user',   content: `Review this pull request diff:\n\n${diff}` },
+        { role: 'user',   content: `Review this pull request diff.\n\nChanged files (use ONLY these exact paths in your JSON):\n${paths.map(p => `- ${p}`).join('\n')}\n\n<diff>\n${diff}\n</diff>` },
       ],
       temperature: 0.2,
       max_tokens: 8192,
@@ -234,16 +240,37 @@ async function postReview(owner, repo, pullNumber, reviewData) {
     .filter(c => c.path && c.line)
     .map(c => ({ path: c.path, line: c.line, side: 'RIGHT', body: c.body }));
 
-  await octokit.pulls.createReview({
-    owner,
-    repo,
-    pull_number: Number(pullNumber),
-    body: reviewData.general_body || '',
-    event: 'COMMENT',
-    comments: lineComments,
-  });
+  try {
+    await octokit.pulls.createReview({
+      owner,
+      repo,
+      pull_number: Number(pullNumber),
+      body: reviewData.general_body || '',
+      event: 'COMMENT',
+      comments: lineComments,
+    });
+    console.log(`Posted review with ${lineComments.length} inline comment(s) to PR #${pullNumber}`);
+  } catch (err) {
+    if (err.status === 422) {
+      console.warn('Inline comments failed (path mismatch) — falling back to general review body');
+      const fallbackBody = [
+        reviewData.general_body,
+        ...lineComments.map(c => `**${c.path}**\n\n${c.body}`),
+      ].filter(Boolean).join('\n\n---\n\n');
 
-  console.log(`Posted review with ${lineComments.length} inline comment(s) to PR #${pullNumber}`);
+      await octokit.pulls.createReview({
+        owner,
+        repo,
+        pull_number: Number(pullNumber),
+        body: fallbackBody,
+        event: 'COMMENT',
+        comments: [],
+      });
+      console.log(`Posted fallback general review to PR #${pullNumber}`);
+    } else {
+      throw err;
+    }
+  }
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
