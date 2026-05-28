@@ -1,0 +1,48 @@
+name: 'RS School Student Reviewer'
+description: 'Automatic code review for RS School students — posts inline PR comments using clean-code standards.'
+author: 'HelgaZhizhka'
+
+inputs:
+  github-token:
+    description: 'GitHub token for posting review comments'
+    required: true
+    default: ${{ github.token }}
+  ai-base-url:
+    description: 'AI provider base URL (default: GitHub Models). Override for Anthropic, OpenAI, Gemini, etc.'
+    required: false
+    default: 'https://models.inference.ai.azure.com'
+  ai-api-key:
+    description: 'AI provider API key (default: github-token for GitHub Models)'
+    required: false
+    default: ''
+  ai-model:
+    description: 'Model name (default: gpt-4o for GitHub Models)'
+    required: false
+    default: 'gpt-4o'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: '${{ github.action_path }}/package-lock.json'
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci --prefix ${{ github.action_path }}
+
+    - name: Run review
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        AI_BASE_URL: ${{ inputs.ai-base-url }}
+        AI_API_KEY: ${{ inputs.ai-api-key || inputs.github-token }}
+        AI_MODEL: ${{ inputs.ai-model }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        WORKSPACE: ${{ github.workspace }}
+      run: node ${{ github.action_path }}/review.mjs
