@@ -375,17 +375,27 @@ async function callJudge(findings, previousTopics) {
   const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
   let decisions;
   try {
-    ({ decisions } = JSON.parse(cleaned));
+    const result = JSON.parse(cleaned);
+    decisions = Array.isArray(result?.decisions) ? result.decisions : null;
   } catch {
     console.warn('Judge returned invalid JSON — posting all findings unfiltered');
     return findings;
   }
 
+  if (!decisions) {
+    console.warn('Judge response missing decisions array — posting all findings unfiltered');
+    return findings;
+  }
+
   const kept = [];
   for (const d of decisions) {
-    const label = d.decision === 'keep' ? 'keep ' : 'drop ';
     const finding = findings[d.index];
-    console.log(`Judge: ${label} [${d.index}] ${finding?.path ?? '?'}:${finding?.line ?? '?'} — ${d.reason}`);
+    if (!finding) {
+      console.warn(`Judge returned out-of-range index ${d.index} — skipping`);
+      continue;
+    }
+    const label = d.decision === 'keep' ? 'keep' : 'drop';
+    console.log(`Judge: ${label} [${d.index}] ${finding.path}:${finding.line} — ${d.reason}`);
     if (d.decision === 'keep') kept.push(finding);
   }
 
