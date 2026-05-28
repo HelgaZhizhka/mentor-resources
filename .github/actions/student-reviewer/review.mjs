@@ -281,6 +281,42 @@ async function postReview(owner, repo, pullNumber, reviewData) {
   }
 }
 
+// ── Previous reviews ─────────────────────────────────────────────────────────
+
+async function fetchPreviousReviews(owner, repo, pullNumber) {
+  try {
+    const octokit = buildOctokit();
+    const { data: reviews } = await octokit.pulls.listReviews({
+      owner,
+      repo,
+      pull_number: Number(pullNumber),
+    });
+
+    const botReviews = reviews.filter(r => r.user?.login === 'github-actions[bot]');
+    if (botReviews.length === 0) return [];
+
+    const topics = [];
+
+    for (const review of botReviews) {
+      if (review.body) topics.push(review.body.slice(0, 120));
+
+      const { data: comments } = await octokit.pulls.listCommentsForReview({
+        owner,
+        repo,
+        pull_number: Number(pullNumber),
+        review_id: review.id,
+      });
+      for (const c of comments) {
+        if (c.body) topics.push(c.body.slice(0, 120));
+      }
+    }
+
+    return topics;
+  } catch {
+    return [];
+  }
+}
+
 // ── Task requirements ────────────────────────────────────────────────────────
 
 const TASK_URL_PATTERN = /https:\/\/github\.com\/rolling-scopes-school\/tasks\/[^\s)>\]]+/;
