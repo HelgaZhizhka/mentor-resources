@@ -161,7 +161,7 @@ If you are not confident about a finding — skip it. Do not guess. Only report 
 </reminder>
 `.trim();
 
-const MAX_DIFF_CHARS = 50000;
+const GITHUB_MODELS_MAX_CHARS = 12000;
 
 function extractPaths(diff) {
   return [...new Set([...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1]))];
@@ -171,8 +171,9 @@ async function callAI(stack, references, prDiff) {
   const client = buildClient();
   const model  = process.env.AI_MODEL || 'gpt-4o';
 
-  const diff = prDiff.length > MAX_DIFF_CHARS
-    ? prDiff.slice(0, MAX_DIFF_CHARS) + '\n\n[diff truncated — too large for free tier]'
+  const isGitHubModels = (process.env.AI_BASE_URL || '').includes('inference.ai.azure.com');
+  const diff = isGitHubModels && prDiff.length > GITHUB_MODELS_MAX_CHARS
+    ? prDiff.slice(0, GITHUB_MODELS_MAX_CHARS) + '\n\n[diff truncated — too large for free tier]'
     : prDiff;
 
   const paths = extractPaths(diff);
