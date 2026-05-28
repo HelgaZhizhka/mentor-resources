@@ -161,7 +161,7 @@ If you are not confident about a finding — skip it. Do not guess. Only report 
 </reminder>
 `.trim();
 
-const MAX_DIFF_CHARS = 6000;
+const MAX_DIFF_CHARS = 50000;
 
 function extractPaths(diff) {
   return [...new Set([...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1]))];
