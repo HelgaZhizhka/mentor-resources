@@ -129,20 +129,37 @@ If you are not confident about a finding — skip it. Do not guess. Only report 
 </reminder>
 `.trim();
 
+const MAX_DIFF_CHARS = 6000;
+
 async function callAI(stack, references, prDiff) {
   const client = buildClient();
   const model  = process.env.AI_MODEL || 'gpt-4o';
 
-  const response = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system',    content: SYSTEM_PROMPT(stack, references) },
-      { role: 'user',      content: `Review this pull request diff:\n\n${prDiff}` },
-      { role: 'assistant', content: '{' },
-    ],
-    temperature: 0.2,
-    max_tokens: 4096,
-  });
+  const diff = prDiff.length > MAX_DIFF_CHARS
+    ? prDiff.slice(0, MAX_DIFF_CHARS) + '\n\n[diff truncated — too large for free tier]'
+    : prDiff;
+
+  let response;
+  try {
+    response = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system',    content: SYSTEM_PROMPT(stack, references) },
+        { role: 'user',      content: `Review this pull request diff:\n\n${diff}` },
+        { role: 'assistant', content: '{' },
+      ],
+      temperature: 0.2,
+      max_tokens: 2048,
+    });
+  } catch (err) {
+    if (err.status === 413) {
+      return {
+        comments: [],
+        general_body: '⚠️ This PR is too large for the GitHub Models free tier (max 8000 tokens). For a full review, add your own AI provider: set `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` in your repository secrets (Settings → Secrets and variables → Actions).',
+      };
+    }
+    throw err;
+  }
 
   const raw = '{' + (response.choices[0]?.message?.content ?? '}');
   const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
