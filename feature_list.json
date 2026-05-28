@@ -14,5 +14,18 @@
       "evidence": "Three live smoke runs on student fun-chat PR (2026-05-19/20). Commits v0.9.1..v0.9.6 ship iterative fixes. v1.0.0..v1.0.2 add severity system, Mode A format, anti-repetition, self-check, stack detection, Agent-First protocol, per-stack mandatory reference citation. v1.0.3 (2026-05-27) adds turn-scoped model lock (model: claude-sonnet-4-6) after a 5-model comparison test (Opus 4.7, Sonnet 4.6, Kimi K2, a GPT model, free-tier baseline) on the fun-chat project showed that weaker models fabricate facts (wrong branch, wrong Conventional-Commits compliance) and miss structural rubric violations.",
       "next": "Watch list for v1.0.4+: (1) rubric-violation-as-Critical severity escalation — v1.0.2 fun-chat run had magic numbers → 🔴 which may be correct per 'blocks pass' or an over-correction from the pad-findings rule; needs a 2nd observation on a project where rubric violation is the only failing class. (2) Opus 4.7 tendency to place findings only in the Score table without a standalone Mode A finding (observed in v1.0.3 5-model test: routing absence went into Score but not into the Critical issues section on Opus, while Sonnet surfaced it correctly). If pattern persists across 2+ further Opus runs, tighten the Strict rules to require a standalone Mode A finding for every non-zero Score-table deduction."
     }
+  ,
+    {
+      "id": "student-reviewer",
+      "type": "github-action",
+      "name": "Student Reviewer — GitHub Actions",
+      "description": "GitHub Actions workflow that automatically reviews student PRs using clean-code references. Stack detection (HTML/CSS/JS/TS/React). GitHub Models default (zero-friction, uses GITHUB_TOKEN). Override via AI_BASE_URL + AI_API_KEY + AI_MODEL for any OpenAI-compatible provider. Posts line-specific inline comments with suggestions via Octokit.",
+      "path": ".github/actions/student-reviewer/",
+      "current_version": "v1.0.0",
+      "status": "stable",
+      "dependencies": ["openai", "@octokit/rest"],
+      "evidence": null,
+      "next": "End-to-end test: create a test PR in a student repo and verify comments post. v1.1: React sub-rules (react-hooks.md, react-testing.md, react-patterns.md)."
+    }
   ]
 }

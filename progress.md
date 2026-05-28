@@ -237,8 +237,36 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 
 **Next:**
 - ~~Post-merge verification~~ — ✓ verified by user 2026-05-27 by running `/pocket-mentor` on a real student project; Sonnet 4.6 turn-scoped lock works end-to-end.
-- Student-reviewer GitHub Actions project (plan: `docs/superpowers/plans/2026-05-25-student-reviewer.md`) — still not started; the multi-agent architecture question is deferred to Task 5 of that plan per ADR-0003 follow-up notes.
+- ~~Student-reviewer GitHub Actions project~~ — ✓ completed 2026-05-28, see entry below.
 - ~~Optional cleanup~~ — ✓ user cleaned merged branches via GitHub UI 2026-05-27; only `feature/pocket-mentor-v0.9-spec` remains as an intentional archive of the pre-pivot engine+CLI design.
+
+**Blockers:** none
+
+---
+
+## 2026-05-28 — student-reviewer v1.0.0
+
+**Done:**
+- `feat/student-reviewer` branch created; all 9 plan tasks completed.
+- `.github/actions/student-reviewer/` — composite GitHub Action (action.yml, review.mjs, package.json, package-lock.json, .gitignore).
+- `review.mjs` — stack detection, reference loading, AI call (GitHub Models default + any OpenAI-compatible override), Octokit PR diff fetch + inline comment posting.
+- `templates/workflows/student-review.yml` — student copies this once, zero API key setup required.
+- `sync-references.sh` extended with student-reviewer second target (conditional on directory existence).
+- README with quick start + optional provider override instructions.
+- Root `.gitignore` fixed: removed global `package-lock.json` ignore (was blocking action scaffold commit).
+- `feature_list.json` updated with student-reviewer v1.0.0 entry.
+
+**Decisions:**
+- GitHub Models as default (uses GITHUB_TOKEN automatically — zero friction for students).
+- No approval gate — runs automatically on PR open/synchronize.
+- Angular: exits 0 silently (no review posted, no error).
+- Finding format matches pocket-mentor Mode A (What / Why bad / How to fix) for consistency.
+- Multi-agent architecture deferred — single-pass first; reconsider if silent reference skips or finding displacement appear in real test runs (per open question in Task 5 of the plan).
+
+**Next:**
+- End-to-end test: add `student-review.yml` to a real student repo, open a PR with a deliberate issue, verify inline comments post correctly.
+- Merge `feat/student-reviewer` → master via PR.
+- v1.1: React sub-rules (react-hooks.md, react-testing.md, react-patterns.md).
 
 **Blockers:** none
 

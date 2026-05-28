@@ -1,0 +1,45 @@
+# RS School Student Reviewer
+# ─────────────────────────
+# Automatically reviews your pull requests against RS School clean-code standards
+# and posts inline comments directly in the PR.
+#
+# ⚠️ NOT SUPPORTED: Angular projects (@angular/core in dependencies)
+#   The action detects Angular automatically and exits without posting any comments.
+#   Use pocket-mentor (manual review) for Angular projects instead.
+#
+# SETUP (one time):
+#   1. Copy this file to .github/workflows/student-review.yml in YOUR repository
+#   2. Push to GitHub — no API keys needed, works out of the box with GitHub Models (free)
+#
+# OPTIONAL — use your own AI provider for better results:
+#   In your repo Settings → Secrets → Actions, add:
+#     AI_API_KEY   → your Anthropic / OpenAI / Gemini key
+#     AI_BASE_URL  → provider base URL (e.g. https://api.anthropic.com/v1)
+#     AI_MODEL     → model name (e.g. claude-sonnet-4-6)
+
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run RS School review
+        uses: HelgaZhizhka/mentor-resources/.github/actions/student-reviewer@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ai-base-url:  ${{ secrets.AI_BASE_URL }}
+          ai-api-key:   ${{ secrets.AI_API_KEY }}
+          ai-model:     ${{ secrets.AI_MODEL }}

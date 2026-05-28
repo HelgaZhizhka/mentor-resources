@@ -24,16 +24,28 @@ if [[ -z "$REPO_ROOT" ]]; then
 fi
 
 SRC="$REPO_ROOT/clean-code"
-DST="$REPO_ROOT/.claude/skills/pocket-mentor/references/clean-code"
 
 if [[ ! -d "$SRC" ]]; then
   echo "ERROR: source not found: $SRC" >&2
   exit 1
 fi
 
-rm -rf "$DST"
-mkdir -p "$DST"
-cp "$SRC"/*.md "$DST/"
+# Target 1: pocket-mentor skill bundle
+DST1="$REPO_ROOT/.claude/skills/pocket-mentor/references/clean-code"
+rm -rf "$DST1"
+mkdir -p "$DST1"
+cp "$SRC"/*.md "$DST1/"
+count1=$(find "$DST1" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
+echo "Synced $count1 files: $SRC → $DST1"
 
-count=$(find "$DST" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
-echo "Synced $count files: $SRC → $DST"
+# Target 2: student-reviewer action bundle
+DST2="$REPO_ROOT/.github/actions/student-reviewer/references/clean-code"
+if [[ -d "$REPO_ROOT/.github/actions/student-reviewer" ]]; then
+  rm -rf "$DST2"
+  mkdir -p "$DST2"
+  cp "$SRC"/*.md "$DST2/"
+  count2=$(find "$DST2" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
+  echo "Synced $count2 files: $SRC → $DST2"
+else
+  echo "Skipped student-reviewer target (directory not yet created)"
+fi

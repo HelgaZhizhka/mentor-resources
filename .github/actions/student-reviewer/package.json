@@ -1,0 +1,14 @@
+{
+  "name": "student-reviewer",
+  "version": "1.0.0",
+  "description": "RS School student PR reviewer — GitHub Action",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "node --check review.mjs"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.0",
+    "openai": "^4.67.0"
+  }
+}

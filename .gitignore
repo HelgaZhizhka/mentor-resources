@@ -6,7 +6,6 @@
 
 # Linter dependencies and build artifacts
 node_modules/
-package-lock.json
 yarn.lock
 .npmrc
 dist/
