@@ -317,6 +317,86 @@ async function fetchPreviousReviews(owner, repo, pullNumber) {
   }
 }
 
+const JUDGE_SYSTEM_PROMPT = `You are a quality filter for an educational code review.
+
+You will receive:
+- new_findings: findings a reviewer wants to post on a student PR
+- previous_topics: short summaries of what was already said in earlier reviews on this PR
+
+For each finding decide: keep or drop.
+
+Drop if ANY of these is true:
+- The same concept is already covered in previous_topics (semantic match, not word match)
+- The finding is vague or speculative (no specific file/line evidence in the body)
+
+Keep everything else.
+
+Output JSON only — no markdown, no explanation:
+{
+  "decisions": [
+    { "index": 0, "decision": "keep", "reason": "specific, not covered before" },
+    { "index": 1, "decision": "drop", "reason": "subscription leaks already covered in previous review" }
+  ]
+}`.trim();
+
+async function callJudge(findings, previousTopics) {
+  if (findings.length === 0) return findings;
+
+  const client = buildClient();
+  const model  = process.env.AI_MODEL || 'gpt-4o';
+
+  const findingSummaries = findings.map((f, i) => ({
+    index: i,
+    path: f.path,
+    line: f.line,
+    body_preview: (f.body ?? '').slice(0, 200),
+  }));
+
+  let raw;
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system', content: JUDGE_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Filter these findings.\n\nprevious_topics:\n${JSON.stringify(previousTopics)}\n\nnew_findings:\n${JSON.stringify(findingSummaries)}`,
+        },
+      ],
+      temperature: 0.0,
+      max_tokens: 1024,
+    });
+    raw = response.choices[0]?.message?.content ?? '{}';
+  } catch (err) {
+    console.warn(`Judge failed (${err.message}) — posting all findings unfiltered`);
+    return findings;
+  }
+
+  const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  let decisions;
+  try {
+    ({ decisions } = JSON.parse(cleaned));
+  } catch {
+    console.warn('Judge returned invalid JSON — posting all findings unfiltered');
+    return findings;
+  }
+
+  const kept = [];
+  for (const d of decisions) {
+    const label = d.decision === 'keep' ? 'keep ' : 'drop ';
+    const finding = findings[d.index];
+    console.log(`Judge: ${label} [${d.index}] ${finding?.path ?? '?'}:${finding?.line ?? '?'} — ${d.reason}`);
+    if (d.decision === 'keep') kept.push(finding);
+  }
+
+  if (kept.length === 0 && findings.length > 0) {
+    console.warn('Judge dropped all findings — falling back to unfiltered');
+    return findings;
+  }
+
+  return kept;
+}
+
 // ── Task requirements ────────────────────────────────────────────────────────
 
 const TASK_URL_PATTERN = /https:\/\/github\.com\/rolling-scopes-school\/tasks\/[^\s)>\]]+/;
