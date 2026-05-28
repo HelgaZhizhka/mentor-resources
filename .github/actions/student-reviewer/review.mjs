@@ -290,6 +290,7 @@ async function fetchPreviousReviews(owner, repo, pullNumber) {
       owner,
       repo,
       pull_number: Number(pullNumber),
+      per_page: 100,
     });
 
     const botReviews = reviews.filter(r => r.user?.login === 'github-actions[bot]');
@@ -298,16 +299,17 @@ async function fetchPreviousReviews(owner, repo, pullNumber) {
     const topics = [];
 
     for (const review of botReviews) {
-      if (review.body) topics.push(review.body.slice(0, 120));
+      if (review.body) topics.push(review.body.slice(0, 200));
 
       const { data: comments } = await octokit.pulls.listCommentsForReview({
         owner,
         repo,
         pull_number: Number(pullNumber),
         review_id: review.id,
+        per_page: 100,
       });
       for (const c of comments) {
-        if (c.body) topics.push(c.body.slice(0, 120));
+        if (c.body) topics.push(c.body.slice(0, 200));
       }
     }
 
@@ -364,7 +366,7 @@ async function callJudge(findings, previousTopics) {
         },
       ],
       temperature: 0.0,
-      max_tokens: 1024,
+      max_tokens: 2048,
     });
     raw = response.choices[0]?.message?.content ?? '{}';
   } catch (err) {
@@ -394,9 +396,21 @@ async function callJudge(findings, previousTopics) {
       console.warn(`Judge returned out-of-range index ${d.index} — skipping`);
       continue;
     }
+    if (d.decision !== 'keep' && d.decision !== 'drop') {
+      console.warn(`Judge returned unknown decision "${d.decision}" for [${d.index}] — treating as keep`);
+      kept.push(finding);
+      continue;
+    }
     const label = d.decision === 'keep' ? 'keep' : 'drop';
     console.log(`Judge: ${label} [${d.index}] ${finding.path}:${finding.line} — ${d.reason}`);
     if (d.decision === 'keep') kept.push(finding);
+  }
+
+  const decided = new Set(decisions.map(d => d.index));
+  const undecided = findings.filter((_, i) => !decided.has(i));
+  if (undecided.length > 0) {
+    console.warn(`Judge omitted ${undecided.length} finding(s) — treating as keep`);
+    kept.push(...undecided);
   }
 
   if (kept.length === 0 && findings.length > 0) {
