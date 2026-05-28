@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
@@ -7,20 +7,50 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Stack detection ──────────────────────────────────────────────────────────
 
-function detectStack(workspace) {
-  const pkgPath = join(workspace, 'package.json');
-  if (!existsSync(pkgPath)) return 'html-css';
-
+function readPackageDeps(pkgPath) {
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  const deps = {
-    ...pkg.dependencies ?? {},
-    ...pkg.devDependencies ?? {},
-  };
+  return { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
+}
 
+function stackFromDeps(deps) {
   if ('@angular/core' in deps) return 'angular';
   if ('react' in deps && 'typescript' in deps) return 'react-ts';
   if ('typescript' in deps) return 'typescript';
   return 'vanilla-js';
+}
+
+function detectStackFromDiff(diff) {
+  const files = [...diff.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1]);
+  const hasAngular = diff.includes('@angular/core') || files.some(f => /\.component\.(ts|html)$/.test(f));
+  const hasTsx = files.some(f => f.endsWith('.tsx'));
+  const hasReact = hasTsx || diff.includes("from 'react'") || diff.includes('from "react"');
+  const hasTs = files.some(f => f.endsWith('.ts') || f.endsWith('.tsx'));
+  const hasJs = files.some(f => f.endsWith('.js'));
+  if (hasAngular) return 'angular';
+  if (hasReact && hasTs) return 'react-ts';
+  if (hasTs) return 'typescript';
+  if (hasJs) return 'vanilla-js';
+  return 'html-css';
+}
+
+function detectStack(workspace) {
+  // Check root package.json first
+  const rootPkg = join(workspace, 'package.json');
+  if (existsSync(rootPkg)) return stackFromDeps(readPackageDeps(rootPkg));
+
+  // RS School repos often have the project in a subdirectory — check one level deep
+  try {
+    const entries = readdirSync(workspace, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      const candidate = join(workspace, entry.name, 'package.json');
+      if (existsSync(candidate)) return stackFromDeps(readPackageDeps(candidate));
+    }
+  } catch {
+    // ignore read errors
+  }
+
+  return null; // signal to main() that workspace detection failed
 }
 
 // ── Reference loading ────────────────────────────────────────────────────────
@@ -227,8 +257,12 @@ async function main() {
     process.exit(1);
   }
 
-  const stack = detectStack(workspace);
-  console.log(`Detected stack: ${stack}`);
+  console.log('Fetching PR diff...');
+  const diff = await fetchPRDiff(owner, repo, prNumber);
+
+  const workspaceStack = detectStack(workspace);
+  const stack = workspaceStack ?? detectStackFromDiff(diff);
+  console.log(`Detected stack: ${stack}${workspaceStack ? '' : ' (from diff)'}`);
 
   if (stack === 'angular') {
     console.log('Angular projects are not supported in this version. Skipping review.');
@@ -236,13 +270,16 @@ async function main() {
   }
 
   const references = buildReferences(stack);
-  console.log('Fetching PR diff...');
-  const diff = await fetchPRDiff(owner, repo, prNumber);
-
   console.log('Calling AI for review...');
   const reviewData = await callAI(stack, references, diff);
 
-  console.log(`Posting ${reviewData.comments?.length ?? 0} comment(s)...`);
+  const commentCount = reviewData.comments?.length ?? 0;
+  if (commentCount === 0 && !reviewData.general_body) {
+    console.log('No findings to post — skipping review.');
+    process.exit(0);
+  }
+
+  console.log(`Posting ${commentCount} comment(s)...`);
   await postReview(owner, repo, prNumber, reviewData);
 }
 
