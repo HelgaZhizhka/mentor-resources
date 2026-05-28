@@ -460,14 +460,23 @@ async function main() {
   console.log('Calling AI for review...');
   const reviewData = await callAI(stack, references, diff, taskRequirements);
 
-  const commentCount = reviewData.comments?.length ?? 0;
-  if (commentCount === 0 && !reviewData.general_body) {
+  console.log('Fetching previous reviews...');
+  const previousTopics = await fetchPreviousReviews(owner, repo, prNumber);
+  console.log(`Found ${previousTopics.length} previous review topic(s).`);
+
+  console.log('Running judge...');
+  const filteredComments = await callJudge(reviewData.comments ?? [], previousTopics);
+
+  const finalReview = { ...reviewData, comments: filteredComments };
+
+  const commentCount = filteredComments.length;
+  if (commentCount === 0 && !finalReview.general_body) {
     console.log('No findings to post — skipping review.');
     process.exit(0);
   }
 
   console.log(`Posting ${commentCount} comment(s)...`);
-  await postReview(owner, repo, prNumber, reviewData);
+  await postReview(owner, repo, prNumber, finalReview);
 }
 
 main().catch(err => {
