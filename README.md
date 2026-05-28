@@ -82,7 +82,25 @@ npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill po
 
 Ментор редактирует отчёт и решает, что отправлять студенту.
 
-**2. ESLint конфигурация для студенческих проектов** → [Подробнее](./templates/configs/LINTER-README.md)
+**2. Student Reviewer — GitHub Actions** → [`.github/actions/student-reviewer/README.md`](./.github/actions/student-reviewer/README.md)
+
+Студент добавляет один файл в свой репозиторий — action запускается автоматически на каждый PR и постит inline-комментарии с обучающим фидбеком прямо в код.
+
+- определяет стек (HTML/CSS, Vanilla JS, TypeScript, React+TS) и применяет только релевантные правила из [`clean-code/`](./clean-code/)
+- работает без API-ключа через GitHub Models (бесплатно); поддерживает любой OpenAI-совместимый провайдер через секреты
+- комментарии в формате ментора: объясняет концепцию, а не просто называет нарушение
+
+> ⚠️ **Angular проекты не поддерживаются** — action обнаруживает `@angular/core` и завершается без комментариев. Для Angular-проектов используй Pocket Mentor.
+
+**Установка (одной командой):**
+
+```bash
+mkdir -p .github/workflows
+curl -o .github/workflows/student-review.yml \
+  https://raw.githubusercontent.com/HelgaZhizhka/mentor-resources/master/templates/workflows/student-review.yml
+```
+
+**3. ESLint конфигурация для студенческих проектов** → [Подробнее](./templates/configs/LINTER-README.md)
 
 Покрывает базовые правила автоматически:
 

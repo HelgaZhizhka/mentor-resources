@@ -2,6 +2,8 @@
 
 Automatic code review for RS School students. Posts inline PR comments using the same clean-code standards as pocket-mentor.
 
+> ⚠️ **Angular projects are not supported.** The action detects `@angular/core` in dependencies and exits without posting comments. Use [pocket-mentor](../../.claude/skills/pocket-mentor/README.md) for Angular projects.
+
 ## Quick start (zero config)
 
 1. Copy `templates/workflows/student-review.yml` from this repo to your project:

@@ -3,6 +3,10 @@
 # Automatically reviews your pull requests against RS School clean-code standards
 # and posts inline comments directly in the PR.
 #
+# ⚠️ NOT SUPPORTED: Angular projects (@angular/core in dependencies)
+#   The action detects Angular automatically and exits without posting any comments.
+#   Use pocket-mentor (manual review) for Angular projects instead.
+#
 # SETUP (one time):
 #   1. Copy this file to .github/workflows/student-review.yml in YOUR repository
 #   2. Push to GitHub — no API keys needed, works out of the box with GitHub Models (free)
