@@ -37,7 +37,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Run RS School review
-        uses: HelgaZhizhka/mentor-resources/.github/actions/student-reviewer@main
+        uses: HelgaZhizhka/mentor-resources/.github/actions/student-reviewer@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           ai-base-url:  ${{ secrets.AI_BASE_URL }}
