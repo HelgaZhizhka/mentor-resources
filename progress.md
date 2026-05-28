@@ -306,7 +306,7 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 
 **Done:**
 - Removed artificial `Maximum 5–7` finder limit — judge now controls count.
-- Added `fetchPreviousReviews()` — reads all `github-actions[bot]` reviews on the PR, extracts topic summaries (120 chars each).
+- Added `fetchPreviousReviews()` — reads all `github-actions[bot]` reviews on the PR with `per_page: 100` pagination, extracts topic summaries (200 chars each).
 - Added `callJudge()` — second AI call (temperature 0.0) that filters finder output: drops semantically duplicate findings and low-confidence findings.
 - Safety net: judge dropping all findings falls back to unfiltered. Any judge error also falls back unfiltered (fail-open).
 - Logs every judge decision to Actions stdout with reason.
@@ -317,8 +317,21 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 - body_preview (200 chars) sent to judge instead of full body — tokens saved.
 - Fail-open on all judge errors — a broken judge never silences a valid review.
 
+**Post-v1.2.0 hardening (same day, from final code review):**
+- Out-of-range judge index guard — warn + skip instead of pushing `undefined` into kept.
+- Null/missing `decisions` array guard — `Array.isArray` check before iteration, fail-open if invalid.
+- Pagination via `per_page: 100` for `listReviews` and `listCommentsForReview` — dedup now works for PRs with many bot reviews.
+- Unknown decision value rescue — values other than "keep"/"drop" warn + treat as keep.
+- Partial decisions rescue — findings omitted by the judge are added to `kept` with a warning.
+- `max_tokens: 1024 → 2048` for `callJudge` — safer for large finding sets.
+- Previous-topic preview widened 120 → 200 chars to match finding body_preview (symmetric for semantic dedup).
+- Node.js 20 → 24 in `action.yml` (fixes GitHub deprecation warning before 2026-06-02).
+
+**End-to-end verification:**
+- Clean-state run on PR #80 (all old bot inline comments deleted): 9 findings posted, no filter triggered (no previous topics) — confirms finder + posting flow works.
+- Will verify dedup on a run with prior bot reviews next iteration.
+
 **Next:**
-- Trigger a re-review on a PR that already has bot reviews and verify judge dedup log appears.
 - v1.3 candidate: configurable task URL pattern (not hardcoded to RS School).
 
 **Blockers:** none
