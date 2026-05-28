@@ -124,6 +124,8 @@ corrected line here
 
 <reminder>
 You are writing to a student, not filing a bug report. A comment that helps them understand a concept is worth ten comments that just cite a rule. Write the comment you would want to receive if you were learning this for the first time.
+
+If you are not confident about a finding — skip it. Do not guess. Only report what you can clearly support with evidence from the diff and a rule from <curriculum>.
 </reminder>
 `.trim();
 
@@ -134,14 +136,15 @@ async function callAI(stack, references, prDiff) {
   const response = await client.chat.completions.create({
     model,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT(stack, references) },
-      { role: 'user',   content: `Review this pull request diff:\n\n${prDiff}` },
+      { role: 'system',    content: SYSTEM_PROMPT(stack, references) },
+      { role: 'user',      content: `Review this pull request diff:\n\n${prDiff}` },
+      { role: 'assistant', content: '{' },
     ],
     temperature: 0.2,
     max_tokens: 4096,
   });
 
-  const raw = response.choices[0]?.message?.content ?? '{}';
+  const raw = '{' + (response.choices[0]?.message?.content ?? '}');
   const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
 
   try {
