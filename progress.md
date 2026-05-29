@@ -366,3 +366,27 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-05-29 — pocket-mentor v1.1.1 — refined inline-mode filter
+
+**Done:**
+- Refined the inline-mode filter rule in `SKILL.md`. Old rule had two conflicting clauses: "all 🔴 are kept" and "total cap 7" — when 🔴 alone reached 7, the rule was unreachable and the model interpreted it ambiguously.
+- New rule:
+  - All 🔴 always kept — no upper bound. Hiding a blocker is worse than a longer list.
+  - 🟡 + 🔵 combined cap: max 5 (≤1 🔵).
+- Bumped version to v1.1.1 in README.md and feature_list.json.
+
+**Evidence:**
+- Real run on fun-chat PR #80 (HelgaZhizhka, 2026-05-29 ~15:00 UTC) produced 7 🔴 + 4 🟡 (11 total) and looked appropriate. The new rule formalises this behaviour.
+
+**Decisions:**
+- Patch bump (v1.1.0 → v1.1.1) — clarifies behaviour, no new capability.
+- Pocket-mentor still cannot detect "missing feature" structural issues (e.g., missing routing). Mentor added a manual 🔴 comment about routing to PR #80. Action item parked for v1.2 candidate consideration.
+
+**Next:**
+- Watch list: track whether v1.1.1 produces consistent 🟡/🔵 totals (target ≤5).
+- v1.2 candidate: structural check that runs on the whole project (not just diff) — would catch "missing routing"-style issues. Bigger architectural change, needs its own spec.
+
+**Blockers:** none
+
+---

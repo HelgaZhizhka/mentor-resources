@@ -2,7 +2,7 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v1.1.0**
+Version: **v1.1.1**
 
 ## Model selection
 
@@ -158,3 +158,5 @@ v1.0.2 — Opus-literal hardening: per-stack mandatory reference citation (e.g. 
 v1.0.3 — Turn-scoped model lock to Claude Sonnet 4.6 via the `model:` frontmatter field, after a 5-model comparison test established that weaker models fabricate facts and miss structural rubric violations. See [Model selection](#model-selection) above.
 
 v1.1.0 — Inline-mode filter: when `--output inline`, the student-facing PR comments are capped at 7 findings (all 🔴 Critical + top 3–4 🟡 + at most 1 🔵), prioritized by teaching value. The full `CODE_REVIEW_REPORT.md` is still written with everything for the mentor. Rationale: 30+ inline comments on a student PR overwhelm and lose pedagogical impact — depth over breadth. Local mode unchanged.
+
+v1.1.1 — Refined the inline-mode filter after a real run on fun-chat produced 7 🔴 + 4 🟡 (11 total): the old "total cap: 7" rule was unreachable when 🔴 alone reached the cap, so the model interpreted it ambiguously. New rule: all 🔴 are always kept (no upper bound — hiding a blocker is worse than a longer list), and the 🟡 + 🔵 tier has its own combined cap of 5 (with at most 1 🔵). This matches what the model actually produced and what the mentor judged appropriate.

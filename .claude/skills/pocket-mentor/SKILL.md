@@ -214,14 +214,12 @@ Rules:
 - Include a `suggestion` block in `body` only for simple single-line fixes (rename, add type annotation, remove `console.log`). For architectural changes: prose only, no suggestion.
 - Findings without a specific line → include in `general_body`, not in `comments`.
 
-**Filter for inline mode** — student-facing, must not overwhelm. Hard limit applies to `comments[]` (architectural findings in `general_body` are not limited).
-- Include **all** 🔴 Critical findings (blockers — never drop)
-- Include **top 3–4** 🟡 Recommendations by teaching value (depth over breadth)
-- Include **at most 1** 🔵 Note (one taste of craft, not a list)
-- **Total cap: 7 findings** in `comments[]`
-- If 🟡 + 🔵 together exceed the budget, drop the lowest-impact 🔵/🟡 — never the 🔴
-- Anti-repetition rule still applies: 3+ occurrences of the same pattern = one detailed comment + brief mention of other locations (counts as 1 toward the cap)
-- The findings that did not make the inline cut are still in the full `CODE_REVIEW_REPORT.md` for the mentor
+**Filter for inline mode** — student-facing, must not overwhelm. The limit applies to `comments[]` (architectural findings in `general_body` are not limited).
+- Include **all** 🔴 Critical findings — no upper bound. Hiding a blocker is worse than a longer list.
+- 🟡 + 🔵 combined cap: **max 5 in total** (depth over breadth in this severity tier).
+  - Within that budget: prioritize 🟡 by teaching value; reserve **at most 1** slot for 🔵 (one taste of craft, not a list).
+- Anti-repetition rule still applies: 3+ occurrences of the same pattern = one detailed comment + brief mention of other locations (counts as 1 toward the budget).
+- The 🟡/🔵 findings that did not make the inline cut are still in the full `CODE_REVIEW_REPORT.md` for the mentor.
 
 ### issues-draft.json
 
