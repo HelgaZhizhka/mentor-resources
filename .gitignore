@@ -54,3 +54,7 @@ docs/test-reviews/
 
 # Local issue tracker (Matt Pocock skills workflow)
 .scratch/
+
+# Local drafts not for git
+docs/mentor-chat-announcement-ru.md
+docs/rs-school-docs-proposal-ru.md
