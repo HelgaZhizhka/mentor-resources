@@ -4,6 +4,46 @@ Structured RS School-style code review of a cloned student repository.
 
 Version: **v1.1.1**
 
+## Mentor's note — what this tool is (and isn't)
+
+`pocket-mentor` is a tool *for the tradesperson*. It saves you mechanical work so you can spend more time on the part AI cannot do: the pedagogy of *this* student in *this* moment of their learning.
+
+**What it is for:**
+- First pass on a student PR — saves time on lint/build/tsc, formal rules, score against rubric, and citing your own curriculum consistently across reviews.
+- An objective base for conversation when a student disputes a finding (the report cites specific files in `clean-code/*`).
+
+**What it is NOT for:**
+- A final verdict you copy-paste to the student.
+- A replacement for your judgment about *this* student in *this* moment of their learning.
+- A scaffold that makes you forget what to look for yourself.
+
+**Three risks to watch:**
+
+1. **Anchoring** — AI returns 8 findings; you treat them as *the* scope. The unique thing this student needs to hear gets lost.
+   *Counter:* read the AI report, then close it and ask yourself: "what would I have said without this?"
+
+2. **Standardisation erodes context** — one student just survived a hard month and needs encouragement. Another is coasting and needs a push. A third is ahead and ready for advanced topics. AI writes to all of them the same way.
+   *Counter:* adapt tone, depth, and emphasis when you curate the report into the message you send.
+
+3. **Atrophy of your own intuition** — if every review starts with AI, you slowly stop noticing patterns yourself.
+   *Counter:* occasionally do a review without the tool to keep the skill alive.
+
+**Use the right output mode for the situation:**
+
+- *Default* (local `CODE_REVIEW_REPORT.md`) → you read, edit, send your own message to the student. Best for most cases.
+- `--output inline` → the filtered comments are posted in your name on the PR. Use when findings are clearly actionable and you have sanity-checked them. The inline filter caps 🟡+🔵 at 5 (≤1 🔵); 🔴 are always kept.
+- `--output issues` → only 🔴 critical findings become tracked issues. Use when you want the student to have explicit work items, not just inline noise.
+
+**Who this tool is for:**
+- Mentors with sustained load (multiple PRs per week) — AI handles mechanics, you preserve energy for pedagogy.
+- Mentors who are early in their menthorship journey — AI as scaffolding, gradually replaced by your own intuition.
+- Mentors who need consistent reference-grounded reviews and a Score against rubric.
+
+**Who this tool may be less useful for:**
+- Senior mentors with strong intuition who prefer a fully personal touch on every PR.
+- Reviewers with a tiny student cohort where the time saved is not worth the curation overhead.
+- Anyone tempted to rubber-stamp AI output without curating — in that case the tool works against the student, not for them.
+
 ## Model selection
 
 Starting with v1.0.3, `SKILL.md` declares `model: claude-sonnet-4-6` in its frontmatter. When you invoke `/pocket-mentor`, Claude Code switches to **Claude Sonnet 4.6** for the duration of that single turn, then returns to whatever model you had active in the session. The override does not modify your settings; it is scoped to the skill invocation only.
