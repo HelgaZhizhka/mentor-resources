@@ -455,3 +455,26 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.4.0 report calibration
+
+**Done:**
+- Added `--language auto|ru|en`; default remains auto with Russian fallback for flags-only invocations.
+- Split scoring into `Functional Rubric Estimate` and `Recommended Mentor Score`.
+- Added required score-delta explanation when functional estimate and recommended mentor score differ.
+- Added confidence rule: skipped build/lint/tests/runtime caps confidence at `medium`.
+- Added `Priority Fixes` and `Generated Files` sections to the report format.
+- Updated README, root README, AGENTS, and `feature_list.json` to v0.4.0.
+
+**Decisions:**
+- Language flag is useful because mentor/student-facing output may need Russian or English independent of the chat language.
+- Functional rubric and code-review recommendation are separate numbers; this avoids confusion seen in the first local state-management smoke report (`96 functional estimate` vs `86 recommended score`).
+- Generated-files audit makes local-only vs GitHub-output runs explicit.
+
+**Next:**
+- Re-run `/react-course-review` on `/Users/mac/rs/code-review/react-q2/rs-react-app` after dependencies are installed.
+- Compare v0.4.0 output against the hand-written smoke report and tune wording if needed.
+
+**Blockers:** none
+
+---

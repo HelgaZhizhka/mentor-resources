@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.3.0**
+Version: **v0.4.0**
 
 ## What This Skill Is For
 
@@ -64,6 +64,18 @@ Supported focus values:
 - `testing`
 - `final`
 
+Force report language:
+
+```text
+> /react-course-review --context ./task.md --language ru
+```
+
+Supported language values:
+
+- `auto` — session language, Russian fallback for flags-only invocations
+- `ru`
+- `en`
+
 Optional output path:
 
 ```text
@@ -113,9 +125,11 @@ Sections:
 - 🔴 Course blockers
 - 🟡 React learning feedback
 - 🔵 Later improvements
-- Recommended Mentor Score, advisory 0-100
-- Rubric table, only when `--context` has a rubric
+- Functional Rubric Estimate, only when `--context` has a rubric
+- Recommended Mentor Score, advisory 0-100 after code-review risks
+- Priority Fixes
 - Manual checks for mentor
+- Generated Files
 - Summary for student
 
 GitHub modes:
@@ -172,3 +186,5 @@ v0.1.0 — initial standalone React-course review skill bundle. It reuses the me
 v0.2.0 — aligned with React mentor-review practice: no separate student-level flag, evidence-first blockers, explicit security/error-handling checks, and an advisory 0-100 Recommended Mentor Score with confidence and final-call note.
 
 v0.3.0 — adds output modes: local report, filtered inline PR comments, GitHub issues for 🔴 Course blockers, and combined inline+issues. GitHub publishing uses draft JSON files plus a mandatory mentor approval gate before running `gh`.
+
+v0.4.0 — adds `--language auto|ru|en`, separates Functional Rubric Estimate from Recommended Mentor Score, requires score-delta explanation when they differ, adds Priority Fixes and Generated Files sections, and caps score confidence at `medium` when build/lint/tests/runtime were skipped.

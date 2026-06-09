@@ -113,7 +113,7 @@ npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill po
 npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill react-course-review
 ```
 
-Используй его для React/React+TS работ, где студенту нужен педагогический фидбек: что сломано, почему это важно в React, как исправить, какой принцип курса нарушен и что можно отложить. Вывод: локальный `REACT_COURSE_REVIEW.md`, отфильтрованные inline-комментарии в PR (`--output inline`), GitHub Issues по 🔴 блокерам (`--output issues`) или оба режима вместе.
+Используй его для React/React+TS работ, где студенту нужен педагогический фидбек: что сломано, почему это важно в React, как исправить, какой принцип курса нарушен и что можно отложить. Вывод: локальный `REACT_COURSE_REVIEW.md`, отфильтрованные inline-комментарии в PR (`--output inline`), GitHub Issues по 🔴 блокерам (`--output issues`) или оба режима вместе. Язык отчёта можно задать явно: `--language ru|en`.
 
 **3. Student Reviewer — GitHub Actions** → [`.github/actions/student-reviewer/README.md`](./.github/actions/student-reviewer/README.md)
 

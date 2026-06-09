@@ -1,7 +1,7 @@
 ---
 name: react-course-review
-description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.3.0
+description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--language auto|ru|en] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
+version: v0.4.0
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -18,21 +18,28 @@ Do **not** ask for or infer a generic student level (`junior` / `middle` / `seni
 
 ## Language
 
-Respond in the language the mentor uses with you in this session. If the invocation contains only flags, default to **Russian**.
+Parse `--language <mode>` from the invocation. Accepted values:
 
-Bash output and checker rule names stay in English; mentor-facing commentary follows the session language.
+| Flag | Behaviour |
+|---|---|
+| *(absent)* or `--language auto` | Use the language the mentor uses with you in this session. If the invocation contains only flags, default to **Russian**. |
+| `--language ru` | Write mentor-facing output in Russian. |
+| `--language en` | Write mentor-facing output in English. |
+
+Bash output, checker rule names, code identifiers, package names, and file paths stay in English; report prose follows the selected language.
 
 ## Inputs
 
 1. **Student repository** — current working directory. The mentor cloned the student's PR branch before invoking you.
 2. **Optional task context** — `--context <path-or-url>` with the assignment requirements, checklist, or rubric. If present, it is authoritative over generic React advice.
 3. **Optional course focus** — `--focus fundamentals|hooks|data|forms|testing|final`. If absent, infer from task context and code, then state your inference in the report.
-4. **Optional output mode** — `--output <mode>`. Accepted values: `local`, `inline`, `issues`, `inline,issues`. Default: `local`.
-5. **Optional output path** — `--output-path <path>`. Default: `REACT_COURSE_REVIEW.md` in the detected project root.
+4. **Optional language** — `--language auto|ru|en`. Default: `auto`.
+5. **Optional output mode** — `--output <mode>`. Accepted values: `local`, `inline`, `issues`, `inline,issues`. Default: `local`.
+6. **Optional output path** — `--output-path <path>`. Default: `REACT_COURSE_REVIEW.md` in the detected project root.
 
 ### When `--context` loading fails
 
-If loading the provided context fails, stop and ask the mentor whether to provide a local file, paste the content, or continue without context. Do not invent rubric categories from memory. If continuing without context, omit any rubric table and add a warning banner. You may still provide a clearly-labelled **Recommended Mentor Score** based on code quality evidence, but mark confidence as `low` and state that task-completion requirements were not verified.
+If loading the provided context fails, stop and ask the mentor whether to provide a local file, paste the content, or continue without context. Do not invent rubric categories from memory. If continuing without context, omit **Functional Rubric Estimate** and add a warning banner. You may still provide a clearly-labelled **Recommended Mentor Score** based on code quality evidence, but mark confidence as `low` and state that task-completion requirements were not verified.
 
 ### Output Mode
 
@@ -128,18 +135,25 @@ Every 🔴/🟡 finding uses:
 - **How to fix:** concrete next step; include a short before/after only when it is safe
 - **Reference:** local reference filename and section when possible
 
-## Recommended Mentor Score
+## Scoring
 
 React-course mentor review uses a 100-point scale, but the agent's score is only a recommendation. The final score belongs to the mentor after checking functionality, reading the student's replies, and deciding how much to value fixes made after review.
 
-When `--context` contains a task rubric, build a rubric table from that context. When no rubric is available, provide a code-review-based score only:
+When `--context` contains a task rubric, separate **functional completion** from the final recommendation:
+
+1. **Functional Rubric Estimate** — a table based only on task criteria and evidence in the code/runtime checks. This answers "how much of the task appears implemented?"
+2. **Recommended Mentor Score** — the agent's final draft score after code-review risks, missing tests, lint/build/runtime limitations, and teaching priorities. This may be lower than the functional estimate.
+
+Always explain the delta when these numbers differ. Example: "Functional rubric looks like 96/100, but recommended mentor score is 86/100 because lint/build/test were not verified and the new state/theme flows lack tests."
+
+When no rubric is available, omit **Functional Rubric Estimate** and provide only a code-review-based **Recommended Mentor Score**.
 
 ```markdown
 ## Recommended Mentor Score
 
 **Draft score:** <0-100>/100
 **Confidence:** high | medium | low
-**Basis:** <task rubric | code review only | code review with missing task context>
+**Basis:** <functional rubric + code review | code review only | code review with missing task context>
 
 **Why this score:** <2-4 bullets grounded in findings>
 **Fastest path to improve:** <top 3 fixes with highest score impact>
@@ -156,6 +170,12 @@ Use these bands for the code-review-based score:
 | 60-74 | Works, but React fundamentals or code quality need substantial improvement |
 | 40-59 | Serious problems in architecture, state/data flow, or task completeness |
 | 0-39 | App/build/functionality is badly broken or core React concepts are missing |
+
+Confidence rules:
+
+- `high` only when task context is loaded and build/lint/tests or runtime evidence confirm the main flows.
+- `medium` when task context is loaded but one major verification layer is missing (for example dependencies are not installed and lint/build/tests are skipped).
+- `low` when task context is missing, build/lint fails before review can continue, or core runtime flows were not inspected.
 
 ## Report Format
 
@@ -184,13 +204,20 @@ Write `REACT_COURSE_REVIEW.md` unless `--output-path` overrides it.
 ## 🔵 Later improvements
 ...
 
+## Functional Rubric Estimate (only when task context includes a rubric)
+| Criterion | Max | Estimated | Comment |
+|---|---:|---:|---|
+| **Total** | **100** | **NN** | <functional-only estimate; no code-quality adjustment unless rubric says so> |
+
 ## Recommended Mentor Score
 **Draft score:** <0-100>/100
 **Confidence:** high | medium | low
-**Basis:** <task rubric | code review only | code review with missing task context>
+**Basis:** <functional rubric + code review | code review only | code review with missing task context>
 
 **Why this score:**
 - ...
+
+**Score delta from functional estimate:** <omit when no rubric estimate exists; explain why recommended score differs>
 
 **Fastest path to improve:**
 1. ...
@@ -199,15 +226,22 @@ Write `REACT_COURSE_REVIEW.md` unless `--output-path` overrides it.
 
 > Mentor-final-call note: this is an agent recommendation, not the official grade. Apply the course coefficient and final RS App score manually.
 
-## Rubric Table (only when task context includes a rubric)
-| Criterion | Max | Awarded | Comment |
-|---|---:|---:|---|
+## Priority Fixes
+| # | Problem | Priority | Complexity |
+|---:|---|---|---|
+| 1 | ... | 🔴 Critical / 🟡 High / 🔵 Later | Low / Medium / High |
 
 ## Manual checks for mentor
 - [ ] Main user scenarios from task context work in browser
 - [ ] No runtime errors in console
 - [ ] Keyboard navigation works for core controls
 - [ ] Mobile layout has no obvious broken states
+
+## Generated Files
+- `REACT_COURSE_REVIEW.md`: yes
+- `inline-draft.json`: yes/no/not requested
+- `issues-draft.json`: yes/no/not requested
+- GitHub posting: not requested / cancelled / posted after approval
 
 ## Summary for student
 <short, kind, actionable wrap-up>
@@ -282,8 +316,13 @@ After writing the report and draft JSON file(s):
 Before writing the report:
 
 - [ ] No fabricated task requirement or score row.
+- [ ] Report language follows `--language`; if absent, it follows session language with Russian fallback for flags-only invocation.
 - [ ] Recommended Mentor Score states its basis and confidence.
-- [ ] If task context is missing, score confidence is `low` and no rubric table is invented.
+- [ ] If task context is missing, score confidence is `low` and no Functional Rubric Estimate is invented.
+- [ ] If Functional Rubric Estimate and Recommended Mentor Score differ, the report explains the delta.
+- [ ] If lint/build/tests/runtime were skipped, confidence is no higher than `medium` and the limitation is visible in Scope and Score.
+- [ ] Priority Fixes table exists and lists the highest-impact fixes first.
+- [ ] Generated Files section exists and truthfully states which local/GitHub artifacts were created.
 - [ ] At least one finding cites `React.md`.
 - [ ] TypeScript findings cite `TypeScript.md`.
 - [ ] Every 🔴/🟡 explains why the issue matters in React.
