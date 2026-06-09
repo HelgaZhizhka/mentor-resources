@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.1.0**
+Version: **v0.2.0**
 
 ## What This Skill Is For
 
@@ -13,6 +13,7 @@ Version: **v0.1.0**
 - how to fix it;
 - which course principle is involved;
 - what is critical now and what can wait.
+- what preliminary mentor score is reasonable on a 100-point scale.
 
 Use it when the project is a React or React+TypeScript assignment and the mentor wants course-level feedback.
 
@@ -80,6 +81,7 @@ Optional output path:
    - data flow: loading/error/empty states, fetch ownership, duplicated async logic;
    - forms: labels, validation, visible errors, submit behaviour, manageable state;
    - UI/UX minimum: keyboard use, mobile layout, visible states;
+   - security and error handling: secrets, unsafe HTML, empty `catch`, missing user-visible errors;
    - code quality: component size, copy-paste, names, business logic in JSX, magic values.
 
 ## Output
@@ -93,13 +95,15 @@ Sections:
 - 🔴 Course blockers
 - 🟡 React learning feedback
 - 🔵 Later improvements
-- Score, only when `--context` has a rubric
+- Recommended Mentor Score, advisory 0-100
+- Rubric table, only when `--context` has a rubric
 - Manual checks for mentor
 - Summary for student
 
 Every major finding uses:
 
 - `What`
+- `Evidence`, required for blockers when useful
 - `Why it matters in React`
 - `Course principle`
 - `How to fix`
@@ -139,3 +143,5 @@ scripts/sync-references.sh
 ## Status
 
 v0.1.0 — initial standalone React-course review skill bundle. It reuses the mentor-resources clean-code references and generic bash checkers, but changes the prompt center from broad clean-code review to React-course pedagogy.
+
+v0.2.0 — aligned with React mentor-review practice: no separate student-level flag, evidence-first blockers, explicit security/error-handling checks, and an advisory 0-100 Recommended Mentor Score with confidence and final-call note.

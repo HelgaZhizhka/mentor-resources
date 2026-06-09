@@ -412,3 +412,24 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.2.0 mentor-score alignment
+
+**Done:**
+- Compared `react-course-review` with a mentor colleague's current React review prompt.
+- Kept the skill without a `--student-level` flag; strictness is calibrated by task context, course focus, and React-course expectations.
+- Added evidence-first blocker rule: 🔴 findings require `file:line` plus a short real snippet when useful; 🟡 snippets stay optional.
+- Added explicit security and error-handling checks.
+- Added advisory `Recommended Mentor Score` on a 0-100 scale with confidence, basis, fastest improvement path, and mentor-final-call note.
+
+**Decisions:**
+- The score is a mentor recommendation, not an official grade. If task context is missing, no rubric table is invented and score confidence must be `low`.
+- No mandatory code quote for every finding; PR/review context should stay readable.
+
+**Next:**
+- Test `/react-course-review` on a real React/React+TS student repository with task context.
+- After test output, decide whether GitHub output modes (`inline`, `issues`) should be added next or whether the file report needs one more prompt pass first.
+
+**Blockers:** none
+
+---

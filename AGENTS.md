@@ -5,7 +5,7 @@
 ## Current skills
 
 - [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.1.1, stable).
-- [`.claude/skills/react-course-review/`](./.claude/skills/react-course-review/README.md) — pedagogical React-course review of student React projects (v0.1.0, draft).
+- [`.claude/skills/react-course-review/`](./.claude/skills/react-course-review/README.md) — pedagogical React-course review of student React projects (v0.2.0, draft).
 
 When a new skill is added, list it here with a one-line description and a link to its `README.md`.
 
