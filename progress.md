@@ -520,3 +520,24 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.5.1 state-management rerun
+
+**Done:**
+- Re-ran the React-course bootstrap on `/Users/mac/rs/code-review/react-q2`; it auto-descended into `rs-react-app`.
+- Confirmed dependencies are installed, `npm run lint` passes, and `npm run build` passes.
+- Re-ran mechanical checkers: TypeScript escape hatches `any=0/as=4/non-null=0`, one `console.log`, no commented-code blocks, 15 non-conventional commits.
+- Re-ran `npm run test:coverage`; it still fails with 13 failed test files and 60 failed tests, rooted in `localStorage.clear is not a function`.
+- Regenerated `/Users/mac/rs/code-review/react-q2/rs-react-app/REACT_COURSE_REVIEW.md` as a local-only Russian report and verified that English report skeleton labels are gone.
+
+**Decisions:**
+- The report may keep code identifiers, file paths, package/script names, and common React ecosystem terms in English.
+- No GitHub output was requested or generated.
+
+**Next:**
+- Validate `react-course-review` on a second React student assignment before promoting the skill from draft to stable.
+- Later, consider an optional runtime/browser pass, but keep manual checks as the default flow for now.
+
+**Blockers:** none
+
+---
