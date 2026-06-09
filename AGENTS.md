@@ -4,7 +4,8 @@
 
 ## Current skills
 
-- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.0.3, stable).
+- [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.1.1, stable).
+- [`.claude/skills/react-course-review/`](./.claude/skills/react-course-review/README.md) — pedagogical React-course review of student React projects (v0.1.0, draft).
 
 When a new skill is added, list it here with a one-line description and a link to its `README.md`.
 
@@ -15,7 +16,7 @@ mentor-resources/
 ├── .claude/
 │   ├── settings.json              # Claude Code hooks (Stop checklist)
 │   └── skills/<skill-name>/       # Self-contained skill bundles
-├── clean-code/                    # Curriculum — students and mentors read; pocket-mentor uses as references/
+├── clean-code/                    # Curriculum — students and mentors read; skill bundles use as references/
 ├── docs/pocket-mentor/            # Pocket Mentor design docs
 ├── templates/configs/             # ESLint + tsconfig reference configs for students
 ├── AGENTS.md                      # This file — routing + conventions
@@ -65,7 +66,7 @@ A change is done when ALL criteria for its type are met.
 - [ ] Commit message includes the new version number
 
 ### Curriculum update (`clean-code/`)
-- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — syncs changes into the skill bundle
+- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — syncs changes into skill/action bundles
 - [ ] `./init.sh` exits 0
 
 ### Tooling / harness change (`AGENTS.md`, `init.sh`, hooks, etc.)

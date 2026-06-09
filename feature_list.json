@@ -13,8 +13,19 @@
       "dependencies": [],
       "evidence": "Three live smoke runs on student fun-chat PR (2026-05-19/20). Commits v0.9.1..v0.9.6 ship iterative fixes. v1.0.0..v1.0.2 add severity system, Mode A format, anti-repetition, self-check, stack detection, Agent-First protocol, per-stack mandatory reference citation. v1.0.3 (2026-05-27) adds turn-scoped model lock (model: claude-sonnet-4-6) after a 5-model comparison test (Opus 4.7, Sonnet 4.6, Kimi K2, a GPT model, free-tier baseline) on the fun-chat project showed that weaker models fabricate facts (wrong branch, wrong Conventional-Commits compliance) and miss structural rubric violations. v1.1.0 (2026-05-28) adds inline-mode filter — when --output inline, comments[] is capped at 7 findings (all 🔴 + top 3–4 🟡 + ≤1 🔵), prioritized by teaching value, to prevent overwhelming students with 30+ comments. Local CODE_REVIEW_REPORT.md is unchanged. v1.1.1 (2026-05-29) refines the filter after a real fun-chat run produced 7🔴+4🟡 — the old hard cap of 7 was unreachable when 🔴 alone hit the cap; new rule keeps all 🔴 unconditionally and caps 🟡+🔵 at 5 combined (≤1 🔵).",
       "next": "Watch list for v1.0.4+: (1) rubric-violation-as-Critical severity escalation — v1.0.2 fun-chat run had magic numbers → 🔴 which may be correct per 'blocks pass' or an over-correction from the pad-findings rule; needs a 2nd observation on a project where rubric violation is the only failing class. (2) Opus 4.7 tendency to place findings only in the Score table without a standalone Mode A finding (observed in v1.0.3 5-model test: routing absence went into Score but not into the Critical issues section on Opus, while Sonnet surfaced it correctly). If pattern persists across 2+ further Opus runs, tighten the Strict rules to require a standalone Mode A finding for every non-zero Score-table deduction."
-    }
-  ,
+    },
+    {
+      "id": "react-course-review",
+      "type": "skill",
+      "name": "React Course Review — student React assignment review",
+      "description": "Claude Code skill that runs inside a cloned React student repository and reviews against React-course learning goals rather than production/performance perfection. Bootstrap detects React/TypeScript/tooling/router/tests, runs lint/build when available, and the LLM review focuses on task requirements, React fundamentals, hooks, TypeScript, data flow, forms, UI/UX minimum, and course-level code quality. Output: REACT_COURSE_REVIEW.md.",
+      "path": ".claude/skills/react-course-review/",
+      "current_version": "v0.1.0",
+      "status": "draft",
+      "dependencies": [],
+      "evidence": "Initial v0.1.0 scaffold created 2026-06-09 from mentor recommendation to split React-course review out of pocket-mentor. Self-contained skill bundle includes SKILL.md, README.md, clean-code references, React-aware init.sh, and the same generic JSON-contract bash checkers as pocket-mentor. Repo-level init.sh smoke-checks the new init script.",
+      "next": "Validate /react-course-review on a real RS School React assignment, then tune severity examples and reference-loading rules from observed output. Consider whether shared checker scripts should remain duplicated per bundle or be generated during sync."
+    },
     {
       "id": "student-reviewer",
       "type": "github-action",

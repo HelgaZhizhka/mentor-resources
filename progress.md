@@ -390,3 +390,25 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.1.0 scaffold
+
+**Done:**
+- Added standalone `.claude/skills/react-course-review/` skill bundle for RS School React-course reviews.
+- Created `SKILL.md` with React-course pedagogical rubric: basic correctness, React fundamentals, hooks, TypeScript, data, forms, UI/UX minimum, and course-level code quality.
+- Added `README.md`, React-aware `scripts/init.sh`, clean-code reference snapshot, generic JSON-contract checkers copied from pocket-mentor, and `scripts/sync-references.sh`.
+- Updated `AGENTS.md`, root `README.md`, `feature_list.json`, pocket-mentor `sync-references.sh`, and root `init.sh` so the new skill is discoverable and smoke-tested.
+
+**Decisions:**
+- React review is a separate skill bundle, not another pocket-mentor mode. The new skill reviews student learning goals rather than production/performance perfection.
+- No grep-based React-specific checker in v0.1.0. Hooks/state/forms issues stay in LLM analysis because naive text matching would create noisy false positives.
+- Status is `draft` until `/react-course-review` is validated on a real RS School React assignment.
+
+**Next:**
+- Test `/react-course-review` on a real React/React+TS student repository with a task context.
+- Tune severity examples and reference-loading rules from observed output.
+- Decide later whether duplicated checker scripts should remain per-bundle or be generated during reference sync.
+
+**Blockers:** none
+
+---

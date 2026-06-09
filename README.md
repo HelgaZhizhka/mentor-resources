@@ -27,6 +27,7 @@
 | --------------------------------------------- | -------------------------------------------------------------------------------------- |
 | **Проводишь код-ревью?**                      | → [Критерии и примеры](./clean-code/index.md)                                          |
 | **Хочешь автоматизировать ревью студенческого PR?** | → [Pocket Mentor — Claude Code skill](./.claude/skills/pocket-mentor/README.md)  |
+| **Проверяешь React-курс?**                     | → [React Course Review — Claude Code skill](./.claude/skills/react-course-review/README.md) |
 | **Нужен линтер для автоматической проверки?** | → [ESLint конфигурация](./templates/configs/LINTER-README.md)                          |
 
 ## Содержание репозитория
@@ -104,7 +105,17 @@ npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill po
 
 Ментор редактирует отчёт и решает, что отправлять студенту.
 
-**2. Student Reviewer — GitHub Actions** → [`.github/actions/student-reviewer/README.md`](./.github/actions/student-reviewer/README.md)
+**2. React Course Review — Claude Code skill** → [`.claude/skills/react-course-review/README.md`](./.claude/skills/react-course-review/README.md)
+
+Отдельный skill для React-курса. Он проверяет не “идеальный React в продакшене”, а соответствие учебным целям: компоненты, props/state, хуки, формы, работу с данными, TypeScript, базовый UI/UX и требования задания.
+
+```bash
+npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill react-course-review
+```
+
+Используй его для React/React+TS работ, где студенту нужен педагогический фидбек: что сломано, почему это важно в React, как исправить, какой принцип курса нарушен и что можно отложить.
+
+**3. Student Reviewer — GitHub Actions** → [`.github/actions/student-reviewer/README.md`](./.github/actions/student-reviewer/README.md)
 
 Студент добавляет один файл в свой репозиторий — action запускается автоматически на каждый PR и постит inline-комментарии с обучающим фидбеком прямо в код.
 
@@ -122,7 +133,7 @@ curl -o .github/workflows/student-review.yml \
   https://raw.githubusercontent.com/HelgaZhizhka/mentor-resources/master/templates/workflows/student-review.yml
 ```
 
-**3. ESLint конфигурация для студенческих проектов** → [Подробнее](./templates/configs/LINTER-README.md)
+**4. ESLint конфигурация для студенческих проектов** → [Подробнее](./templates/configs/LINTER-README.md)
 
 Покрывает базовые правила автоматически:
 
