@@ -500,3 +500,23 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.5.1 Russian localization fix
+
+**Done:**
+- Re-inspected the generated state-management report and confirmed that `--language ru` only partially localized the output.
+- Added an explicit Russian label map for section headings, finding labels, score labels, table headers, checklist items, and mentor notes.
+- Tightened the report-format instruction: the markdown outline is structural, not literal, and must be translated for non-English output.
+- Added a self-check that `--language ru` leaves no English report skeleton labels except code identifiers, package names, script names, file paths, checker names, and unavoidable ecosystem terms.
+
+**Decisions:**
+- Code identifiers, package names, script names, file paths, and common ecosystem terms may remain English.
+- Human-facing report scaffolding should follow the selected language; mixed RU/EN skeletons are considered a prompt bug.
+
+**Next:**
+- Re-run `/react-course-review` on the state-management student repo with `--language ru`.
+- Verify that headings like `Scope`, `What`, `Why it matters`, `Recommended Mentor Score`, and `Fastest path to improve` are localized.
+
+**Blockers:** none
+
+---

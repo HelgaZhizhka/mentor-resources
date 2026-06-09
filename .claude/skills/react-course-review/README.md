@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.5.0**
+Version: **v0.5.1**
 
 ## What This Skill Is For
 
@@ -73,8 +73,8 @@ Force report language:
 Supported language values:
 
 - `auto` — session language, Russian fallback for flags-only invocations
-- `ru`
-- `en`
+- `ru` — Russian report prose, headings, labels, tables, checklist items, and GitHub comment bodies
+- `en` — English report prose and labels
 
 Optional output path:
 
@@ -119,7 +119,9 @@ Both:
 
 The skill always writes `REACT_COURSE_REVIEW.md` by default. With `--output inline`, `--output issues`, or `--output inline,issues`, it also writes draft JSON files and asks for mentor approval before posting anything to GitHub.
 
-Sections:
+Sections follow the selected report language. In `--language ru`, headings, labels, table headers, checklist items, and GitHub comment bodies are Russian; code identifiers, package names, script names, and file paths stay in English.
+
+Canonical sections:
 
 - Scope
 - Strengths
@@ -147,6 +149,8 @@ Every major finding uses:
 - `Course principle`
 - `How to fix`
 - `Reference`
+
+These labels are translated in non-English output.
 
 ## Companion Skills
 
@@ -192,3 +196,5 @@ v0.3.0 — adds output modes: local report, filtered inline PR comments, GitHub 
 v0.4.0 — adds `--language auto|ru|en`, separates Functional Rubric Estimate from Recommended Mentor Score, requires score-delta explanation when they differ, adds Priority Fixes and Generated Files sections, and caps score confidence at `medium` when build/lint/tests/runtime were skipped.
 
 v0.5.0 — adds a course-calibrated maintainability pass inspired by strict architecture review: look for simpler state/model ownership, scattered conditionals, thin hooks/helpers, unclear type boundaries, and missing test seams without turning student review into a production approval gate. Adds Process Notes for git/checker findings that should be visible to mentors but not over-promoted to React blockers.
+
+v0.5.1 — fixes `--language ru` localisation by requiring translated report headings, labels, table headers, checklist items, mentor notes, and GitHub comment bodies. Technical identifiers remain in English.

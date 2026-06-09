@@ -1,7 +1,7 @@
 ---
 name: react-course-review
 description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--language auto|ru|en] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.5.0
+version: v0.5.1
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -26,7 +26,42 @@ Parse `--language <mode>` from the invocation. Accepted values:
 | `--language ru` | Write mentor-facing output in Russian. |
 | `--language en` | Write mentor-facing output in English. |
 
-Bash output, checker rule names, code identifiers, package names, and file paths stay in English; report prose follows the selected language.
+Bash output, checker rule names, code identifiers, package names, script names, and file paths stay in English. All human-facing report prose, section headings, labels, table column names, checklist items, severity names, JSON comment bodies, and mentor notes follow the selected language.
+
+For `--language ru`, do not leave English report labels such as `Scope`, `Strengths`, `What`, `Why it matters`, `How to fix`, `Course principle`, `Recommended Mentor Score`, or `Fastest path to improve`. Translate the report skeleton itself. Technical terms may stay in English only when they are code/package names or standard React ecosystem terms that are clearer untranslated.
+
+Use this Russian label map when `--language ru`:
+
+| English label | Russian label |
+|---|---|
+| Scope | Область проверки |
+| Strengths | Что сделано хорошо |
+| Course blockers | Блокеры курса |
+| React learning feedback | Учебные замечания по React |
+| Later improvements | Можно улучшить позже |
+| Functional Rubric Estimate | Оценка по функциональным критериям |
+| Recommended Mentor Score | Рекомендуемая менторская оценка |
+| Priority Fixes | Приоритет исправлений |
+| Process Notes | Процессные заметки |
+| Manual checks for mentor | Ручные проверки для ментора |
+| Generated Files | Созданные файлы |
+| Summary for student | Итог для студента |
+| File | Файл |
+| Evidence | Подтверждение |
+| What | Что происходит |
+| Why it matters in React | Почему это важно в React |
+| Course principle | Принцип курса |
+| How to fix | Как исправить |
+| Reference | Источник |
+| Draft score | Черновая оценка |
+| Confidence | Уверенность |
+| Basis | Основание |
+| Why this score | Почему такая оценка |
+| Score delta from functional estimate | Почему оценка отличается от функциональной |
+| Fastest path to improve | Самый быстрый путь к улучшению |
+| Mentor-final-call note | Примечание для ментора |
+| Criterion / Max / Estimated / Comment | Критерий / Максимум / Оценка / Комментарий |
+| Problem / Priority / Complexity | Проблема / Приоритет / Сложность |
 
 ## Inputs
 
@@ -209,6 +244,8 @@ Confidence rules:
 
 Write `REACT_COURSE_REVIEW.md` unless `--output-path` overrides it.
 
+The outline below is canonical in structure, not in literal language. Translate every human-facing heading, label, table header, note, and checklist item when the selected language is not English. For `--language ru`, use the label map in the Language section.
+
 ```markdown
 # REACT COURSE REVIEW: <project name>
 
@@ -350,6 +387,7 @@ Before writing the report:
 
 - [ ] No fabricated task requirement or score row.
 - [ ] Report language follows `--language`; if absent, it follows session language with Russian fallback for flags-only invocation.
+- [ ] For `--language ru`, no English report skeleton labels remain except code identifiers, package names, script names, file paths, checker names, and unavoidable ecosystem terms.
 - [ ] Recommended Mentor Score states its basis and confidence.
 - [ ] If task context is missing, score confidence is `low` and no Functional Rubric Estimate is invented.
 - [ ] If Functional Rubric Estimate and Recommended Mentor Score differ, the report explains the delta.
