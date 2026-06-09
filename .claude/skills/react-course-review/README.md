@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.4.0**
+Version: **v0.5.0**
 
 ## What This Skill Is For
 
@@ -112,6 +112,7 @@ Both:
    - forms: labels, validation, visible errors, submit behaviour, manageable state;
    - UI/UX minimum: keyboard use, mobile layout, visible states;
    - security and error handling: secrets, unsafe HTML, empty `catch`, missing user-visible errors;
+   - course-calibrated maintainability: state/model ownership, thin abstractions, scattered conditionals, type boundaries, and test seams;
    - code quality: component size, copy-paste, names, business logic in JSX, magic values.
 
 ## Output
@@ -128,6 +129,7 @@ Sections:
 - Functional Rubric Estimate, only when `--context` has a rubric
 - Recommended Mentor Score, advisory 0-100 after code-review risks
 - Priority Fixes
+- Process Notes
 - Manual checks for mentor
 - Generated Files
 - Summary for student
@@ -188,3 +190,5 @@ v0.2.0 — aligned with React mentor-review practice: no separate student-level 
 v0.3.0 — adds output modes: local report, filtered inline PR comments, GitHub issues for 🔴 Course blockers, and combined inline+issues. GitHub publishing uses draft JSON files plus a mandatory mentor approval gate before running `gh`.
 
 v0.4.0 — adds `--language auto|ru|en`, separates Functional Rubric Estimate from Recommended Mentor Score, requires score-delta explanation when they differ, adds Priority Fixes and Generated Files sections, and caps score confidence at `medium` when build/lint/tests/runtime were skipped.
+
+v0.5.0 — adds a course-calibrated maintainability pass inspired by strict architecture review: look for simpler state/model ownership, scattered conditionals, thin hooks/helpers, unclear type boundaries, and missing test seams without turning student review into a production approval gate. Adds Process Notes for git/checker findings that should be visible to mentors but not over-promoted to React blockers.

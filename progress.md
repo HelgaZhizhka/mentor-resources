@@ -478,3 +478,25 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.5.0 maintainability pass
+
+**Done:**
+- Reviewed the thermo-nuclear code quality review skill and Matt Pocock transcript for reusable ideas.
+- Added a course-calibrated maintainability pass to `react-course-review`.
+- Added high-conviction filter: keep structural findings only when they have a concrete simplification path.
+- Added `Process Notes` section for git/process/checker findings that should be visible to mentors without becoming React blockers.
+- Updated README, root README, AGENTS, and `feature_list.json` to v0.5.0.
+
+**Decisions:**
+- Do not import the thermo-nuclear tone, approval bar, or production blocker semantics.
+- Use its best ideas as a student-appropriate lens: state/model ownership, scattered conditionals, thin hooks/helpers, type boundaries, and test seams.
+- Non-conventional commits and similar process findings belong in `Process Notes` unless the task explicitly scores them as blockers.
+
+**Next:**
+- Re-run `/react-course-review` on the state-management student repo after dependencies are installed.
+- Verify v0.5.0 output: maintainability findings should be useful but not harsh, and `Process Notes` should capture the 15 non-conventional commits without overwhelming the review.
+
+**Blockers:** none
+
+---

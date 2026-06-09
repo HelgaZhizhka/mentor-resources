@@ -1,7 +1,7 @@
 ---
 name: react-course-review
 description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--language auto|ru|en] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.4.0
+version: v0.5.0
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -115,6 +115,25 @@ Inspect `src/`, app/router entry points, data/api modules, forms, tests, configs
 - **Error handling:** no empty `catch`, user-visible errors for failed async actions, Error Boundary considered for final projects or routes that can crash.
 - **Code quality:** no huge components without reason, no copy-paste, names are clear, business logic is not buried in JSX, magic values have context.
 
+### 5. Course-Calibrated Maintainability Pass
+
+After the React-course checks, do one maintainability pass inspired by strict architecture review, but keep it student-appropriate.
+
+Look for high-conviction simplification opportunities:
+
+- logic spread across unrelated components instead of living with the state/model owner;
+- repeated conditionals, mode flags, or special cases that suggest a missing model/helper;
+- custom hooks/helpers that move code but do not reduce complexity;
+- optional props, casts, or loose data shapes that hide an unclear invariant;
+- feature logic in the wrong layer (for example UI components owning API/data policy);
+- duplicated async/form/state logic instead of a small shared helper;
+- large components/files that became hard to scan without a clear course reason;
+- missing tests around the seams where state, router, data, or context meet.
+
+Prefer feedback that deletes complexity rather than merely rearranging it. Ask: "Can the state shape, data boundary, or component ownership be reframed so this branch/helper/prop disappears?"
+
+Do **not** turn this into a harsh production audit. Maintainability issues are usually 🟡 unless they break task requirements, user flows, build, security, or data correctness. Avoid approval/rejection language; the mentor makes the final call.
+
 ### Severity
 
 - 🔴 **Course blocker** — prevents passing or learning objective validation: app does not build, required feature missing, runtime-breaking state/hook bug, form cannot submit, data flow loses user data, accessibility issue blocks basic use.
@@ -122,6 +141,15 @@ Inspect `src/`, app/router entry points, data/api modules, forms, tests, configs
 - 🔵 **Later improvement** — useful polish or advanced pattern for stronger/final projects: memoization, composition refinements, performance, library-specific best practices.
 
 Use the lowest accurate severity. Advanced production advice is usually 🔵 unless the task/rubric explicitly requires it.
+
+## High-Conviction Filter
+
+Prefer a smaller number of useful findings over a long list of nits:
+
+- Always keep build/lint/runtime blockers and missing required task features.
+- Keep maintainability findings only when they show a concrete simplification path.
+- Do not repeat the same pattern more than twice; collapse repeated occurrences.
+- Do not surface pure style preferences unless the task, lint config, or curriculum makes them relevant.
 
 ## Finding Format
 
@@ -231,6 +259,11 @@ Write `REACT_COURSE_REVIEW.md` unless `--output-path` overrides it.
 |---:|---|---|---|
 | 1 | ... | 🔴 Critical / 🟡 High / 🔵 Later | Low / Medium / High |
 
+## Process Notes
+- Git/PR hygiene: <branch, non-conventional commits, forbidden tracked files, README/process notes>
+- Mechanical checker notes: <console, commented code, TS escape hatches that were not promoted to main findings>
+- Verification limits: <dependencies skipped, lint/build/test/runtime skipped or failed>
+
 ## Manual checks for mentor
 - [ ] Main user scenarios from task context work in browser
 - [ ] No runtime errors in console
@@ -322,10 +355,12 @@ Before writing the report:
 - [ ] If Functional Rubric Estimate and Recommended Mentor Score differ, the report explains the delta.
 - [ ] If lint/build/tests/runtime were skipped, confidence is no higher than `medium` and the limitation is visible in Scope and Score.
 - [ ] Priority Fixes table exists and lists the highest-impact fixes first.
+- [ ] Process Notes include relevant checker/process findings without over-promoting them to React blockers.
 - [ ] Generated Files section exists and truthfully states which local/GitHub artifacts were created.
 - [ ] At least one finding cites `React.md`.
 - [ ] TypeScript findings cite `TypeScript.md`.
 - [ ] Every 🔴/🟡 explains why the issue matters in React.
+- [ ] Maintainability pass was applied, but strict/production-only concerns were not escalated above course level.
 - [ ] Every 🔴 finding has enough evidence: `file:line`, and a short real snippet when useful.
 - [ ] For GitHub output modes, full `REACT_COURSE_REVIEW.md` is still written.
 - [ ] For inline mode, student-facing comments include all 🔴 and at most 5 🟡/🔵 combined.
