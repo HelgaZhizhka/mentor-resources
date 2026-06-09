@@ -433,3 +433,25 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.3.0 output modes
+
+**Done:**
+- Added `--output local|inline|issues|inline,issues` to `react-course-review`.
+- Copied GitHub helper scripts into the bundle: `post-pr-review.sh` and `create-issues.sh`.
+- Added `inline-draft.json` and `issues-draft.json` contracts to `SKILL.md`.
+- Added mandatory mentor approval gate before any GitHub publishing.
+- Updated README, root README, `feature_list.json`, and AGENTS version to v0.3.0.
+
+**Decisions:**
+- Full `REACT_COURSE_REVIEW.md` is always written, even when GitHub output is requested.
+- Inline PR comments are student-facing and filtered: all 🔴 blockers plus at most 5 🟡/🔵 combined, with at most 1 🔵.
+- GitHub issues are created only for 🔴 Course blockers.
+
+**Next:**
+- Validate `/react-course-review` on a real React/React+TS student repository.
+- Before posting to a real PR, inspect generated `inline-draft.json` / `issues-draft.json` manually.
+
+**Blockers:** none
+
+---

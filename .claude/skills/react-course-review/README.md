@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.2.0**
+Version: **v0.3.0**
 
 ## What This Skill Is For
 
@@ -70,6 +70,24 @@ Optional output path:
 > /react-course-review --context ./task.md --output-path ./reviews/react-review.md
 ```
 
+Post filtered inline PR comments after mentor approval:
+
+```text
+> /react-course-review --context ./task.md --output inline
+```
+
+Create GitHub issues for 🔴 Course blockers after mentor approval:
+
+```text
+> /react-course-review --context ./task.md --output issues
+```
+
+Both:
+
+```text
+> /react-course-review --context ./task.md --output inline,issues
+```
+
 ## What It Checks
 
 1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint` and `build` scripts.
@@ -86,7 +104,7 @@ Optional output path:
 
 ## Output
 
-The skill writes `REACT_COURSE_REVIEW.md` by default.
+The skill always writes `REACT_COURSE_REVIEW.md` by default. With `--output inline`, `--output issues`, or `--output inline,issues`, it also writes draft JSON files and asks for mentor approval before posting anything to GitHub.
 
 Sections:
 
@@ -99,6 +117,11 @@ Sections:
 - Rubric table, only when `--context` has a rubric
 - Manual checks for mentor
 - Summary for student
+
+GitHub modes:
+
+- `inline-draft.json` → line-specific PR review comments, filtered for student readability.
+- `issues-draft.json` → GitHub issues for 🔴 Course blockers only.
 
 Every major finding uses:
 
@@ -137,6 +160,8 @@ scripts/checkers/check-ts-usage.sh
 scripts/checkers/check-no-console.sh
 scripts/checkers/check-commented-code.sh
 scripts/checkers/check-git-quality.sh
+scripts/post-pr-review.sh
+scripts/create-issues.sh
 scripts/sync-references.sh
 ```
 
@@ -145,3 +170,5 @@ scripts/sync-references.sh
 v0.1.0 — initial standalone React-course review skill bundle. It reuses the mentor-resources clean-code references and generic bash checkers, but changes the prompt center from broad clean-code review to React-course pedagogy.
 
 v0.2.0 — aligned with React mentor-review practice: no separate student-level flag, evidence-first blockers, explicit security/error-handling checks, and an advisory 0-100 Recommended Mentor Score with confidence and final-call note.
+
+v0.3.0 — adds output modes: local report, filtered inline PR comments, GitHub issues for 🔴 Course blockers, and combined inline+issues. GitHub publishing uses draft JSON files plus a mandatory mentor approval gate before running `gh`.

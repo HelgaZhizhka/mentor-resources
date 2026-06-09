@@ -1,7 +1,7 @@
 ---
 name: react-course-review
-description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.2.0
+description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
+version: v0.3.0
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -27,11 +27,32 @@ Bash output and checker rule names stay in English; mentor-facing commentary fol
 1. **Student repository** — current working directory. The mentor cloned the student's PR branch before invoking you.
 2. **Optional task context** — `--context <path-or-url>` with the assignment requirements, checklist, or rubric. If present, it is authoritative over generic React advice.
 3. **Optional course focus** — `--focus fundamentals|hooks|data|forms|testing|final`. If absent, infer from task context and code, then state your inference in the report.
-4. **Optional output path** — `--output-path <path>`. Default: `REACT_COURSE_REVIEW.md` in the detected project root.
+4. **Optional output mode** — `--output <mode>`. Accepted values: `local`, `inline`, `issues`, `inline,issues`. Default: `local`.
+5. **Optional output path** — `--output-path <path>`. Default: `REACT_COURSE_REVIEW.md` in the detected project root.
 
 ### When `--context` loading fails
 
 If loading the provided context fails, stop and ask the mentor whether to provide a local file, paste the content, or continue without context. Do not invent rubric categories from memory. If continuing without context, omit any rubric table and add a warning banner. You may still provide a clearly-labelled **Recommended Mentor Score** based on code quality evidence, but mark confidence as `low` and state that task-completion requirements were not verified.
+
+### Output Mode
+
+Parse `--output <mode>` from the invocation message.
+
+| Flag | Behaviour |
+|---|---|
+| *(absent)* or `--output local` | Write the full `REACT_COURSE_REVIEW.md` report only. |
+| `--output inline` | Write the full report, then write `inline-draft.json`, show approval gate, and post a GitHub PR review after mentor confirmation. |
+| `--output issues` | Write the full report, then write `issues-draft.json`, show approval gate, and create GitHub issues after mentor confirmation. |
+| `--output inline,issues` | Write the full report and both draft JSON files, show one combined approval gate, then run both scripts after mentor confirmation. |
+
+For any GitHub-publishing mode, check `gh auth status` before showing the approval gate. If it fails, stop and tell the mentor: `gh is not authenticated — run: gh auth login`. Also require `jq`; the scripts will validate it.
+
+**Approval gate is mandatory.** After writing draft JSON file(s), display a readable preview of what will be posted. Then ask the mentor to confirm:
+
+1. **Post now** — run the corresponding script(s)
+2. **Cancel** — stop without posting
+
+Never run `post-pr-review.sh` or `create-issues.sh` without explicit confirmation.
 
 ## Execution Sequence
 
@@ -192,6 +213,70 @@ Write `REACT_COURSE_REVIEW.md` unless `--output-path` overrides it.
 <short, kind, actionable wrap-up>
 ```
 
+## GitHub Output JSON Formats
+
+These files are written in addition to the full report when `--output` requests GitHub publishing.
+
+### inline-draft.json
+
+Written to `$PROJECT_DIR/inline-draft.json`.
+
+```json
+{
+  "comments": [
+    {
+      "path": "src/components/SearchForm.tsx",
+      "line": 42,
+      "body": "🔴 **Course blocker**: Form submit reloads the page.\n\n**What:** The submit handler does not call `event.preventDefault()`.\n**Why it matters in React:** React loses component state and the user cannot complete the flow reliably.\n**Course principle:** forms\n**How to fix:** Prevent the default submit and handle validation in React state.\n\n```suggestion\nconst handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {\n  event.preventDefault();\n  submitForm();\n};\n```\n\n📖 React.md §5.2"
+    }
+  ],
+  "general_body": "Short summary for architectural findings without a stable changed line. Empty string if none."
+}
+```
+
+Rules:
+
+- `path` is relative to the repository root.
+- `line` is a line in the current PR diff when possible. If no stable line exists, put the finding in `general_body`, not in `comments`.
+- Include a GitHub `suggestion` block only for simple line-level fixes. For architecture, hooks/data-flow rewrites, or multi-file changes, use prose only.
+- Student-facing inline comments must not overwhelm:
+  - include all 🔴 Course blockers;
+  - include at most 5 🟡/🔵 combined, with at most 1 🔵;
+  - choose 🟡 by teaching value and score impact;
+  - collapse 3+ repeated occurrences into one detailed comment with brief mentions of other locations.
+- Findings omitted from inline comments stay in `REACT_COURSE_REVIEW.md`.
+
+### issues-draft.json
+
+Written to `$PROJECT_DIR/issues-draft.json`.
+
+```json
+{
+  "issues": [
+    {
+      "title": "🔴 Form submit reloads the page (src/components/SearchForm.tsx:42)",
+      "body": "**File:** `src/components/SearchForm.tsx:42`\n\n**What:** The submit handler allows the browser's default page reload.\n\n**Why it matters in React:** React state is lost, validation feedback disappears, and the required user flow is broken.\n\n**Course principle:** forms\n\n**How to fix:** Call `event.preventDefault()` and keep submit handling inside React.\n\n**Reference:** React.md §5.2"
+    }
+  ]
+}
+```
+
+Rules:
+
+- Create issues only for 🔴 Course blockers. Do not create issues for 🟡/🔵.
+- Title format: `🔴 <short problem> (<file:line>)`.
+- Body uses the same finding format as the report.
+
+## Publish to GitHub
+
+Skip this section for local output.
+
+After writing the report and draft JSON file(s):
+
+- `inline`: run `bash $SKILL_DIR/scripts/post-pr-review.sh --draft "$PROJECT_DIR/inline-draft.json" --project-dir "$PROJECT_DIR"` only after mentor confirmation.
+- `issues`: run `bash $SKILL_DIR/scripts/create-issues.sh --draft "$PROJECT_DIR/issues-draft.json" --project-dir "$PROJECT_DIR"` only after mentor confirmation.
+- `inline,issues`: run both scripts in that order after one combined approval.
+
 ## Self-Check
 
 Before writing the report:
@@ -203,5 +288,9 @@ Before writing the report:
 - [ ] TypeScript findings cite `TypeScript.md`.
 - [ ] Every 🔴/🟡 explains why the issue matters in React.
 - [ ] Every 🔴 finding has enough evidence: `file:line`, and a short real snippet when useful.
+- [ ] For GitHub output modes, full `REACT_COURSE_REVIEW.md` is still written.
+- [ ] For inline mode, student-facing comments include all 🔴 and at most 5 🟡/🔵 combined.
+- [ ] For issues mode, only 🔴 Course blockers become issues.
+- [ ] GitHub scripts are not run before mentor approval.
 - [ ] Production/performance advice is not escalated above the course level.
 - [ ] Fix snippets do not introduce a pattern criticised elsewhere in the same report.
