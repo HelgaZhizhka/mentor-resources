@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.6.0**
+Version: **v0.6.1**
 
 ## What This Skill Is For
 
@@ -102,7 +102,7 @@ Both:
 
 ## What It Checks
 
-1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint`, `build`, and one discovered test script.
+1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint`, `build`, and one discovered test script. Package manager detection prefers lockfiles, then `packageManager` in `package.json`, then `npm`.
 2. **Mechanical signals** — optional bash checkers for TypeScript escape hatches, console calls, commented-out code, and git hygiene.
 3. **React-course review** — LLM inspection grounded in `clean-code/*` references:
    - React fundamentals: components, props, state ownership, keys, controlled inputs, conditional rendering;
@@ -200,3 +200,5 @@ v0.5.0 — adds a course-calibrated maintainability pass inspired by strict arch
 v0.5.1 — fixes `--language ru` localisation by requiring translated report headings, labels, table headers, checklist items, mentor notes, and GitHub comment bodies. Technical identifiers remain in English.
 
 v0.6.0 — adds test script discovery to bootstrap. The init script prefers `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`, and reports the selected script plus pass/fail/skip status in JSON.
+
+v0.6.1 — improves package manager detection: lockfiles still win, then `packageManager` from `package.json`; supports `npm`, `pnpm`, `yarn`, and `bun`, with PATH fallback for common macOS locations.

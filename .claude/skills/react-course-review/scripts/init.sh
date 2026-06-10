@@ -60,14 +60,24 @@ if ! $HAS_PACKAGE_JSON; then
   fi
 fi
 
+PACKAGE_MANAGER_FIELD=""
+if $HAS_PACKAGE_JSON; then
+  PACKAGE_MANAGER_FIELD="$(sed -nE 's/.*"packageManager"[[:space:]]*:[[:space:]]*"([^"@]+).*/\1/p' package.json | head -1)"
+fi
+
 PM="npm"
 if [[ -f "pnpm-lock.yaml" ]]; then PM="pnpm"
 elif [[ -f "yarn.lock" ]]; then PM="yarn"
-elif [[ -f "package-lock.json" ]]; then PM="npm"
+elif [[ -f "bun.lockb" || -f "bun.lock" ]]; then PM="bun"
+elif [[ -f "package-lock.json" || -f "npm-shrinkwrap.json" ]]; then PM="npm"
+elif [[ "$PACKAGE_MANAGER_FIELD" == "pnpm" ]]; then PM="pnpm"
+elif [[ "$PACKAGE_MANAGER_FIELD" == "yarn" ]]; then PM="yarn"
+elif [[ "$PACKAGE_MANAGER_FIELD" == "bun" ]]; then PM="bun"
+elif [[ "$PACKAGE_MANAGER_FIELD" == "npm" ]]; then PM="npm"
 fi
 
 if ! command -v "$PM" >/dev/null 2>&1; then
-  for candidate_dir in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
+  for candidate_dir in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin" "$HOME/.bun/bin"; do
     if [[ -x "$candidate_dir/$PM" ]]; then
       PATH="$candidate_dir:$PATH"
       break
@@ -287,6 +297,7 @@ cat <<EOF
     "dir": "$PROJECT_DIR",
     "dir_changed": $DIR_CHANGED,
     "package_manager": "$PM",
+    "package_manager_field": "$PACKAGE_MANAGER_FIELD",
     "package_manager_available": $PM_AVAILABLE,
     "has_package_json": $HAS_PACKAGE_JSON,
     "has_src": $HAS_SRC,

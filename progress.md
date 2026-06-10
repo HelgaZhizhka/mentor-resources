@@ -568,3 +568,32 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-10 — react-course-review v0.6.1 package manager detection
+
+**Done:**
+- Reviewed package installation/bootstrap path after noting that student repos may use `pnpm` or another package manager.
+- Updated `scripts/init.sh` package manager detection:
+  - lockfiles win: `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`/`bun.lock`, `package-lock.json`/`npm-shrinkwrap.json`;
+  - fallback to `packageManager` in `package.json`;
+  - final fallback remains `npm`.
+- Added `bun` to supported package manager detection and PATH fallback for `~/.bun/bin`.
+- Added `project.package_manager_field` to bootstrap JSON.
+- Updated `SKILL.md`, README, AGENTS, and `feature_list.json` to v0.6.1.
+
+**Decisions:**
+- Lockfiles are more authoritative than `packageManager` because they reflect the actual installed dependency graph in the submitted repo.
+- If the detected package manager is unavailable, the skill should report a verification limitation rather than blame the student project.
+
+**Next:**
+- Decide whether to push this branch or merge before sharing install instructions with another mentor.
+- Run one more mentor-side pilot on a second React assignment before marking the skill stable.
+
+**Validation:**
+- Local fixture with only `packageManager: pnpm@9.0.0` selects `pnpm`.
+- Local fixture with `pnpm-lock.yaml` and `packageManager: npm@10.0.0` selects `pnpm`, confirming lockfile precedence.
+- Local fixture with `packageManager: bun@1.1.0` selects `bun` and reports `package_manager_available=false` when bun is not installed.
+
+**Blockers:** none
+
+---

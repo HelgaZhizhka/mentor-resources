@@ -1,7 +1,7 @@
 ---
 name: react-course-review
 description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--language auto|ru|en] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.6.0
+version: v0.6.1
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -106,9 +106,9 @@ Run:
 bash $SKILL_DIR/scripts/init.sh
 ```
 
-Use `--no-install` if the mentor does not want dependency installation. Parse the JSON. If the script auto-descends into a nested app folder, set `PROJECT_DIR` to `project.dir` from the JSON before running checkers or writing output.
+Use `--no-install` if the mentor does not want dependency installation. Parse the JSON. If the script auto-descends into a nested app folder, set `PROJECT_DIR` to `project.dir` from the JSON before running checkers or writing output. The bootstrap chooses the package manager from lockfiles first (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`/`bun.lock`, `package-lock.json`/`npm-shrinkwrap.json`), then from `packageManager` in `package.json`, then falls back to `npm`.
 
-The bootstrap discovers and runs one test script when available. It prefers coverage/non-watch scripts in this order: `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`. Parse `project.package_manager_available`, `test.ran`, `test.ok`, `test.script`, and `test.tail`.
+The bootstrap discovers and runs one test script when available. It prefers coverage/non-watch scripts in this order: `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`. Parse `project.package_manager`, `project.package_manager_field`, `project.package_manager_available`, `test.ran`, `test.ok`, `test.script`, and `test.tail`.
 
 Treat failing lint/build/test as priority findings. A failing test command is especially important for React-course tasks that require updated tests. If the package manager is unavailable, no test script is found, or a watch-like `test` script is skipped, state that limitation in Scope, Process Notes, and score confidence without blaming the student's code.
 
