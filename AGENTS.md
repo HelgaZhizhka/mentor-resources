@@ -5,7 +5,7 @@
 ## Current skills
 
 - [`.claude/skills/pocket-mentor/`](./.claude/skills/pocket-mentor/README.md) — structured code review of cloned student PRs (v1.1.1, stable).
-- [`.claude/skills/react-course-review/`](./.claude/skills/react-course-review/README.md) — pedagogical React-course review of student React projects (v0.5.1, draft).
+- [`.claude/skills/react-course-review/`](./.claude/skills/react-course-review/README.md) — pedagogical React-course review of student React projects (v0.6.0, draft).
 
 When a new skill is added, list it here with a one-line description and a link to its `README.md`.
 
@@ -79,7 +79,7 @@ A change is done when ALL criteria for its type are met.
 `./init.sh` performs three checks in order:
 
 1. **shellcheck** — runs `shellcheck` on every `*.sh` under `.claude/skills/`. Exits non-zero on the first failure. Catches bash syntax errors and common pitfalls in all skill scripts at once.
-2. **Smoke test** — runs `.claude/skills/pocket-mentor/scripts/init.sh --no-install` against this repo and confirms the output is well-formed JSON with the expected fields (`checker`, `ok`, `summary`, `project`). The smoke test does **not** require `"ok": true` — `mentor-resources` itself has no `package.json`, so `ok: false` is the correct result here.
+2. **Smoke test** — runs each skill `scripts/init.sh --no-install` against this repo and confirms the output is well-formed JSON with the expected fields (`checker`, `ok`, `summary`, `project`). The smoke test does **not** require `"ok": true` — `mentor-resources` itself has no `package.json`, so `ok: false` is the correct result here.
 3. **Clean working tree** — warns (does not block) if `git status --porcelain` has output. Reminder to commit before ending the session.
 
 ## Adding a new skill

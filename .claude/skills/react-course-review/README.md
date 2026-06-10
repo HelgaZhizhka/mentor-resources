@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.5.1**
+Version: **v0.6.0**
 
 ## What This Skill Is For
 
@@ -102,7 +102,7 @@ Both:
 
 ## What It Checks
 
-1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint` and `build` scripts.
+1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint`, `build`, and one discovered test script.
 2. **Mechanical signals** — optional bash checkers for TypeScript escape hatches, console calls, commented-out code, and git hygiene.
 3. **React-course review** — LLM inspection grounded in `clean-code/*` references:
    - React fundamentals: components, props, state ownership, keys, controlled inputs, conditional rendering;
@@ -198,3 +198,5 @@ v0.4.0 — adds `--language auto|ru|en`, separates Functional Rubric Estimate fr
 v0.5.0 — adds a course-calibrated maintainability pass inspired by strict architecture review: look for simpler state/model ownership, scattered conditionals, thin hooks/helpers, unclear type boundaries, and missing test seams without turning student review into a production approval gate. Adds Process Notes for git/checker findings that should be visible to mentors but not over-promoted to React blockers.
 
 v0.5.1 — fixes `--language ru` localisation by requiring translated report headings, labels, table headers, checklist items, mentor notes, and GitHub comment bodies. Technical identifiers remain in English.
+
+v0.6.0 — adds test script discovery to bootstrap. The init script prefers `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`, and reports the selected script plus pass/fail/skip status in JSON.

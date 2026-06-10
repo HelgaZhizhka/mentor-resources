@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # React Course Review — init.sh
-# Bootstrap: detect React course project traits, run lint/build, emit JSON to stdout.
+# Bootstrap: detect React course project traits, run lint/build/tests, emit JSON to stdout.
 # Non-interactive. All diagnostic output goes to stderr.
 
 set -uo pipefail
@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       cat >&2 <<EOF
 Usage: $0 [--project-dir <path>] [--yes | --no-install]
-Emits a single JSON object describing React/tooling/lint/build outcomes.
+Emits a single JSON object describing React/tooling/lint/build/test outcomes.
 EOF
       exit 0
       ;;
@@ -66,6 +66,30 @@ elif [[ -f "yarn.lock" ]]; then PM="yarn"
 elif [[ -f "package-lock.json" ]]; then PM="npm"
 fi
 
+if ! command -v "$PM" >/dev/null 2>&1; then
+  for candidate_dir in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
+    if [[ -x "$candidate_dir/$PM" ]]; then
+      PATH="$candidate_dir:$PATH"
+      break
+    fi
+  done
+fi
+
+if ! command -v "$PM" >/dev/null 2>&1; then
+  for candidate in "$HOME"/.nvm/versions/node/*/bin/"$PM"; do
+    if [[ -x "$candidate" ]]; then
+      PATH="$(dirname "$candidate"):$PATH"
+      break
+    fi
+  done
+fi
+
+PM_AVAILABLE=true
+if ! command -v "$PM" >/dev/null 2>&1; then
+  PM_AVAILABLE=false
+  skip "package manager command not found: ${PM}"
+fi
+
 HAS_SRC=false
 [[ -d "src" ]] && HAS_SRC=true
 
@@ -90,6 +114,12 @@ has_pkg_token() {
 has_script() {
   local script_name="$1"
   $HAS_PACKAGE_JSON && grep -q "\"$script_name\"[[:space:]]*:" package.json
+}
+
+script_value() {
+  local script_name="$1"
+  $HAS_PACKAGE_JSON || return 0
+  sed -nE "s/.*\"$script_name\"[[:space:]]*:[[:space:]]*\"([^\"]*)\".*/\1/p" package.json | head -1
 }
 
 HAS_REACT=false
@@ -131,10 +161,21 @@ HAS_DEV_SCRIPT=false
 HAS_LINT_SCRIPT=false
 HAS_BUILD_SCRIPT=false
 HAS_TEST_SCRIPT=false
+HAS_ANY_TEST_SCRIPT=false
+TEST_SCRIPT_NAME=""
 has_script "dev" && HAS_DEV_SCRIPT=true
 has_script "lint" && HAS_LINT_SCRIPT=true
 has_script "build" && HAS_BUILD_SCRIPT=true
 has_script "test" && HAS_TEST_SCRIPT=true
+
+for candidate in test:coverage coverage test:cov coverage:test test:ci test:run test:unit test; do
+  if has_script "$candidate"; then
+    TEST_SCRIPT_NAME="$candidate"
+    HAS_ANY_TEST_SCRIPT=true
+    HAS_TESTS=true
+    break
+  fi
+done
 
 DEPS_INSTALLED=true
 if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
@@ -144,12 +185,17 @@ if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
       DEPS_INSTALLED=false
       ;;
     yes|auto)
-      info "installing deps via ${PM}..."
-      if $PM install >/tmp/react-course-review-install.log 2>&1; then
-        ok "deps installed"
-      else
-        fail "deps install FAILED (see /tmp/react-course-review-install.log)"
+      if ! $PM_AVAILABLE; then
+        skip "cannot install deps because ${PM} is not available"
         DEPS_INSTALLED=false
+      else
+        info "installing deps via ${PM}..."
+        if $PM install >/tmp/react-course-review-install.log 2>&1; then
+          ok "deps installed"
+        else
+          fail "deps install FAILED (see /tmp/react-course-review-install.log)"
+          DEPS_INSTALLED=false
+        fi
       fi
       ;;
   esac
@@ -158,7 +204,7 @@ fi
 LINT_RAN=false
 LINT_OK=false
 LINT_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $HAS_LINT_SCRIPT; then
+if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_LINT_SCRIPT; then
   LINT_RAN=true
   if $PM run lint >/tmp/react-course-review-lint.log 2>&1; then
     LINT_OK=true
@@ -172,7 +218,7 @@ fi
 BUILD_RAN=false
 BUILD_OK=false
 BUILD_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $HAS_BUILD_SCRIPT; then
+if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_BUILD_SCRIPT; then
   BUILD_RAN=true
   if $PM run build >/tmp/react-course-review-build.log 2>&1; then
     BUILD_OK=true
@@ -180,6 +226,26 @@ if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $HAS_BUILD_SCRIPT; then
   else
     BUILD_TAIL="$(tail -40 /tmp/react-course-review-build.log | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'BEGIN{ORS="\\n"} {print}')"
     fail "build check failed"
+  fi
+fi
+
+TEST_RAN=false
+TEST_OK=false
+TEST_TAIL=""
+if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_ANY_TEST_SCRIPT; then
+  TEST_VALUE="$(script_value "$TEST_SCRIPT_NAME")"
+  TEST_LOG="/tmp/react-course-review-test.log"
+  if [[ "$TEST_SCRIPT_NAME" == "test" && "$TEST_VALUE" == *"watch"* && "$TEST_VALUE" != *"--watch=false"* && "$TEST_VALUE" != *"--watchAll=false"* ]]; then
+    skip "test script appears to use watch mode; skipped (${TEST_SCRIPT_NAME})"
+  else
+    TEST_RAN=true
+    if CI=true $PM run "$TEST_SCRIPT_NAME" >"$TEST_LOG" 2>&1; then
+      TEST_OK=true
+      ok "tests passed (${TEST_SCRIPT_NAME})"
+    else
+      TEST_TAIL="$(tail -80 "$TEST_LOG" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'BEGIN{ORS="\\n"} {print}')"
+      fail "tests failed (${TEST_SCRIPT_NAME})"
+    fi
   fi
 fi
 
@@ -193,6 +259,7 @@ status() {
 
 LINT_STATUS="$(status "$LINT_RAN" "$LINT_OK")"
 BUILD_STATUS="$(status "$BUILD_RAN" "$BUILD_OK")"
+TEST_STATUS="$(status "$TEST_RAN" "$TEST_OK")"
 
 INIT_OK=true
 $HAS_PACKAGE_JSON || INIT_OK=false
@@ -202,8 +269,9 @@ $HAS_PACKAGE_JSON || READY_TO_REVIEW=false
 $HAS_REACT || READY_TO_REVIEW=false
 $LINT_RAN && ! $LINT_OK && READY_TO_REVIEW=false
 $BUILD_RAN && ! $BUILD_OK && READY_TO_REVIEW=false
+$TEST_RAN && ! $TEST_OK && READY_TO_REVIEW=false
 
-SUMMARY="react-course-init: react=${HAS_REACT} ts=${HAS_TYPESCRIPT} lint=${LINT_STATUS} build=${BUILD_STATUS}"
+SUMMARY="react-course-init: react=${HAS_REACT} ts=${HAS_TYPESCRIPT} lint=${LINT_STATUS} build=${BUILD_STATUS} test=${TEST_STATUS}"
 if ! $HAS_PACKAGE_JSON; then
   SUMMARY="react-course-init: no package.json found in ${PROJECT_DIR} or its subdirectories"
 fi
@@ -219,6 +287,7 @@ cat <<EOF
     "dir": "$PROJECT_DIR",
     "dir_changed": $DIR_CHANGED,
     "package_manager": "$PM",
+    "package_manager_available": $PM_AVAILABLE,
     "has_package_json": $HAS_PACKAGE_JSON,
     "has_src": $HAS_SRC,
     "has_readme": $HAS_README,
@@ -241,9 +310,12 @@ cat <<EOF
     "dev": $HAS_DEV_SCRIPT,
     "lint": $HAS_LINT_SCRIPT,
     "build": $HAS_BUILD_SCRIPT,
-    "test": $HAS_TEST_SCRIPT
+    "test": $HAS_TEST_SCRIPT,
+    "test_any": $HAS_ANY_TEST_SCRIPT,
+    "test_selected": "$TEST_SCRIPT_NAME"
   },
   "lint": { "ran": $LINT_RAN, "ok": $LINT_OK, "tail": "$LINT_TAIL" },
-  "build": { "ran": $BUILD_RAN, "ok": $BUILD_OK, "tail": "$BUILD_TAIL" }
+  "build": { "ran": $BUILD_RAN, "ok": $BUILD_OK, "tail": "$BUILD_TAIL" },
+  "test": { "ran": $TEST_RAN, "ok": $TEST_OK, "script": "$TEST_SCRIPT_NAME", "tail": "$TEST_TAIL" }
 }
 EOF

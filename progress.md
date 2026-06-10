@@ -541,3 +541,30 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-10 — react-course-review v0.6.0 test script discovery
+
+**Done:**
+- Reviewed `react-course-review` before giving it to another mentor for a lazy local pilot.
+- Identified that the first student report depended on a manual `npm run test:coverage` run, while the skill bootstrap only ran lint/build.
+- Added test script discovery to `scripts/init.sh`: prefer `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`.
+- Added JSON fields for selected test script and test pass/fail/skip status.
+- Added package-manager PATH fallback for common macOS/Homebrew/nvm locations so non-login bash shells can still find `npm`, `pnpm`, or `yarn`.
+- Updated `SKILL.md` so agents must set `PROJECT_DIR` from bootstrap `project.dir`, include test status in the report, and treat failed tests as priority findings.
+- Updated README, AGENTS version, repo `init.sh`, and `feature_list.json` to v0.6.0.
+- Validated on `/Users/mac/rs/code-review/react-q2`: bootstrap auto-descends into `rs-react-app`, lint/build pass, selects `test:coverage`, and reports the existing `localStorage.clear is not a function` test failure in valid JSON.
+- Ran repo `./init.sh`; shellcheck and smoke tests pass.
+
+**Decisions:**
+- Test command names vary across student repos, so the skill should discover the best available script rather than hard-code `test:coverage`.
+- Failed tests should not stop the review, but they should affect confidence and mentor score.
+- Plain `test` is a fallback and runs with `CI=true`; obvious watch-mode scripts may be skipped and reported as a verification limitation.
+- If the package manager is unavailable, the skill reports a verification limitation instead of blaming the student's lint/build/test scripts.
+
+**Next:**
+- Decide whether to push the branch or merge before sharing install instructions with another mentor.
+- Run one more mentor-side pilot on a second React assignment before marking the skill stable.
+
+**Blockers:** none
+
+---

@@ -1,7 +1,7 @@
 ---
 name: react-course-review
 description: Review RS School React-course student projects against course learning goals, not production-grade React perfection. Run inside a cloned React student repository via /react-course-review [--context <path-or-url>] [--focus fundamentals|hooks|data|forms|testing|final] [--language auto|ru|en] [--output local|inline|issues|inline,issues] [--output-path <path>]. Produces REACT_COURSE_REVIEW.md, optional GitHub PR comments, and optional GitHub issues with pedagogical findings on React fundamentals, hooks, TypeScript, data flow, forms, UI/UX, and task requirements. Use when the mentor asks for a React-course review, reviews a React/React+TS assignment, or wants student-level feedback rather than Vercel-style production feedback.
-version: v0.5.1
+version: v0.6.0
 model: claude-sonnet-4-6
 compatibility: Designed for Claude Code. Review quality depends on a model that can inspect code accurately and avoid fabricated task requirements.
 ---
@@ -106,7 +106,11 @@ Run:
 bash $SKILL_DIR/scripts/init.sh
 ```
 
-Use `--no-install` if the mentor does not want dependency installation. Parse the JSON. Treat failing lint/build as priority findings.
+Use `--no-install` if the mentor does not want dependency installation. Parse the JSON. If the script auto-descends into a nested app folder, set `PROJECT_DIR` to `project.dir` from the JSON before running checkers or writing output.
+
+The bootstrap discovers and runs one test script when available. It prefers coverage/non-watch scripts in this order: `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`. Parse `project.package_manager_available`, `test.ran`, `test.ok`, `test.script`, and `test.tail`.
+
+Treat failing lint/build/test as priority findings. A failing test command is especially important for React-course tasks that require updated tests. If the package manager is unavailable, no test script is found, or a watch-like `test` script is skipped, state that limitation in Scope, Process Notes, and score confidence without blaming the student's code.
 
 If `project.is_react_project` is `false`, stop and write a short note: this skill is only for React-course projects. Suggest `/pocket-mentor` for generic HTML/CSS/JS/TS review.
 
@@ -124,7 +128,7 @@ Every Critical or Recommendation must cite at least one loaded local reference b
 
 ### 3. Optional Mechanical Checkers
 
-Run these only when the relevant files exist; they are signals, not verdicts:
+Run these only when the relevant files exist, using `PROJECT_DIR` from the bootstrap JSON; they are signals, not verdicts:
 
 ```bash
 bash $SKILL_DIR/scripts/checkers/check-ts-usage.sh --project-dir "$PROJECT_DIR"
@@ -181,7 +185,7 @@ Use the lowest accurate severity. Advanced production advice is usually 🔵 unl
 
 Prefer a smaller number of useful findings over a long list of nits:
 
-- Always keep build/lint/runtime blockers and missing required task features.
+- Always keep build/lint/test/runtime blockers and missing required task features.
 - Keep maintainability findings only when they show a concrete simplification path.
 - Do not repeat the same pattern more than twice; collapse repeated occurrences.
 - Do not surface pure style preferences unless the task, lint config, or curriculum makes them relevant.
@@ -204,8 +208,8 @@ React-course mentor review uses a 100-point scale, but the agent's score is only
 
 When `--context` contains a task rubric, separate **functional completion** from the final recommendation:
 
-1. **Functional Rubric Estimate** — a table based only on task criteria and evidence in the code/runtime checks. This answers "how much of the task appears implemented?"
-2. **Recommended Mentor Score** — the agent's final draft score after code-review risks, missing tests, lint/build/runtime limitations, and teaching priorities. This may be lower than the functional estimate.
+1. **Functional Rubric Estimate** — a table based only on task criteria and evidence in the code/test/runtime checks. This answers "how much of the task appears implemented?"
+2. **Recommended Mentor Score** — the agent's final draft score after code-review risks, missing tests, lint/build/test/runtime limitations, and teaching priorities. This may be lower than the functional estimate.
 
 Always explain the delta when these numbers differ. Example: "Functional rubric looks like 96/100, but recommended mentor score is 86/100 because lint/build/test were not verified and the new state/theme flows lack tests."
 
@@ -236,8 +240,8 @@ Use these bands for the code-review-based score:
 
 Confidence rules:
 
-- `high` only when task context is loaded and build/lint/tests or runtime evidence confirm the main flows.
-- `medium` when task context is loaded but one major verification layer is missing (for example dependencies are not installed and lint/build/tests are skipped).
+- `high` only when task context is loaded and build/lint/test or runtime evidence confirm the main flows.
+- `medium` when task context is loaded but one major verification layer is missing (for example dependencies are not installed and lint/build/test are skipped).
 - `low` when task context is missing, build/lint fails before review can continue, or core runtime flows were not inspected.
 
 ## Report Format
@@ -255,7 +259,7 @@ The outline below is canonical in structure, not in literal language. Translate 
 - Course focus: <provided or inferred>
 - React: yes; TypeScript: yes/no
 - Tooling: <Vite/Next/CRA/other>, router: yes/no, tests: yes/no
-- Verified by agent: install <yes/no/skipped>, lint <pass/fail/skip>, build <pass/fail/skip>, runtime <checked/not checked>
+- Verified by agent: install <yes/no/skipped>, lint <pass/fail/skip>, build <pass/fail/skip>, test <pass/fail/skip; script name if any>, runtime <checked/not checked>
 
 ## Strengths
 1. ...
@@ -299,7 +303,7 @@ The outline below is canonical in structure, not in literal language. Translate 
 ## Process Notes
 - Git/PR hygiene: <branch, non-conventional commits, forbidden tracked files, README/process notes>
 - Mechanical checker notes: <console, commented code, TS escape hatches that were not promoted to main findings>
-- Verification limits: <dependencies skipped, lint/build/test/runtime skipped or failed>
+- Verification limits: <dependencies skipped, lint/build/test/runtime skipped or failed; include selected test script when tests ran>
 
 ## Manual checks for mentor
 - [ ] Main user scenarios from task context work in browser
@@ -391,7 +395,8 @@ Before writing the report:
 - [ ] Recommended Mentor Score states its basis and confidence.
 - [ ] If task context is missing, score confidence is `low` and no Functional Rubric Estimate is invented.
 - [ ] If Functional Rubric Estimate and Recommended Mentor Score differ, the report explains the delta.
-- [ ] If lint/build/tests/runtime were skipped, confidence is no higher than `medium` and the limitation is visible in Scope and Score.
+- [ ] If lint/build/test/runtime were skipped, confidence is no higher than `medium` and the limitation is visible in Scope and Score.
+- [ ] If tests ran and failed, the report includes the selected script name and the relevant tail/error from `test.tail`.
 - [ ] Priority Fixes table exists and lists the highest-impact fixes first.
 - [ ] Process Notes include relevant checker/process findings without over-promoting them to React blockers.
 - [ ] Generated Files section exists and truthfully states which local/GitHub artifacts were created.

@@ -6,6 +6,15 @@
 
 set -euo pipefail
 
+if ! command -v shellcheck >/dev/null 2>&1; then
+  for candidate_dir in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
+    if [[ -x "$candidate_dir/shellcheck" ]]; then
+      PATH="$candidate_dir:$PATH"
+      break
+    fi
+  done
+fi
+
 echo "==> shellcheck: all skill bash scripts"
 while IFS= read -r script; do
   shellcheck "$script" || { echo "ERROR: shellcheck failed on $script" >&2; exit 1; }
