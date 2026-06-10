@@ -390,3 +390,210 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-09 — react-course-review v0.1.0 scaffold
+
+**Done:**
+- Added standalone `.claude/skills/react-course-review/` skill bundle for RS School React-course reviews.
+- Created `SKILL.md` with React-course pedagogical rubric: basic correctness, React fundamentals, hooks, TypeScript, data, forms, UI/UX minimum, and course-level code quality.
+- Added `README.md`, React-aware `scripts/init.sh`, clean-code reference snapshot, generic JSON-contract checkers copied from pocket-mentor, and `scripts/sync-references.sh`.
+- Updated `AGENTS.md`, root `README.md`, `feature_list.json`, pocket-mentor `sync-references.sh`, and root `init.sh` so the new skill is discoverable and smoke-tested.
+
+**Decisions:**
+- React review is a separate skill bundle, not another pocket-mentor mode. The new skill reviews student learning goals rather than production/performance perfection.
+- No grep-based React-specific checker in v0.1.0. Hooks/state/forms issues stay in LLM analysis because naive text matching would create noisy false positives.
+- Status is `draft` until `/react-course-review` is validated on a real RS School React assignment.
+
+**Next:**
+- Test `/react-course-review` on a real React/React+TS student repository with a task context.
+- Tune severity examples and reference-loading rules from observed output.
+- Decide later whether duplicated checker scripts should remain per-bundle or be generated during reference sync.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.2.0 mentor-score alignment
+
+**Done:**
+- Compared `react-course-review` with a mentor colleague's current React review prompt.
+- Kept the skill without a `--student-level` flag; strictness is calibrated by task context, course focus, and React-course expectations.
+- Added evidence-first blocker rule: 🔴 findings require `file:line` plus a short real snippet when useful; 🟡 snippets stay optional.
+- Added explicit security and error-handling checks.
+- Added advisory `Recommended Mentor Score` on a 0-100 scale with confidence, basis, fastest improvement path, and mentor-final-call note.
+
+**Decisions:**
+- The score is a mentor recommendation, not an official grade. If task context is missing, no rubric table is invented and score confidence must be `low`.
+- No mandatory code quote for every finding; PR/review context should stay readable.
+
+**Next:**
+- Test `/react-course-review` on a real React/React+TS student repository with task context.
+- After test output, decide whether GitHub output modes (`inline`, `issues`) should be added next or whether the file report needs one more prompt pass first.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.3.0 output modes
+
+**Done:**
+- Added `--output local|inline|issues|inline,issues` to `react-course-review`.
+- Copied GitHub helper scripts into the bundle: `post-pr-review.sh` and `create-issues.sh`.
+- Added `inline-draft.json` and `issues-draft.json` contracts to `SKILL.md`.
+- Added mandatory mentor approval gate before any GitHub publishing.
+- Updated README, root README, `feature_list.json`, and AGENTS version to v0.3.0.
+
+**Decisions:**
+- Full `REACT_COURSE_REVIEW.md` is always written, even when GitHub output is requested.
+- Inline PR comments are student-facing and filtered: all 🔴 blockers plus at most 5 🟡/🔵 combined, with at most 1 🔵.
+- GitHub issues are created only for 🔴 Course blockers.
+
+**Next:**
+- Validate `/react-course-review` on a real React/React+TS student repository.
+- Before posting to a real PR, inspect generated `inline-draft.json` / `issues-draft.json` manually.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.4.0 report calibration
+
+**Done:**
+- Added `--language auto|ru|en`; default remains auto with Russian fallback for flags-only invocations.
+- Split scoring into `Functional Rubric Estimate` and `Recommended Mentor Score`.
+- Added required score-delta explanation when functional estimate and recommended mentor score differ.
+- Added confidence rule: skipped build/lint/tests/runtime caps confidence at `medium`.
+- Added `Priority Fixes` and `Generated Files` sections to the report format.
+- Updated README, root README, AGENTS, and `feature_list.json` to v0.4.0.
+
+**Decisions:**
+- Language flag is useful because mentor/student-facing output may need Russian or English independent of the chat language.
+- Functional rubric and code-review recommendation are separate numbers; this avoids confusion seen in the first local state-management smoke report (`96 functional estimate` vs `86 recommended score`).
+- Generated-files audit makes local-only vs GitHub-output runs explicit.
+
+**Next:**
+- Re-run `/react-course-review` on `/Users/mac/rs/code-review/react-q2/rs-react-app` after dependencies are installed.
+- Compare v0.4.0 output against the hand-written smoke report and tune wording if needed.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.5.0 maintainability pass
+
+**Done:**
+- Reviewed the thermo-nuclear code quality review skill and Matt Pocock transcript for reusable ideas.
+- Added a course-calibrated maintainability pass to `react-course-review`.
+- Added high-conviction filter: keep structural findings only when they have a concrete simplification path.
+- Added `Process Notes` section for git/process/checker findings that should be visible to mentors without becoming React blockers.
+- Updated README, root README, AGENTS, and `feature_list.json` to v0.5.0.
+
+**Decisions:**
+- Do not import the thermo-nuclear tone, approval bar, or production blocker semantics.
+- Use its best ideas as a student-appropriate lens: state/model ownership, scattered conditionals, thin hooks/helpers, type boundaries, and test seams.
+- Non-conventional commits and similar process findings belong in `Process Notes` unless the task explicitly scores them as blockers.
+
+**Next:**
+- Re-run `/react-course-review` on the state-management student repo after dependencies are installed.
+- Verify v0.5.0 output: maintainability findings should be useful but not harsh, and `Process Notes` should capture the 15 non-conventional commits without overwhelming the review.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.5.1 Russian localization fix
+
+**Done:**
+- Re-inspected the generated state-management report and confirmed that `--language ru` only partially localized the output.
+- Added an explicit Russian label map for section headings, finding labels, score labels, table headers, checklist items, and mentor notes.
+- Tightened the report-format instruction: the markdown outline is structural, not literal, and must be translated for non-English output.
+- Added a self-check that `--language ru` leaves no English report skeleton labels except code identifiers, package names, script names, file paths, checker names, and unavoidable ecosystem terms.
+
+**Decisions:**
+- Code identifiers, package names, script names, file paths, and common ecosystem terms may remain English.
+- Human-facing report scaffolding should follow the selected language; mixed RU/EN skeletons are considered a prompt bug.
+
+**Next:**
+- Re-run `/react-course-review` on the state-management student repo with `--language ru`.
+- Verify that headings like `Scope`, `What`, `Why it matters`, `Recommended Mentor Score`, and `Fastest path to improve` are localized.
+
+**Blockers:** none
+
+---
+
+## 2026-06-09 — react-course-review v0.5.1 state-management rerun
+
+**Done:**
+- Re-ran the React-course bootstrap on `/Users/mac/rs/code-review/react-q2`; it auto-descended into `rs-react-app`.
+- Confirmed dependencies are installed, `npm run lint` passes, and `npm run build` passes.
+- Re-ran mechanical checkers: TypeScript escape hatches `any=0/as=4/non-null=0`, one `console.log`, no commented-code blocks, 15 non-conventional commits.
+- Re-ran `npm run test:coverage`; it still fails with 13 failed test files and 60 failed tests, rooted in `localStorage.clear is not a function`.
+- Regenerated `/Users/mac/rs/code-review/react-q2/rs-react-app/REACT_COURSE_REVIEW.md` as a local-only Russian report and verified that English report skeleton labels are gone.
+
+**Decisions:**
+- The report may keep code identifiers, file paths, package/script names, and common React ecosystem terms in English.
+- No GitHub output was requested or generated.
+
+**Next:**
+- Validate `react-course-review` on a second React student assignment before promoting the skill from draft to stable.
+- Later, consider an optional runtime/browser pass, but keep manual checks as the default flow for now.
+
+**Blockers:** none
+
+---
+
+## 2026-06-10 — react-course-review v0.6.0 test script discovery
+
+**Done:**
+- Reviewed `react-course-review` before giving it to another mentor for a lazy local pilot.
+- Identified that the first student report depended on a manual `npm run test:coverage` run, while the skill bootstrap only ran lint/build.
+- Added test script discovery to `scripts/init.sh`: prefer `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`.
+- Added JSON fields for selected test script and test pass/fail/skip status.
+- Added package-manager PATH fallback for common macOS/Homebrew/nvm locations so non-login bash shells can still find `npm`, `pnpm`, or `yarn`.
+- Updated `SKILL.md` so agents must set `PROJECT_DIR` from bootstrap `project.dir`, include test status in the report, and treat failed tests as priority findings.
+- Updated README, AGENTS version, repo `init.sh`, and `feature_list.json` to v0.6.0.
+- Validated on `/Users/mac/rs/code-review/react-q2`: bootstrap auto-descends into `rs-react-app`, lint/build pass, selects `test:coverage`, and reports the existing `localStorage.clear is not a function` test failure in valid JSON.
+- Ran repo `./init.sh`; shellcheck and smoke tests pass.
+
+**Decisions:**
+- Test command names vary across student repos, so the skill should discover the best available script rather than hard-code `test:coverage`.
+- Failed tests should not stop the review, but they should affect confidence and mentor score.
+- Plain `test` is a fallback and runs with `CI=true`; obvious watch-mode scripts may be skipped and reported as a verification limitation.
+- If the package manager is unavailable, the skill reports a verification limitation instead of blaming the student's lint/build/test scripts.
+
+**Next:**
+- Decide whether to push the branch or merge before sharing install instructions with another mentor.
+- Run one more mentor-side pilot on a second React assignment before marking the skill stable.
+
+**Blockers:** none
+
+---
+
+## 2026-06-10 — react-course-review v0.6.1 package manager detection
+
+**Done:**
+- Reviewed package installation/bootstrap path after noting that student repos may use `pnpm` or another package manager.
+- Updated `scripts/init.sh` package manager detection:
+  - lockfiles win: `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`/`bun.lock`, `package-lock.json`/`npm-shrinkwrap.json`;
+  - fallback to `packageManager` in `package.json`;
+  - final fallback remains `npm`.
+- Added `bun` to supported package manager detection and PATH fallback for `~/.bun/bin`.
+- Added `project.package_manager_field` to bootstrap JSON.
+- Updated `SKILL.md`, README, AGENTS, and `feature_list.json` to v0.6.1.
+
+**Decisions:**
+- Lockfiles are more authoritative than `packageManager` because they reflect the actual installed dependency graph in the submitted repo.
+- If the detected package manager is unavailable, the skill should report a verification limitation rather than blame the student project.
+
+**Next:**
+- Decide whether to push this branch or merge before sharing install instructions with another mentor.
+- Run one more mentor-side pilot on a second React assignment before marking the skill stable.
+
+**Validation:**
+- Local fixture with only `packageManager: pnpm@9.0.0` selects `pnpm`.
+- Local fixture with `pnpm-lock.yaml` and `packageManager: npm@10.0.0` selects `pnpm`, confirming lockfile precedence.
+- Local fixture with `packageManager: bun@1.1.0` selects `bun` and reports `package_manager_available=false` when bun is not installed.
+
+**Blockers:** none
+
+---

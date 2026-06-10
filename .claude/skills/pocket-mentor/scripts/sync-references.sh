@@ -49,3 +49,15 @@ if [[ -d "$REPO_ROOT/.github/actions/student-reviewer" ]]; then
 else
   echo "Skipped student-reviewer target (directory not yet created)"
 fi
+
+# Target 3: react-course-review skill bundle
+DST3="$REPO_ROOT/.claude/skills/react-course-review/references/clean-code"
+if [[ -d "$REPO_ROOT/.claude/skills/react-course-review" ]]; then
+  rm -rf "$DST3"
+  mkdir -p "$DST3"
+  cp "$SRC"/*.md "$DST3/"
+  count3=$(find "$DST3" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
+  echo "Synced $count3 files: $SRC → $DST3"
+else
+  echo "Skipped react-course-review target (directory not yet created)"
+fi
