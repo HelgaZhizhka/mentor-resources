@@ -40,7 +40,7 @@ good example with an explanation of why
 
 Explanation of the reasons and consequences
 
-### Pocket Mentor skill
+### Mentor-review skill bundles
 
 **What you can improve:**
 
@@ -50,20 +50,29 @@ Explanation of the reasons and consequences
 
 **Where to find it:**
 
-- `.claude/skills/pocket-mentor/` — skill bundle
-- `.claude/skills/pocket-mentor/README.md` — install and usage
-- `.claude/skills/pocket-mentor/SKILL.md` — prompt and rules
-- `.claude/skills/pocket-mentor/scripts/init.sh` — bootstrap (stack detection, lint, build)
-- `.claude/skills/pocket-mentor/scripts/checkers/*.sh` — focused bash mechanics
-- `.claude/skills/pocket-mentor/scripts/sync-references.sh` — re-syncs `clean-code/*` from repo root into the skill bundle's `references/clean-code/`
+- `.claude/skills/pocket-mentor/` — broad mentor review across supported frontend stacks
+- `.claude/skills/react-course-review/` — React-course-specific mentor review
+- `<skill>/README.md` — install and usage
+- `<skill>/SKILL.md` — prompt and execution rules
+- `<skill>/scripts/init.sh` — bootstrap (project detection, install, lint, build, tests)
+- `<skill>/scripts/checkers/*.sh` — focused bash mechanics
+- `<skill>/scripts/sync-references.sh` — re-syncs `clean-code/*` from repo root into the skill bundle's `references/clean-code/`
 
 **Architectural decisions** are tracked under [`docs/adr/`](./docs/adr/) — read them before proposing structural changes:
 
 - [ADR-0001](./docs/adr/0001-skill-first-over-engine-cli.md) — why skill-first, not engine + CLI
 - [ADR-0002](./docs/adr/0002-bash-checkers-over-ast.md) — why bash + grep, not AST parsing
 - [ADR-0003](./docs/adr/0003-skills-sh-for-skill-publish.md) — why `npx skills add` for distribution
+- [React Course Review SDD](./docs/superpowers/specs/2026-06-10-react-course-review-sdd.md) — design and boundaries for the React-course skill
 
-**Curriculum sync:** when you edit any file under `clean-code/` (the canonical source), run `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` to propagate the change into the skill bundle. The skill bundle reads from its own `references/clean-code/` — without sync, mentor-side curriculum and skill-side references will drift.
+**Curriculum sync:** when you edit any file under `clean-code/` (the canonical source), run the sync script for each affected skill bundle:
+
+```bash
+bash .claude/skills/pocket-mentor/scripts/sync-references.sh
+bash .claude/skills/react-course-review/scripts/sync-references.sh
+```
+
+Each skill bundle reads from its own `references/clean-code/` — without sync, mentor-side curriculum and skill-side references will drift.
 
 **Recommendations:**
 
@@ -119,16 +128,18 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) with a **scope*
 git commit -m "docs(clean-code): add AbortController example to React.md §3.3"
 git commit -m "fix(clean-code): correct typo in Clean-Code-Fundamental-Part1.md"
 
-# Pocket Mentor skill changes
+# Mentor-review skill changes
 git commit -m "feat(pocket-mentor): add severity downgrade rule for style-only findings"
 git commit -m "fix(pocket-mentor): handle pnpm-workspace projects in init.sh"
+git commit -m "docs(react-course-review): clarify report scoring model"
+git commit -m "fix(react-course-review): handle pnpm lockfile detection"
 
 # Architecture decisions and progress
 git commit -m "docs(adr): ADR-0004 — describe the decision title"
 git commit -m "chore(progress): close session entry"
 ```
 
-Common scopes used in this repo: `pocket-mentor`, `clean-code`, `adr`, `progress`, `student-reviewer` (planned).
+Common scopes used in this repo: `pocket-mentor`, `react-course-review`, `clean-code`, `adr`, `progress`, `student-reviewer` (planned).
 
 ### 5. Push and open a PR
 

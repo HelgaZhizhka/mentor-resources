@@ -597,3 +597,26 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-10 — react-course-review SDD documentation
+
+**Done:**
+- Audited the repository documentation after merging `react-course-review` and found that public usage docs were updated, but domain/spec docs still leaned on the older `pocket-mentor`-only model.
+- Added `docs/superpowers/specs/2026-06-10-react-course-review-sdd.md` to document the React-course skill's problem, goals, non-goals, workflow, architecture, bootstrap behavior, output contract, scoring model, evidence rules, and verification status.
+- Updated `CONTEXT.md` so the domain glossary covers both mentor-review skill bundles, `react-course-review`, generic checkers, task context, mentors, student repositories, and report file names.
+- Updated `CONTRIBUTING.md` with React-course skill paths, sync instructions for both skill bundles, the new SDD link, and `react-course-review` commit-scope examples.
+- Updated `README.md`, `AGENTS.md`, and `docs/agents/domain.md` to remove stale `pocket-mentor`-only or retired-doc references.
+
+**Decisions:**
+- This is documentation/spec alignment only; no skill behavior changed, so the `react-course-review` version remains v0.6.1.
+- Keep the formal design note under `docs/superpowers/specs/` rather than adding an ADR, because this records the current design rather than a new irreversible architectural decision.
+
+**Next:**
+- Run one more mentor-side pilot on a second React assignment before promoting `react-course-review` from draft to stable.
+
+**Validation:**
+- Checked for stale `docs/pocket-mentor`, `pocket-mentor`-only checker wording, and outdated domain-doc placeholders in the touched docs.
+
+**Blockers:** none
+
+---

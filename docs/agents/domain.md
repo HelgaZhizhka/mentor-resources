@@ -13,8 +13,8 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 ```
 mentor-resources/
-├── CONTEXT.md            ← not yet created; will be added when a skill needs it
-├── docs/adr/             ← not yet created; populated as decisions are made
+├── CONTEXT.md            ← canonical glossary for skill bundles and review artifacts
+├── docs/adr/             ← accepted architectural decisions
 └── .claude/skills/<...>/
 ```
 

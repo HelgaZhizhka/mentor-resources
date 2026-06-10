@@ -17,7 +17,8 @@ mentor-resources/
 │   ├── settings.json              # Claude Code hooks (Stop checklist)
 │   └── skills/<skill-name>/       # Self-contained skill bundles
 ├── clean-code/                    # Curriculum — students and mentors read; skill bundles use as references/
-├── docs/pocket-mentor/            # Pocket Mentor design docs
+├── docs/adr/                      # Accepted architectural decisions
+├── docs/superpowers/specs/        # Design/specification notes for larger changes
 ├── templates/configs/             # ESLint + tsconfig reference configs for students
 ├── AGENTS.md                      # This file — routing + conventions
 ├── CLAUDE.md                      # Symlink → AGENTS.md (Claude Code auto-loads this name)
@@ -52,7 +53,7 @@ When changing a skill or curriculum:
 - **Skill changes are versioned.** Use semantic intent: bug fix → patch, new checker/flag → minor. Reflect the new version in `feature_list.json` (`current_version`) and the skill's `SKILL.md` / `README.md`.
 - **`progress.md` is for multi-session continuity, not granular history.** One entry per work session, capturing: what was done, durable decisions, next step, blockers. Granular changes live in `git log`.
 - **`feature_list.json` is per-skill, not per-task.** Internal skill scope lives in commit messages and the skill's own version log.
-- **Skill prompts and bash scripts stay in English.** Mentor-facing output language is decided at runtime by the skill (see `pocket-mentor/SKILL.md` language-detection block).
+- **Skill prompts and bash scripts stay in English.** Mentor-facing output language is decided at runtime by each skill (for example `--language` in `react-course-review`).
 
 ## Definition of Done
 
@@ -62,11 +63,11 @@ A change is done when ALL criteria for its type are met.
 - [ ] `shellcheck` on changed `.sh` scripts — clean
 - [ ] `./init.sh` exits 0 (runs shellcheck on all scripts + smoke test)
 - [ ] Version bumped in the skill's `README.md` and in `feature_list.json` (`current_version`)
-- [ ] If `SKILL.md` (LLM prompt) changed: `/pocket-mentor` tested in a real student repo
+- [ ] If `SKILL.md` (LLM prompt) changed: the changed skill tested in a real matching student repo
 - [ ] Commit message includes the new version number
 
 ### Curriculum update (`clean-code/`)
-- [ ] `bash .claude/skills/pocket-mentor/scripts/sync-references.sh` — syncs changes into skill/action bundles
+- [ ] Run each affected skill's `scripts/sync-references.sh` — syncs changes into skill bundles
 - [ ] `./init.sh` exits 0
 
 ### Tooling / harness change (`AGENTS.md`, `init.sh`, hooks, etc.)
@@ -107,7 +108,7 @@ Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` at repo root (8-term glossary) and `docs/adr/` (ADR-0001, ADR-0002). See `docs/agents/domain.md`.
+Single-context — `CONTEXT.md` at repo root, accepted decisions under `docs/adr/`, and larger design/spec notes under `docs/superpowers/specs/`. See `docs/agents/domain.md`.
 
 ## End of session
 
