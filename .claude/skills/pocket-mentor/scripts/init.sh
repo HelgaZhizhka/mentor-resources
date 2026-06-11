@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pocket Mentor — init.sh
-# Bootstrap: detect $PROJECT_DIR, check deps, run lint+build, emit JSON to stdout.
+# Bootstrap: detect $PROJECT_DIR, check deps, optionally run install/lint/build, emit JSON to stdout.
 # Non-interactive. All diagnostic output to stderr.
 
 set -uo pipefail
@@ -18,15 +18,17 @@ skip() { echo "${YELLOW}[init] ⊘ $*${RESET}"  >&2; }
 
 PROJECT_DIR=""
 INSTALL_MODE="auto"  # auto | yes | no
+SAFE_MODE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
     --yes)         INSTALL_MODE="yes"; shift ;;
     --no-install)  INSTALL_MODE="no"; shift ;;
+    --safe)        SAFE_MODE=true; INSTALL_MODE="no"; shift ;;
     -h|--help)
       cat >&2 <<EOF
-Usage: $0 [--project-dir <path>] [--yes | --no-install]
+Usage: $0 [--project-dir <path>] [--yes | --no-install | --safe]
 Emits a single JSON object describing config / lint / build outcomes.
 EOF
       exit 0
@@ -99,7 +101,9 @@ done
 
 # --- install deps if needed ---
 DEPS_INSTALLED=true
-if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
+if $SAFE_MODE; then
+  skip "safe mode: dependency install and package scripts skipped"
+elif $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
   case "$INSTALL_MODE" in
     no)
       skip "node_modules missing, --no-install set"
@@ -121,7 +125,7 @@ fi
 LINT_RAN=false
 LINT_OK=false
 LINT_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && grep -q '"lint"' package.json; then
+if $HAS_PACKAGE_JSON && ! $SAFE_MODE && $DEPS_INSTALLED && grep -q '"lint"' package.json; then
   LINT_RAN=true
   if $PM run lint >/tmp/pocket-mentor-lint.log 2>&1; then
     LINT_OK=true
@@ -136,7 +140,7 @@ fi
 BUILD_RAN=false
 BUILD_OK=false
 BUILD_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && grep -q '"build"' package.json; then
+if $HAS_PACKAGE_JSON && ! $SAFE_MODE && $DEPS_INSTALLED && grep -q '"build"' package.json; then
   BUILD_RAN=true
   if $PM run build >/tmp/pocket-mentor-build.log 2>&1; then
     BUILD_OK=true
@@ -182,6 +186,7 @@ cat <<EOF
     "name": "$PROJECT_NAME",
     "dir": "$PROJECT_DIR",
     "dir_changed": $DIR_CHANGED,
+    "safe_mode": $SAFE_MODE,
     "package_manager": "$PM",
     "has_package_json": $HAS_PACKAGE_JSON,
     "has_src": $HAS_SRC,

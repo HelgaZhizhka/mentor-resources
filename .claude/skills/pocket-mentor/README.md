@@ -2,7 +2,7 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v1.1.1**
+Version: **v1.2.0**
 
 ## Mentor's note — what this tool is (and isn't)
 
@@ -60,6 +60,18 @@ Starting with v1.0.3, `SKILL.md` declares `model: claude-sonnet-4-6` in its fron
 - [gh CLI](https://cli.github.com/) installed and authenticated (`gh auth login`) — required only for `--output inline` and `--output issues` modes
 - [jq](https://jqlang.github.io/jq/) — required only for `--output inline` and `--output issues` modes (`brew install jq`)
 
+## Security note
+
+Student repositories are untrusted input. By default, `/pocket-mentor` runs a safe/static bootstrap: it detects project structure and reads files, but it does **not** install dependencies or run `package.json` scripts.
+
+Use execution flags intentionally:
+
+- `--safe` — default; no dependency install, no `npm run lint`, no `npm run build`.
+- `--allow-scripts` — run `lint`/`build` only if `node_modules` already exists; do not install dependencies.
+- `--allow-install` — may run package manager install and then package scripts. This can execute lifecycle scripts from the student repository.
+
+For unknown or suspicious submissions, start with the default safe mode. Use full execution only in a sandbox or disposable clone, and avoid running it in a directory that contains real tokens, private `.env` files, SSH keys, or unrelated private work.
+
 ## Install
 
 ### Option 0 — `npx skills add` (recommended for mentors)
@@ -108,6 +120,18 @@ Inside the Claude Code session:
 > /pocket-mentor
 ```
 
+Full mechanical verification on an already-installed project:
+
+```
+> /pocket-mentor --allow-scripts
+```
+
+Full verification that may install dependencies:
+
+```
+> /pocket-mentor --allow-install
+```
+
 With a task-specific rubric (local markdown):
 
 ```
@@ -146,7 +170,7 @@ Both inline comments and issues:
 
 ## What the skill does
 
-1. **Bootstrap (`scripts/init.sh`)** — detects `package.json` (including in subdirectories), package manager, TypeScript config, ESLint config, README presence; installs dependencies if missing; runs `lint` + `build` scripts. Emits a single JSON object summarising everything.
+1. **Bootstrap (`scripts/init.sh`)** — detects `package.json` (including in subdirectories), package manager, TypeScript config, ESLint config, README presence. Default safe mode skips dependency install and package scripts; `--allow-scripts` / `--allow-install` opt into lint/build execution. Emits a single JSON object summarising everything.
 2. **Focused checkers (`scripts/checkers/*.sh`)** — four bash checkers, each emitting a JSON contract:
    - `check-ts-usage.sh` — `any`, `as Type` assertions, `!` non-null
    - `check-no-console.sh` — `console.log` / `console.debug` in `src/`
@@ -164,6 +188,7 @@ You then edit the report and decide what to forward to the student.
 - `--project-dir <path>` — explicit project directory (defaults to `$PWD`)
 - `--yes` — install dependencies without prompting
 - `--no-install` — skip dependency install even if `node_modules` is missing
+- `--safe` — skip dependency install and skip all package scripts, even if dependencies already exist
 
 ## Failure modes
 
@@ -200,3 +225,5 @@ v1.0.3 — Turn-scoped model lock to Claude Sonnet 4.6 via the `model:` frontmat
 v1.1.0 — Inline-mode filter: when `--output inline`, the student-facing PR comments are capped at 7 findings (all 🔴 Critical + top 3–4 🟡 + at most 1 🔵), prioritized by teaching value. The full `CODE_REVIEW_REPORT.md` is still written with everything for the mentor. Rationale: 30+ inline comments on a student PR overwhelm and lose pedagogical impact — depth over breadth. Local mode unchanged.
 
 v1.1.1 — Refined the inline-mode filter after a real run on fun-chat produced 7 🔴 + 4 🟡 (11 total): the old "total cap: 7" rule was unreachable when 🔴 alone reached the cap, so the model interpreted it ambiguously. New rule: all 🔴 are always kept (no upper bound — hiding a blocker is worse than a longer list), and the 🟡 + 🔵 tier has its own combined cap of 5 (with at most 1 🔵). This matches what the model actually produced and what the mentor judged appropriate.
+
+v1.2.0 — Security hardening after public skill supply-chain research: safe/static bootstrap is now the default, package-script execution requires `--allow-scripts`, dependency installation requires `--allow-install`, SKILL.md defines an explicit untrusted-input boundary, and GitHub draft publishing scripts validate draft shape and caps before posting.

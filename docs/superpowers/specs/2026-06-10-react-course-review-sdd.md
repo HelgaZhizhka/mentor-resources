@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-10  
 **Status:** Draft  
-**Skill version:** v0.6.1  
+**Skill version:** v0.7.0
 **Owner:** Helga Zhizhka
 
 ## Summary
@@ -26,7 +26,7 @@ Production-oriented React skills can over-penalize performance or deployment con
 
 - Provide a React/React+TypeScript mentor-review workflow grounded in RS School course expectations.
 - Read the whole student repository, not only a PR diff.
-- Run deterministic bootstrap checks before LLM analysis: dependency install when allowed, lint, build, one discovered test script, and generic bash checkers.
+- Run deterministic bootstrap checks before LLM analysis. Default bootstrap is safe/static; package-script execution and dependency installation require explicit mentor opt-in.
 - Support task context through `--context <path-or-url>` and treat it as authoritative over generic clean-code guidance.
 - Produce a mentor-editable local report: `REACT_COURSE_REVIEW.md`.
 - Support optional GitHub output modes with an approval gate:
@@ -40,6 +40,7 @@ Production-oriented React skills can over-penalize performance or deployment con
 - It is not a replacement for the mentor's final decision.
 - It is not a production readiness gate.
 - It does not post anything to GitHub without mentor approval.
+- It does not install dependencies or run package scripts by default.
 - It does not add naive grep-based React-specific anti-pattern checkers; React semantics stay in LLM analysis to avoid noisy false positives.
 - It does not require a `--student-level` flag. The default audience is RS School React-course students; strictness is calibrated by task context, focus, and evidence.
 
@@ -82,7 +83,7 @@ Runtime flow:
 
 1. Parse slash-command flags in `SKILL.md`.
 2. Load task context when `--context` is provided.
-3. Run `scripts/init.sh` against the student repository.
+3. Run `scripts/init.sh --safe` against the student repository unless the mentor explicitly requested `--allow-scripts` or `--allow-install`.
 4. Read JSON bootstrap output and checker findings.
 5. Read relevant source files, primarily under `src/`.
 6. Load only the needed clean-code references from `references/clean-code/`.
@@ -96,7 +97,17 @@ Runtime flow:
 - nested application directory;
 - package manager from lockfiles first, then `packageManager` in `package.json`, then `npm`;
 - React, TypeScript, router, test dependencies, README, ESLint config;
-- lint, build, and one discovered test script.
+- optionally lint, build, and one discovered test script.
+
+Execution modes:
+
+```text
+--safe             no dependency install, no package scripts; default
+--allow-scripts    run lint/build/test only if dependencies already exist
+--allow-install    may install dependencies and run package scripts
+```
+
+Student repositories are treated as untrusted input. Dependency install and `package.json` scripts may execute arbitrary code from the submitted repository, so the full verification path is opt-in.
 
 Test script discovery order:
 
@@ -111,7 +122,7 @@ test:unit
 test
 ```
 
-The script emits JSON with the existing checker-style contract and includes project, lint, build, and test status. A failing test run is evidence for the report, not a shell crash.
+The script emits JSON with the existing checker-style contract and includes project, safe-mode, lint, build, and test status. A failing test run is evidence for the report, not a shell crash.
 
 ## Output contract
 

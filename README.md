@@ -94,7 +94,8 @@
 Ментор склонировал PR студента и из этой директории запускает `/pocket-mentor` в Claude Code. Skill:
 
 - определяет стек проекта (HTML/CSS, Vanilla JS, TypeScript, React+TS) и подтягивает только релевантные материалы из [`clean-code/`](./clean-code/)
-- запускает `init.sh` (lint + build + tsc) и четыре фокусных bash-чекера: `check-ts-usage` (`any`, `as`, `!`), `check-no-console`, `check-git-quality` (ветка, запрещённые файлы, Conventional Commits), `check-commented-code`
+- запускает safe/static bootstrap и четыре фокусных bash-чекера: `check-ts-usage` (`any`, `as`, `!`), `check-no-console`, `check-git-quality` (ветка, запрещённые файлы, Conventional Commits), `check-commented-code`
+- запуск `lint`/`build`/package scripts и установка зависимостей включаются явно через `--allow-scripts` / `--allow-install`
 - читает исходники студента и опционально подтягивает rubric задания через `--context <path-or-url>` (локальный файл или GitHub URL)
 - пишет `CODE_REVIEW_REPORT.md` с секциями Stack / Strengths / 🔴 Critical issues / 🟡 Recommendations / 🔵 Notes / Score (только при `--context` с rubric) / Summary / Manual checks. Каждая находка в формате What / Why / How to fix / Reference со ссылкой на конкретный раздел `clean-code/*`
 - поддерживает режимы публикации: отчёт в файл (по умолчанию), inline-комментарии в PR (`--output inline`), GitHub Issues для критических находок (`--output issues`)
@@ -115,7 +116,19 @@ npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill po
 npx skills@latest add HelgaZhizhka/mentor-resources -g -a claude-code --skill react-course-review
 ```
 
-Используй его для React/React+TS работ, где студенту нужен педагогический фидбек: что сломано, почему это важно в React, как исправить, какой принцип курса нарушен и что можно отложить. Skill также делает мягкий maintainability-проход по ownership, type boundaries и test seams, но не превращает студенческое ревью в production approval gate. Вывод: локальный `REACT_COURSE_REVIEW.md`, отфильтрованные inline-комментарии в PR (`--output inline`), GitHub Issues по 🔴 блокерам (`--output issues`) или оба режима вместе. Язык отчёта можно задать явно: `--language ru|en`.
+Первый безопасный локальный запуск:
+
+```text
+/react-course-review --context <task-url-or-local-md> --language ru --output local
+```
+
+Полная механическая проверка на уже установленном проекте:
+
+```text
+/react-course-review --context <task-url-or-local-md> --language ru --output local --allow-scripts
+```
+
+Используй его для React/React+TS работ, где студенту нужен педагогический фидбек: что сломано, почему это важно в React, как исправить, какой принцип курса нарушен и что можно отложить. Skill также делает мягкий maintainability-проход по ownership, type boundaries и test seams, но не превращает студенческое ревью в production approval gate. По умолчанию bootstrap безопасный/static; запуск package scripts и установка зависимостей включаются явно через `--allow-scripts` / `--allow-install`. Вывод: локальный `REACT_COURSE_REVIEW.md`, отфильтрованные inline-комментарии в PR (`--output inline`), GitHub Issues по 🔴 блокерам (`--output issues`) или оба режима вместе. Язык отчёта можно задать явно: `--language ru|en`.
 
 **3. Student Reviewer — GitHub Actions** → [`.github/actions/student-reviewer/README.md`](./.github/actions/student-reviewer/README.md)
 

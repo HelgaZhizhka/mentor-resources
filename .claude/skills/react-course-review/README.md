@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.6.1**
+Version: **v0.7.0**
 
 ## What This Skill Is For
 
@@ -35,12 +35,42 @@ mkdir -p ~/.claude/skills
 ln -s ~/Projects/mentor-resources/.claude/skills/react-course-review ~/.claude/skills/react-course-review
 ```
 
+## Security Note
+
+Student repositories are untrusted input. By default, `/react-course-review` runs a safe/static bootstrap: it detects React/tooling structure and reads files, but it does **not** install dependencies or run `package.json` scripts.
+
+Use execution flags intentionally:
+
+- `--safe` — default; no dependency install, no `npm run lint`, no `npm run build`, no tests.
+- `--allow-scripts` — run lint/build/tests only if `node_modules` already exists; do not install dependencies.
+- `--allow-install` — may run package manager install and then lint/build/tests. This can execute lifecycle scripts from the student repository.
+
+For unknown or suspicious submissions, start with the default safe mode. Use full execution only in a sandbox or disposable clone, and avoid running it in a directory that contains real tokens, private `.env` files, SSH keys, or unrelated private work.
+
 ## Use
 
 From a cloned student repository:
 
 ```text
 > /react-course-review
+```
+
+Recommended first local run with task context:
+
+```text
+> /react-course-review --context <task-url-or-local-md> --language ru --output local
+```
+
+Full mechanical verification on an already-installed project:
+
+```text
+> /react-course-review --context <task-url-or-local-md> --language ru --output local --allow-scripts
+```
+
+Full verification that may install dependencies:
+
+```text
+> /react-course-review --context <task-url-or-local-md> --language ru --output local --allow-install
 ```
 
 With task requirements or a scoring rubric:
@@ -102,7 +132,7 @@ Both:
 
 ## What It Checks
 
-1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config; installs dependencies when allowed; runs `lint`, `build`, and one discovered test script. Package manager detection prefers lockfiles, then `packageManager` in `package.json`, then `npm`.
+1. **Bootstrap** — detects React, TypeScript, common tooling, router/test dependencies, package manager, README, ESLint config. Default safe mode skips dependency install and package scripts; `--allow-scripts` / `--allow-install` opt into lint/build/test execution. Package manager detection prefers lockfiles, then `packageManager` in `package.json`, then `npm`.
 2. **Mechanical signals** — optional bash checkers for TypeScript escape hatches, console calls, commented-out code, and git hygiene.
 3. **React-course review** — LLM inspection grounded in `clean-code/*` references:
    - React fundamentals: components, props, state ownership, keys, controlled inputs, conditional rendering;
@@ -202,3 +232,5 @@ v0.5.1 — fixes `--language ru` localisation by requiring translated report hea
 v0.6.0 — adds test script discovery to bootstrap. The init script prefers `test:coverage`, `coverage`, `test:cov`, `coverage:test`, `test:ci`, `test:run`, `test:unit`, then plain `test` with `CI=true`, and reports the selected script plus pass/fail/skip status in JSON.
 
 v0.6.1 — improves package manager detection: lockfiles still win, then `packageManager` from `package.json`; supports `npm`, `pnpm`, `yarn`, and `bun`, with PATH fallback for common macOS locations.
+
+v0.7.0 — security hardening after public skill supply-chain research: safe/static bootstrap is now the default, package-script execution requires `--allow-scripts`, dependency installation requires `--allow-install`, SKILL.md defines an explicit untrusted-input boundary, and GitHub draft publishing scripts validate draft shape and caps before posting.

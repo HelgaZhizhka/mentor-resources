@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # React Course Review — init.sh
-# Bootstrap: detect React course project traits, run lint/build/tests, emit JSON to stdout.
+# Bootstrap: detect React course project traits, optionally run install/lint/build/tests, emit JSON to stdout.
 # Non-interactive. All diagnostic output goes to stderr.
 
 set -uo pipefail
@@ -18,15 +18,17 @@ skip() { echo "${YELLOW}[react-course-init] ⊘ $*${RESET}"  >&2; }
 
 PROJECT_DIR=""
 INSTALL_MODE="auto"  # auto | yes | no
+SAFE_MODE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
     --yes)         INSTALL_MODE="yes"; shift ;;
     --no-install)  INSTALL_MODE="no"; shift ;;
+    --safe)        SAFE_MODE=true; INSTALL_MODE="no"; shift ;;
     -h|--help)
       cat >&2 <<EOF
-Usage: $0 [--project-dir <path>] [--yes | --no-install]
+Usage: $0 [--project-dir <path>] [--yes | --no-install | --safe]
 Emits a single JSON object describing React/tooling/lint/build/test outcomes.
 EOF
       exit 0
@@ -188,7 +190,9 @@ for candidate in test:coverage coverage test:cov coverage:test test:ci test:run 
 done
 
 DEPS_INSTALLED=true
-if $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
+if $SAFE_MODE; then
+  skip "safe mode: dependency install and package scripts skipped"
+elif $HAS_PACKAGE_JSON && [[ ! -d "node_modules" ]]; then
   case "$INSTALL_MODE" in
     no)
       skip "node_modules missing, --no-install set"
@@ -214,7 +218,7 @@ fi
 LINT_RAN=false
 LINT_OK=false
 LINT_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_LINT_SCRIPT; then
+if $HAS_PACKAGE_JSON && ! $SAFE_MODE && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_LINT_SCRIPT; then
   LINT_RAN=true
   if $PM run lint >/tmp/react-course-review-lint.log 2>&1; then
     LINT_OK=true
@@ -228,7 +232,7 @@ fi
 BUILD_RAN=false
 BUILD_OK=false
 BUILD_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_BUILD_SCRIPT; then
+if $HAS_PACKAGE_JSON && ! $SAFE_MODE && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_BUILD_SCRIPT; then
   BUILD_RAN=true
   if $PM run build >/tmp/react-course-review-build.log 2>&1; then
     BUILD_OK=true
@@ -242,7 +246,7 @@ fi
 TEST_RAN=false
 TEST_OK=false
 TEST_TAIL=""
-if $HAS_PACKAGE_JSON && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_ANY_TEST_SCRIPT; then
+if $HAS_PACKAGE_JSON && ! $SAFE_MODE && $DEPS_INSTALLED && $PM_AVAILABLE && $HAS_ANY_TEST_SCRIPT; then
   TEST_VALUE="$(script_value "$TEST_SCRIPT_NAME")"
   TEST_LOG="/tmp/react-course-review-test.log"
   if [[ "$TEST_SCRIPT_NAME" == "test" && "$TEST_VALUE" == *"watch"* && "$TEST_VALUE" != *"--watch=false"* && "$TEST_VALUE" != *"--watchAll=false"* ]]; then
@@ -296,6 +300,7 @@ cat <<EOF
     "name": "$PROJECT_NAME",
     "dir": "$PROJECT_DIR",
     "dir_changed": $DIR_CHANGED,
+    "safe_mode": $SAFE_MODE,
     "package_manager": "$PM",
     "package_manager_field": "$PACKAGE_MANAGER_FIELD",
     "package_manager_available": $PM_AVAILABLE,

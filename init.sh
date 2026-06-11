@@ -34,7 +34,7 @@ do
     exit 1
   fi
 
-  JSON="$(bash "$skill_init" --no-install 2>/dev/null)"
+  JSON="$(bash "$skill_init" --safe 2>/dev/null)"
 
   for field in '"checker":' '"ok":' '"summary":' '"project":'; do
     if ! echo "$JSON" | grep -q "$field"; then
