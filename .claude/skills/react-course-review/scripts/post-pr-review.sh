@@ -47,6 +47,15 @@ if ! jq empty "$DRAFT_PATH" 2>/dev/null; then
   echo "ERROR: draft file is not valid JSON: $DRAFT_PATH" >&2
   exit 1
 fi
+if ! jq -e '(.comments | type == "array") and (.general_body == null or (.general_body | type == "string")) and all(.comments[]?; (.path | type == "string") and (.path | length > 0) and (.path | length < 1024) and (.path | startswith("/") | not) and (.path | contains("..") | not) and (.line | type == "number") and (.line >= 1) and (.body | type == "string") and (.body | length > 0) and (.body | length < 60000))' "$DRAFT_PATH" >/dev/null; then
+  echo "ERROR: draft file does not match expected inline review schema" >&2
+  exit 1
+fi
+COMMENT_COUNT=$(jq '.comments | length' "$DRAFT_PATH")
+if [[ "$COMMENT_COUNT" -gt 50 ]]; then
+  echo "ERROR: refusing to post ${COMMENT_COUNT} inline comments (max 50)" >&2
+  exit 1
+fi
 
 # 4. Auto-detect PR number from current branch if not supplied
 if [[ -z "$PR_NUMBER" ]]; then
@@ -61,11 +70,19 @@ if [[ -z "$PR_NUMBER" ]]; then
     exit 1
   fi
 fi
+if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: invalid PR number: $PR_NUMBER" >&2
+  exit 1
+fi
 
 # 5. Get repo owner/name
 REPO=$(cd "$PROJECT_DIR" && gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>/dev/null || echo "")
 if [[ -z "$REPO" ]]; then
   echo "ERROR: cannot determine repository name. Run from inside a GitHub repository." >&2
+  exit 1
+fi
+if [[ ! "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+  echo "ERROR: unexpected repository identifier: $REPO" >&2
   exit 1
 fi
 

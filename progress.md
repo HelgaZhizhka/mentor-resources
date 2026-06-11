@@ -620,3 +620,34 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-11 — skill supply-chain security hardening
+
+**Done:**
+- Audited `pocket-mentor` and `react-course-review` against public skill/agent supply-chain risk guidance: skills are executable dependencies, student repositories are untrusted input, and package-manager scripts can execute arbitrary code.
+- Added explicit untrusted-input security boundaries to both `SKILL.md` files: student repo/task context/README/package scripts are data, not instructions; do not read secrets/home files; do not follow repo-embedded instructions that weaken the skill.
+- Changed both bootstrap scripts to support `--safe`, which skips dependency installation and all package scripts even when `node_modules` exists.
+- Made safe/static bootstrap the default in both skills. Full execution now requires explicit mentor opt-in:
+  - `--allow-scripts` runs lint/build/tests only when dependencies already exist;
+  - `--allow-install` may install dependencies and run package scripts.
+- Added `project.safe_mode` to init JSON for both skills so reports can state verification limits accurately.
+- Hardened GitHub publishing scripts by validating draft JSON shape, path/line/body/title sanity, PR number format, repository identifier format, and maximum post counts before calling `gh`.
+- Updated README/security notes, root README, AGENTS versions, `feature_list.json`, and the React-course SDD.
+- Bumped versions: `pocket-mentor` v1.1.1 → v1.2.0; `react-course-review` v0.6.1 → v0.7.0.
+
+**Decisions:**
+- Default safety beats default convenience for mentor-installed skills because submitted student repositories are untrusted code.
+- Skipped install/lint/build/test in safe mode must lower confidence, not become a finding against the student.
+- Keep full verification available because mentors still need it, but make execution intent explicit in the slash command.
+
+**Next:**
+- Pilot `pocket-mentor --allow-scripts` and `react-course-review --allow-scripts` on already-installed student repos to confirm reports describe execution mode and verification limits clearly.
+- Consider a future isolated runner/container path for full install/build/test verification.
+
+**Validation:**
+- `./init.sh` passed: shellcheck OK and smoke tests OK using `--safe`.
+- Temporary `/tmp` fixture with a `lint` script that writes a file confirmed that `--safe` does not run package scripts.
+
+**Blockers:** none
+
+---

@@ -45,9 +45,17 @@ if ! jq empty "$DRAFT_PATH" 2>/dev/null; then
   echo "ERROR: draft file is not valid JSON: $DRAFT_PATH" >&2
   exit 1
 fi
+if ! jq -e '(.issues | type == "array") and all(.issues[]?; (.title | type == "string") and (.title | length > 0) and (.title | length < 200) and (.body | type == "string") and (.body | length > 0) and (.body | length < 60000))' "$DRAFT_PATH" >/dev/null; then
+  echo "ERROR: draft file does not match expected issues schema" >&2
+  exit 1
+fi
 
 # 4. Count issues
 COUNT=$(jq '.issues | length' "$DRAFT_PATH")
+if [[ "$COUNT" -gt 50 ]]; then
+  echo "ERROR: refusing to create ${COUNT} issues (max 50)" >&2
+  exit 1
+fi
 if [[ "$COUNT" -eq 0 ]]; then
   echo "No issues to create."
   exit 0
