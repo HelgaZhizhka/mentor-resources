@@ -2,7 +2,7 @@
 
 Structured RS School-style code review of a cloned student repository.
 
-Version: **v1.2.0**
+Version: **v1.3.0**
 
 ## Mentor's note — what this tool is (and isn't)
 
@@ -176,14 +176,14 @@ Both inline comments and issues:
    - `check-no-console.sh` — `console.log` / `console.debug` in `src/`
    - `check-git-quality.sh` — branch on `main`, forbidden tracked files (`node_modules`, `.env`, `dist`), non-Conventional-Commits subjects
    - `check-commented-code.sh` — blocks of ≥3 consecutive commented-out code lines
-3. **LLM analysis** — Claude reads the student's source, grounds findings in `references/clean-code/*`, and aggregates them with the bash-checker output.
-4. **Report** — writes `CODE_REVIEW_REPORT.md` with sections: Stack, Strengths, Critical issues, Recommendations, Score (only with `--context`), Summary, Manual checks.
+3. **Evidence-first LLM analysis** — Claude inventories relevant source scope, classifies claims as command/source/structural/inferred/manual, grounds findings in `references/clean-code/*`, and aggregates them with checker output.
+4. **Report** — writes `CODE_REVIEW_REPORT.md` with verification confidence plus Stack/Scope, Strengths, Critical issues, Recommendations, Score (only with `--context`), Summary, and Manual checks.
 
 You then edit the report and decide what to forward to the student.
 
 ## Init.sh flags
 
-`init.sh` accepts these flags (the skill normally invokes it without flags, but they are useful for manual runs):
+`init.sh` accepts these flags (the skill invokes `--safe` by default):
 
 - `--project-dir <path>` — explicit project directory (defaults to `$PWD`)
 - `--yes` — install dependencies without prompting
@@ -198,7 +198,9 @@ You then edit the report and decide what to forward to the student.
 ## Bundle contents
 
 ```
-SKILL.md                              # prompt + scoring rules + report template
+SKILL.md                              # core workflow and evidence rules
+references/report-contract.md        # local report, finding, and scoring contract
+references/github-output-contract.md # conditional inline/issues JSON contract
 references/clean-code/                # frozen curriculum, copied from mentor-resources/clean-code
 scripts/init.sh                       # bootstrap
 scripts/checkers/check-ts-usage.sh
@@ -227,3 +229,5 @@ v1.1.0 — Inline-mode filter: when `--output inline`, the student-facing PR com
 v1.1.1 — Refined the inline-mode filter after a real run on fun-chat produced 7 🔴 + 4 🟡 (11 total): the old "total cap: 7" rule was unreachable when 🔴 alone reached the cap, so the model interpreted it ambiguously. New rule: all 🔴 are always kept (no upper bound — hiding a blocker is worse than a longer list), and the 🟡 + 🔵 tier has its own combined cap of 5 (with at most 1 🔵). This matches what the model actually produced and what the mentor judged appropriate.
 
 v1.2.0 — Security hardening after public skill supply-chain research: safe/static bootstrap is now the default, package-script execution requires `--allow-scripts`, dependency installation requires `--allow-install`, SKILL.md defines an explicit untrusted-input boundary, and GitHub draft publishing scripts validate draft shape and caps before posting.
+
+v1.3.0 — Evidence-first prompt refactor: adds outcome/success/stop contracts, source-scope accounting, command/source/structural/inferred/manual evidence classes, truthful verification confidence, and a repair-loop self-check. Architectural findings now use explicit structural evidence instead of fabricated line numbers. Local-report and GitHub output contracts moved to conditional reference files, and the unsafe `as UserResponse` suggestion example was removed.
