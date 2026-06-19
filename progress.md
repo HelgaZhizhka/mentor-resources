@@ -651,3 +651,30 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-19 — react-course-review v0.8.0 prompt contract
+
+**Done:**
+- Refactored `react-course-review` around a concise outcome-first goal, explicit success criteria, stop rules, and a repair-loop final self-check.
+- Added evidence classes for command, source, structural, inferred, and manual claims; score rows now follow the same grounding rules as findings.
+- Added relevant-source inventory/exclusion accounting and clarified that absence of evidence is not proof of missing functionality.
+- Tightened score confidence: `high` now requires browser/runtime or relevant integration/e2e evidence for main flows; static/build/lint/unit evidence alone cannot exceed `medium`.
+- Moved the canonical local report and GitHub JSON contracts into conditional reference files, reducing `SKILL.md` from 447 to 214 lines.
+- Updated README, SDD, AGENTS, and `feature_list.json` to v0.8.0.
+
+**Decisions:**
+- Keep security, missing-context, and publishing approval rules as hard invariants; express review judgment through evidence and decision rules.
+- Use conditional output-contract references to reduce active prompt noise without weakening stable artifact formats.
+- Do not claim browser functionality from source inspection or unit/build checks.
+
+**Validation:**
+- Repo `./init.sh` passed: shellcheck and both skill smoke tests are green.
+- Safe-mode forward-test on `/Users/mac/rs/code-review/react-q2/rs-react-app` loaded the state-management rubric, inventoried task-relevant source/tests, and produced a Russian local report with translated headings, explicit evidence classes, static inferences, manual checks, and `low` confidence.
+- `skill-creator` quick validator could not run because PyYAML is not installed; repo-native frontmatter/smoke validation passed.
+
+**Next:**
+- Run a second React assignment pilot before promoting the skill from draft to stable.
+
+**Blockers:** none
+
+---

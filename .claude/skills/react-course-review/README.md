@@ -2,7 +2,7 @@
 
 Pedagogical review of RS School React-course student projects.
 
-Version: **v0.7.0**
+Version: **v0.8.0**
 
 ## What This Skill Is For
 
@@ -171,7 +171,7 @@ GitHub modes:
 - `inline-draft.json` → line-specific PR review comments, filtered for student readability.
 - `issues-draft.json` → GitHub issues for 🔴 Course blockers only.
 
-Every major finding uses:
+Every major finding states its evidence class (`Command-verified`, `Source-verified`, `Structural`, `Inferred`, or `Manual`) and uses:
 
 - `What`
 - `Evidence`, required for blockers when useful
@@ -204,6 +204,8 @@ npx skills add https://github.com/vercel-labs/agent-skills --skill web-design-gu
 ```text
 SKILL.md
 README.md
+references/report-contract.md
+references/github-output-contract.md
 references/clean-code/
 scripts/init.sh
 scripts/checkers/check-ts-usage.sh
@@ -234,3 +236,5 @@ v0.6.0 — adds test script discovery to bootstrap. The init script prefers `tes
 v0.6.1 — improves package manager detection: lockfiles still win, then `packageManager` from `package.json`; supports `npm`, `pnpm`, `yarn`, and `bun`, with PATH fallback for common macOS locations.
 
 v0.7.0 — security hardening after public skill supply-chain research: safe/static bootstrap is now the default, package-script execution requires `--allow-scripts`, dependency installation requires `--allow-install`, SKILL.md defines an explicit untrusted-input boundary, and GitHub draft publishing scripts validate draft shape and caps before posting.
+
+v0.8.0 — refactors the prompt around an outcome-first completion contract, explicit evidence classes, source-coverage accounting, stop/repair rules, and stricter score confidence. `high` confidence now requires runtime or relevant integration/e2e evidence for main flows. Local-report and GitHub JSON contracts moved to conditional reference files to reduce active prompt noise.

@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-10  
 **Status:** Draft  
-**Skill version:** v0.7.0
+**Skill version:** v0.8.0
 **Owner:** Helga Zhizhka
 
 ## Summary
@@ -71,6 +71,8 @@ The skill bundle is self-contained under `.claude/skills/react-course-review/`:
 ```text
 SKILL.md
 README.md
+references/report-contract.md
+references/github-output-contract.md
 references/clean-code/
 scripts/init.sh
 scripts/checkers/*.sh
@@ -87,8 +89,9 @@ Runtime flow:
 4. Read JSON bootstrap output and checker findings.
 5. Read relevant source files, primarily under `src/`.
 6. Load only the needed clean-code references from `references/clean-code/`.
-7. Produce the report and, if requested, draft GitHub output files.
-8. Ask for mentor approval before any GitHub publishing script runs.
+7. Load the local report contract and produce an evidence-classified report.
+8. If requested, load the GitHub output contract and produce draft GitHub files.
+9. Ask for mentor approval before any GitHub publishing script runs.
 
 ## Bootstrap behavior
 
@@ -168,10 +171,14 @@ The report must explain the delta when the recommended score differs from the fu
 ## Evidence rules
 
 - Do not invent code that is not present.
-- Course blockers need concrete file/line evidence when possible.
+- Inventory relevant hand-written source/config scope and state exclusions.
+- Classify material claims as command-verified, source-verified, structural, inferred, or manual.
+- Course blockers need concrete command, file/line, or structural evidence.
 - If code cannot be read, state that explicitly.
 - If the project does not compile or tests fail, surface that early.
-- Real snippets are useful for major findings, but file/line evidence is the minimum requirement.
+- Absence of evidence is not evidence that functionality is missing until the relevant scope was inspected.
+- `high` score confidence requires browser/runtime or relevant integration/e2e evidence for main flows; build/lint/unit checks alone cap confidence at `medium`.
+- If the final self-check fails, repair the report and repeat it before finalizing.
 
 ## Relationship to other tools
 
