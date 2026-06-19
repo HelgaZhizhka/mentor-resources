@@ -651,3 +651,31 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** none
 
 ---
+
+## 2026-06-19 — pocket-mentor v1.3.0 prompt contract
+
+**Done:**
+- Refactored `pocket-mentor` around an outcome-first goal, success criteria, stop rules, evidence classes, verification confidence, and a repair-loop final self-check.
+- Replaced the contradictory universal `file:line` rule with honest evidence rules: line-specific findings require `file:line`; architecture/process findings require structural or command evidence.
+- Added source inventory/exclusion accounting and clarified that absence of evidence is not proof of missing functionality.
+- Moved local report/scoring and GitHub JSON contracts into conditional reference files, reducing `SKILL.md` from 564 to 211 lines.
+- Removed the unsafe `as UserResponse` GitHub suggestion example and made fix snippets optional when a verified safe correction is unavailable.
+- Updated README, AGENTS, and `feature_list.json` to v1.3.0.
+
+**Decisions:**
+- Preserve security, context-failure, rubric, and GitHub approval invariants while converting review judgment into evidence-based decision rules.
+- Keep every quantifiable rubric violation as a standalone finding, but require directly relevant citations rather than decorative reference quotas.
+- Static/build/lint evidence does not prove browser flows; verification confidence must say so.
+
+**Validation:**
+- Safe-mode forward-test on `/Users/mac/rs/code-review/react-q2/rs-react-app` detected React + TypeScript, ran all four pocket checkers, and produced a rubric-based local report with structural evidence and `low` confidence.
+- The first draft omitted the checker-provided non-conventional commit subjects; the repair-loop self-check caught it, and the revised report listed all 15 subjects verbatim.
+- Repo `./init.sh` passed: shellcheck and both skill smoke tests are green.
+- `skill-creator` quick validator remains unavailable because PyYAML is not installed; repo-native validation passed.
+
+**Next:**
+- Pilot v1.3.0 through actual Claude slash-command runs on a vanilla TypeScript and another React submission.
+
+**Blockers:** none
+
+---
