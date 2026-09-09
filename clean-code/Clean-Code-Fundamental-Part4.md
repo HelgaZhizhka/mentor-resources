@@ -93,7 +93,6 @@ renderUser(user);
 
 **Debounce/Throttle:**
 
-<!-- example: debounce -->
 ```typescript
 // Debounce — вызов после паузы
 const debounce = <Args extends unknown[], Result>(

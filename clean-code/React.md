@@ -354,8 +354,6 @@ MemoizedUserCard.displayName = 'UserCard'
 
 Обычно достаточно стандартного сравнения `memo`. Пользовательский компаратор нужен только при измеримой пользе и должен учитывать все пропсы, влияющие на вывод и поведение, включая callbacks. Для карточки выше сравнение только по `id` оставит устаревшие имя и email.
 
-<!-- example: user-card-equal -->
-
 ```typescript
 type UserCardProps = {
   user: { id: string; name: string; email: string };

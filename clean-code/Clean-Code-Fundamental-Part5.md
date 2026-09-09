@@ -397,7 +397,6 @@ const postgresService = new UserService(new PostgreSQLDatabase());
 
 **Frontend пример без классов:**
 
-<!-- example: user-greeting -->
 ```typescript
 type User = { id: string; name: string };
 type FindUser = (id: string) => Promise<User | null>;

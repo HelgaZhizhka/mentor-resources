@@ -138,8 +138,6 @@ const processData = (data: any) => {
 
 **✅ Хорошо — `unknown` требует проверки перед использованием:**
 
-<!-- example: process-data -->
-
 ```typescript
 const processData = (data: unknown): string[] => {
   if (!Array.isArray(data)) throw new Error('Invalid data');
@@ -238,8 +236,6 @@ const getUser = (id: string) => {
 ```
 
 **✅ Хорошо — явный контракт и проверка внешних данных:**
-
-<!-- example: get-user -->
 
 ```typescript
 interface User {

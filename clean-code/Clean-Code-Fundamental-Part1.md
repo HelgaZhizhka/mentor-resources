@@ -1202,7 +1202,6 @@ const getUserName = (user: User | null): string => user?.profile?.firstName ?? '
 
 Проверяем и массив, и каждый его элемент: `unknown` нельзя безопасно читать как объект без проверки.
 
-<!-- example: calculate-total -->
 ```typescript
 const calculateTotal = (items: unknown): number => {
   // ✅ Проверяем тип
