@@ -677,3 +677,15 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Blockers:** The legacy executable script requires a deliberate migration choice; a Markdown placeholder is not a valid executable replacement.
 
 ---
+
+## 2026-09-09 — Record agreed source ownership and documentation migration
+
+**Done:** Corrected the assessment plan: do not recreate deleted legacy pages/scripts; prepare coordinated mentor-resources navigation updates and a PR replacing obsolete recommendations in school documentation. Added source ownership, precedence, generated-reference checks, and completion criteria.
+
+**Decisions:** School docs own review process and grading policy; assignments own requirements; clean-code owns practice explanations; tool pages own usage instructions. This supersedes the earlier legacy-restoration proposal.
+
+**Next:** Implement the documented navigation and school-link migration, then curriculum corrections.
+
+**Blockers:** None for planning; the external documentation PR has not been created.
+
+---
