@@ -665,3 +665,15 @@ Entry format: one section per session, in reverse-chronological-narrative order 
 **Validation:** Repo ./init.sh passed; local fixtures and compiler checks confirmed the issues described in the assessment.
 
 ---
+
+## 2026-09-09 — Official school references and mentor-stage scope correction
+
+**Done:** Read the official RS School PR review process and checked its links into mentor-resources. Confirmed four missing target files returning 404. Updated the assessment with the existing Draft/Release workflow, five-day correction period, discretionary code-quality penalty up to 50 points, and the user-confirmed TypeScript mentor-stage scope.
+
+**Decisions:** Existing public documentation quality and link compatibility take priority over a new AI pilot. Treat early-course comparisons as scope boundaries; pilot automation on a mentor-stage TS assignment. School referral is confirmed, AI effectiveness remains unmeasured. No curriculum, skills, public compatibility files, or external school documentation changed in this clarification.
+
+**Next:** Restore stable public entry points; fix curriculum examples; align mentor guidance with official review and re-review rules; coordinate any changes to school-owned links or grading policy.
+
+**Blockers:** The legacy executable script requires a deliberate migration choice; a Markdown placeholder is not a valid executable replacement.
+
+---
