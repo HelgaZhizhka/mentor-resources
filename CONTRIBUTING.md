@@ -40,13 +40,23 @@ good example with an explanation of why
 
 Explanation of the reasons and consequences
 
+**Verify executable examples:**
+
+Selected standalone TypeScript snippets are marked with `<!-- example: name -->` immediately before their code fence. Run the checker from the repo root with Node.js >=18 and TypeScript >=4.9 (`tsc` on PATH):
+
+```bash
+node scripts/verify-clean-code-examples.mjs
+```
+
+The checker extracts six examples from Markdown, compiles them in strict mode in a temporary directory, and checks valid inputs, rejected inputs, async errors, debounce calls and prop changes. It does not compile every illustrative fragment or run a React application. When changing one of these examples, extend its behavioral checks as needed; do not maintain a separate copy of the example code.
+
 ### Mentor-review skill bundles
 
 **What you can improve:**
 
 - Tune the prompt in `SKILL.md` (rules for Critical issues / Recommendations / Notes / severity / stack detection)
 - Add or refine bash checkers under `scripts/checkers/`
-- Add new entries to `references/clean-code/` (or edit the canonical files in `clean-code/` at repo root — see sync note below)
+- Edit curriculum only in the canonical `clean-code/` directory, then sync the generated `references/clean-code/` copies (see below)
 
 **Where to find it:**
 

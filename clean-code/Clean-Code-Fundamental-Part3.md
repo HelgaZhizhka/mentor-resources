@@ -49,6 +49,8 @@ count++;
 
 ### 1.3 Избегать мутации параметров
 
+Проблема — неожиданное изменение данных, принадлежащих вызывающему коду. Изменение локального объекта или явно задокументированная in-place операция допустимы. В примере ниже предполагается, что вызывающий код ожидает сохранить исходного пользователя.
+
 **❌ Плохо:**
 
 ```typescript
@@ -77,7 +79,9 @@ const updateUser = (user: User): User => ({
 - React оптимизация (shallow comparison)
 - Избегает мутаций
 
-**❌ Плохо — мутация:**
+**❌ Плохо для общего состояния или React state — изменение существующего объекта:**
+
+Сами операции `push` и присваивание полю допустимы для локальных данных. Здесь показан риск изменения разделяемого состояния без создания новой ссылки.
 
 ```typescript
 const user = { name: 'John', age: 30 };
@@ -616,17 +620,34 @@ const saveUser = async (user: User) => {
 **Необработанные промисы:**
 
 ```typescript
-// ❌ Плохо
+// ❌ Плохо — вызывающий код не получает результат и ошибку fetchUsers
 const loadData = async () => {
-  fetchUsers(); // ❌ Promise не обработан
-};
-// ✅ Хорошо
-const loadData = async () => {
-  await fetchUsers();
-  // Или явно игнорируем
-  void fetchUsers(); // Если действительно не нужен результат
+  fetchUsers();
 };
 ```
+
+```typescript
+// ✅ Передаём результат и ошибку вызывающему коду
+const loadData = async () => {
+  return await fetchUsers();
+};
+
+try {
+  const users = await loadData();
+  renderUsers(users);
+} catch (error: unknown) {
+  showLoadError(error);
+}
+```
+
+Если обработчик события не ожидает результат, обработайте отказ явно:
+
+```typescript
+// showLoadError — синхронный обработчик, который сам не бросает ошибку
+void fetchUsers().then(renderUsers).catch(showLoadError);
+```
+
+`void` только отбрасывает значение выражения. Он **не обрабатывает rejection**. `await` передаёт ошибку в окружающую async-функцию; у цепочки должен быть ответственный за обработку отказа. См. [no-floating-promises](https://typescript-eslint.io/rules/no-floating-promises/).
 
 **Смешивание then и async/await:**
 

@@ -6,6 +6,18 @@ SOLID часто объясняют через классы, но это не з
 
 Используйте SOLID как способ думать о связности и ответственности, а не как требование создавать много классов.
 
+SOLID — полноценная часть этого материала. Изучите все пять принципов и объясняйте их через изменения в проекте. Применение принципа не обязано добавлять класс или интерфейс: иногда достаточно разделить функции и явно передать зависимость.
+
+| Принцип | Вопрос при ревью |
+| --- | --- |
+| S — Single Responsibility | Какие независимые причины заставляют менять этот модуль? |
+| O — Open/Closed | Можно ли добавить нужное поведение, не переписывая стабильную общую логику? |
+| L — Liskov Substitution | Сохраняет ли каждая реализация обещанный контракт, включая ошибки и ограничения? |
+| I — Interface Segregation | Не зависит ли потребитель от методов и данных, которые ему не нужны? |
+| D — Dependency Inversion | Отделены ли правила приложения от деталей API, хранения и других внешних систем? |
+
+На ревью называйте конкретную проблему и сценарий изменения. Отсутствие абстракции «на будущее» само по себе не является нарушением SOLID; согласуйте решение с KISS и YAGNI.
+
 ### 1 SOLID Principles
 
 #### S - Single Responsibility Principle (Принцип единственной ответственности)
@@ -383,25 +395,22 @@ const postgresService = new UserService(new PostgreSQLDatabase());
 - Когда код зависит от конкретных реализаций
 - Когда нужна гибкость в выборе реализации (БД, API, сервисы)
 
-**Frontend/React пример без классов:**
+**Frontend пример без классов:**
 
+<!-- example: user-greeting -->
 ```typescript
-type FetchUser = (id: string) => Promise<User>;
+type User = { id: string; name: string };
+type FindUser = (id: string) => Promise<User | null>;
 
-const createUseUser = (fetchUser: FetchUser) => {
-  return (userId: string) => {
-    const [user, setUser] = useState<User | null>(null);
-
-    useEffect(() => {
-      fetchUser(userId).then(setUser);
-    }, [fetchUser, userId]);
-
-    return user;
+const createUserGreeting = (findUser: FindUser) => {
+  return async (userId: string): Promise<string> => {
+    const user = await findUser(userId);
+    return user ? `Hello, ${user.name}` : 'User not found';
   };
 };
 ```
 
-Идея та же: hook зависит от переданной функции `fetchUser`, а не от конкретного API-клиента внутри себя. На практике часто достаточно проще: вынести API-функцию в отдельный модуль и мокать её в тестах.
+Функция зависит от узкого контракта `FindUser`. В точке сборки приложения передаём реализацию через API, в тесте — функцию с фиксированными данными. Ошибка поиска передаётся вызывающему коду, который отвечает за её обработку. Мы отделили правило формирования приветствия от транспорта, не создавая фабрику React-хуков.
 
 ### 2 KISS (Keep It Simple, Stupid)
 
@@ -410,7 +419,7 @@ const createUseUser = (fetchUser: FetchUser) => {
 **Признаки сложного кода:**
 
 - Глубокая вложенность (больше 3 уровней)
-- Длинные функции (больше 20-30 строк)
+- Функции, ответственность которых сложно объяснить; длина больше 20–30 строк — повод присмотреться
 - Сложные условия
 - Неочевидная логика
 
@@ -638,11 +647,14 @@ const UserProfile = () => {
 
 **✅ Хорошо — логика разделена:**
 
+Фрагмент предполагает импорты `useState`/`useEffect` из React и тип `User` с `firstName`, `lastName`, `role`. `isUser` должен проверять все эти поля. Cleanup игнорирует поздний ответ, но не отменяет сетевой запрос.
+
 ```typescript
 // 1. Data Layer (API)
 // isUser — type guard для проверки структуры ответа
 const fetchUser = async (): Promise<User> => {
   const response = await fetch('/api/user');
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data: unknown = await response.json();
 
   if (!isUser(data)) {
@@ -655,17 +667,26 @@ const fetchUser = async (): Promise<User> => {
 // 2. Business Logic (Hook)
 const useUser = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    fetchUser().then(data => {
-      setUser(data);
-      setLoading(false);
-    });
+    let ignore = false;
+    const load = async () => {
+      try {
+        const data = await fetchUser();
+        if (!ignore) setUser(data);
+      } catch {
+        if (!ignore) setError('Could not load user');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    void load(); // Ошибка обработана внутри load
+    return () => { ignore = true; };
   }, []);
 
-  return { user, loading };
+  return { user, loading, error };
 };
 
 // 3. Business Logic (Utils)
@@ -677,9 +698,10 @@ const isUserAdmin = (user: User): boolean =>
 
 // 4. UI Layer (Component)
 const UserProfile = () => {
-  const { user, loading } = useUser();
+  const { user, loading, error } = useUser();
 
   if (loading) return <p>Loading...</p>;
+  if (error) return <p role="alert">{error}</p>;
   if (!user) return null;
 
   return (

@@ -136,12 +136,20 @@ const processData = (data: any) => {
 };
 ```
 
-**✅ Хорошо — `unknown` требует явного приведения типа:**
+**✅ Хорошо — `unknown` требует проверки перед использованием:**
+
+<!-- example: process-data -->
 
 ```typescript
-const processData = (data: unknown) => {
+const processData = (data: unknown): string[] => {
   if (!Array.isArray(data)) throw new Error('Invalid data');
-  return data.map((item) => (item as { value: string }).value);
+  return data.map((item: unknown) => {
+    if (typeof item !== 'object' || item === null ||
+        !('value' in item) || typeof item.value !== 'string') {
+      throw new Error('Item value must be a string');
+    }
+    return item.value;
+  });
 };
 ```
 
@@ -183,34 +191,31 @@ try {
 
 ### 1.3 Запрет `{}` и `object`
 
-**Проблема:**
+Здесь речь о запрете подменять этими типами известную структуру данных, а не о запрете самих типов.
 
-- `{}` и `object` слишком общие → **не дают нормальной типизации**
-- Лучше использовать **`Record<string, string>`** или **`unknown`**
+- `{}` допускает любое значение, кроме `null` и `undefined`, в том числе строки и числа.
+- `object` исключает примитивы и может быть полезен как ограничение generic, но не описывает поля объекта.
+- `Record<string, string>` описывает словарь. Он не гарантирует наличие конкретного ключа `name`; учитывайте `undefined` при чтении отсутствующего ключа (`noUncheckedIndexedAccess`).
+- Для известных полей задавайте конкретный тип; внешние неизвестные данные проверяйте во время выполнения.
 
-**❌ Плохо — `object` ничего не гарантирует:**
+**❌ Плохо — `object` не описывает поле `name`:**
 
 ```typescript
 const processUser = (user: object) => {
-  console.log(user.name); // ❌ Ошибка! TS не знает, что есть `name`: Свойство "name" не существует в типе "object"
+  console.log(user.name); // TypeScript: поле name неизвестно
 };
 ```
 
-**✅ Хорошо — `Record<string, string>` или `unknown` + приведение типа:**
+**✅ Хорошо — контракт требует конкретные поля:**
 
 ```typescript
-const processUser = (user: Record<string, string>) => {
-  console.log(user.name); // ✅ Теперь `name` точно строка
-};
-
-// Или с интерфейсом
 interface User {
   name: string;
   age: number;
 }
 
-const processUser = (user: User) => {
-  console.log(user.name); // ✅ Типизация работает
+const processUser = (user: User): void => {
+  console.log(user.name);
 };
 ```
 
@@ -218,11 +223,13 @@ const processUser = (user: User) => {
 
 **Почему это важно:**
 
-- Предотвращает непреднамеренные типы возврата (TypeScript может выводить неправильные типы)
+- Фиксирует задуманный контракт: вывод типов отражает написанный код, а не намерение автора
 - Делает функциональные подписи более ясными для товарищей по команде
 - Помогает TypeScript ловить ошибки на раннем этапе (особенно в асинхронных функциях)
 
-**❌ Плохо — TypeScript выводит тип, но не всегда корректен:**
+Аннотации особенно полезны на границах модулей и публичных API. Для простых внутренних функций вывод типов допустим, если задание или соглашение проекта не требует явных аннотаций.
+
+**❌ Плохо — результат `json()` проходит как `any` без проверки:**
 
 ```typescript
 const getUser = (id: string) => {
@@ -230,7 +237,9 @@ const getUser = (id: string) => {
 };
 ```
 
-**✅ Хорошо — явный тип возврата обеспечивает безопасность типа:**
+**✅ Хорошо — явный контракт и проверка внешних данных:**
+
+<!-- example: get-user -->
 
 ```typescript
 interface User {
@@ -239,8 +248,20 @@ interface User {
   email: string;
 }
 
-const getUser = (id: string): Promise<User> => {
-  return fetch(`/users/${id}`).then((res) => res.json());
+const isUser = (value: unknown): value is User => {
+  return typeof value === 'object' && value !== null &&
+    'id' in value && typeof value.id === 'string' &&
+    'name' in value && typeof value.name === 'string' &&
+    'email' in value && typeof value.email === 'string';
+};
+
+const getUser = async (id: string): Promise<User> => {
+  const response = await fetch(`/users/${encodeURIComponent(id)}`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data: unknown = await response.json();
+  if (!isUser(data)) throw new Error('Invalid user response');
+  return data;
 };
 ```
 
@@ -258,6 +279,7 @@ const formatUser = (user: User): string => `${user.name} (${user.email})`;
 // isData — type guard для проверки структуры ответа
 const fetchData = async (url: string): Promise<Data> => {
   const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data: unknown = await response.json();
 
   if (!isData(data)) {
@@ -273,7 +295,7 @@ const logMessage = (message: string): void => {
 };
 ```
 
-**Теперь функции всегда возвращают ожидаемый тип — никаких сюрпризов!**
+Аннотация `Promise<User>` сама по себе не проверяет JSON. Проверку во время выполнения делает `isUser`; корректность самого type guard тоже нужно проверять. См. [Type assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions): утверждения типов удаляются при компиляции.
 
 ## 2. `type` vs `interface`
 
@@ -448,7 +470,7 @@ console.log(HttpStatus.OK); // 200
 **3. Когда требуется совместимость с внешними библиотеками, legacy-кодом или shared contracts:**
 Если библиотека, backend contract или существующий shared-пакет уже использует `enum`, иногда проще и безопаснее использовать тот же тип.
 
-**Рекомендация:** В frontend-коде по умолчанию используйте `as const` вместо обычного `enum`, чтобы не добавлять runtime-код в bundle. `const enum` используйте осторожно: он зависит от настроек сборки (`preserveConstEnums`, Babel/SWC, `isolatedModules`) и не всегда подходит для библиотек.
+**Рекомендация:** В frontend-коде по умолчанию используйте `as const` вместо обычного `enum`, чтобы избежать дополнительного кода, который компилятор создаёт для enum. Сам объект остаётся в JavaScript. `const enum` используйте осторожно: он зависит от настроек сборки (`preserveConstEnums`, Babel/SWC, `isolatedModules`) и не всегда подходит для библиотек.
 
 ### 3.2 Использование `as const`
 
@@ -463,7 +485,7 @@ const Role = {
 type RoleType = (typeof Role)[keyof typeof Role]; // "admin" | "user"
 ```
 
-**Теперь `RoleType` будет `"admin" | "user"`, и не будет лишнего кода в JS!**
+Тип `RoleType` будет `"admin" | "user"`. Аннотация `as const` исчезает при компиляции, но сам объект `Role` остаётся в JavaScript.
 
 **Примеры использования:**
 
@@ -608,7 +630,7 @@ if (isNumber(input)) {
 }
 ```
 
-**Теперь TypeScript проверит тип перед выполнением кода!**
+Условие выполняется в JavaScript во время работы программы. TypeScript использует эту проверку для сужения типа при компиляции.
 
 **2. `instanceof` – для классов (`HTMLElement`, `Error`, `Date`)**
 
@@ -1018,13 +1040,13 @@ navigate('/unknown'); // ❌ Type error
 
 - [ ] Нет `any` в коде
 - [ ] Используется `unknown` вместо `any`
-- [ ] Нет `{}` или `object` типов
-- [ ] Явные типы возврата во всех функциях
+- [ ] Известные структуры не заменены общими `{}` или `object`; словари учитывают отсутствие ключей
+- [ ] Публичные контракты и требования задания к аннотациям соблюдены; внутренние функции могут использовать вывод типов
 - [ ] Type Guards вместо type assertions где возможно
 
 ### ✅ Структуры данных
 
-- [ ] `as const` вместо `enum`
+- [ ] Выбор union, объекта as const или enum учитывает контракт и сборку проекта
 - [ ] `type` для простых типов
 - [ ] `interface` для расширяемых типов
 - [ ] Константы для magic values
@@ -1033,4 +1055,4 @@ navigate('/unknown'); // ❌ Type error
 
 - [ ] Строгий режим в `tsconfig.json`
 - [ ] ESLint правила для TypeScript
-- [ ] Path aliases настроены
+- [ ] Если aliases используются, их одинаково понимают TypeScript, сборщик и тесты

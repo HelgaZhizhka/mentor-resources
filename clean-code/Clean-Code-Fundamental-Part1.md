@@ -337,12 +337,9 @@ button.addEventListener('click', (e) => {
 
 ### 2.1 Размер функции
 
-**Правило:** Функция должна делать ОДНО действие.
-**Оптимальный размер:**
+**Принцип:** Функция выполняет одну связную задачу на понятном уровне абстракции.
 
-- **5-15 строк** — идеально
-- **20-30 строк** — приемлемо
-- **Больше 30** — подумать о разбиении
+20–30 строк — повод посмотреть на ответственность и вложенность, а не универсальный лимит. Короткая функция тоже может смешивать задачи. Делите код, когда выделенная функция получает понятное назначение и упрощает чтение; учитывайте явные ограничения задания.
 
 **❌ Плохо — функция делает слишком много:**
 
@@ -439,9 +436,7 @@ const processOrder = (order: Order): number => {
 
 **Правило:**
 
-- **0-2 параметра** — идеально
-- **3 параметра** — приемлемо
-- **Больше 3** — использовать объект параметров
+Чем больше позиционных аргументов, особенно одного типа, тем легче перепутать их при вызове. Объект параметров полезен для связанных настроек и необязательных значений. Само по себе количество больше трёх не является ошибкой: учитывайте смысл аргументов и контракт используемого API.
 
 **❌ Плохо — слишком много параметров:**
 
@@ -890,12 +885,11 @@ const calculateShippingCost = (order: Order): number => {
 
 ```typescript
 // ✅ Объясняем почему выбрано именно это решение
-const debounce = (fn: Function, delay: number) => {
+const debounce = <Args extends unknown[]>(fn: (...args: Args) => void, delay: number) => {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return (...args: unknown[]) => {
-    // Очищаем предыдущий таймер вместо проверки времени
-    // потому что clearTimeout эффективнее по памяти
+  return (...args: Args) => {
+    // Новый ввод отменяет предыдущий поиск: нужен только последний запрос
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
@@ -947,7 +941,7 @@ const deleteUser = (userId: string): Promise<void> => {
  *   [{ price: 100 }, { price: 200 }],
  *   0.2,
  *   10
- * ); // 270
+ * ); // 324
  *
  * @throws {Error} Если массив товаров пустой
  */
@@ -1200,12 +1194,15 @@ const getUserName = (user: User | null): string => {
   return user.profile.firstName || 'Unknown';
 };
 
-// ✅ Ещё лучше — optional chaining
+// Другой контракт: все отсутствующие значения отображаются как Anonymous
 const getUserName = (user: User | null): string => user?.profile?.firstName ?? 'Anonymous';
 ```
 
 **Валидация типов:**
 
+Проверяем и массив, и каждый его элемент: `unknown` нельзя безопасно читать как объект без проверки.
+
+<!-- example: calculate-total -->
 ```typescript
 const calculateTotal = (items: unknown): number => {
   // ✅ Проверяем тип
@@ -1214,8 +1211,12 @@ const calculateTotal = (items: unknown): number => {
   }
 
   return items.reduce((sum: number, item: unknown) => {
-    if (typeof item.price !== 'number') {
-      throw new Error('Item price must be a number');
+    if (
+      typeof item !== 'object' || item === null ||
+      !('price' in item) || typeof item.price !== 'number' ||
+      !Number.isFinite(item.price)
+    ) {
+      throw new Error('Item price must be a finite number');
     }
     return sum + item.price;
   }, 0);
