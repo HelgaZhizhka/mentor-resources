@@ -95,21 +95,25 @@ renderUser(user);
 
 ```typescript
 // Debounce — вызов после паузы
-const debounce = <T extends (...args: unknown[]) => unknown>(
-  fn: T,
+const debounce = <Args extends unknown[], Result>(
+  fn: (...args: Args) => Result,
   delay: number
-): ((...args: Parameters<T>) => void) => {
+): ((...args: Args) => void) => {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return (...args: Parameters<T>) => {
+  return (...args: Args) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 };
 
-// Использование
+```
+
+Это минимальный trailing debounce: он вызывает функцию после паузы, не сохраняет `this` и не предоставляет `cancel`/`flush`. Если callback возвращает Promise, он должен обрабатывать свои ошибки: таймер не передаёт их вызывающему коду.
+
+```typescript
 const handleSearch = debounce((query: string) => {
-  fetchSearchResults(query);
+  console.log('Search:', query);
 }, 300);
 
 // Throttle — вызов не чаще N мс

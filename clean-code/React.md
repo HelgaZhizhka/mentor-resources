@@ -103,14 +103,15 @@ import styles from './styles.module.css';
 
 ### 1.3 Структура компонента и импорты: как лучше делать
 
-**Рекомендуемый паттерн:**
+**Один из вариантов организации (соглашение проекта):**
 
 - Каждый компонент — это папка с именем в формате `kebab-case`.
 - В папке только один главный файл: `index.tsx` (`index.ts` для "чистых" TypeScript-компонентов).
 - В этой же папке лежат стили `styles.module.css` (или `.scss`), тесты и типы, если нужны.
-- **Всегда используем именованный экспорт!**  
-  (`export const Card...` а не `export default`)
-- Импорт компонента: только по папке.
+- В этом варианте используем именованный экспорт (`export const Card...`).
+- Импорт компонента — по папке, если это поддерживает сборка.
+
+Имена файлов, `index.tsx`, aliases и вид экспорта — соглашения проекта, а не требования React. `UserProfile.tsx` и default export тоже допустимы; default export, например, используется в стандартном контракте `React.lazy`. Учитывайте требования задания и фреймворка.
 
 **Пример структуры:**
 
@@ -155,18 +156,14 @@ import { CardList } from '@/components/card-list';
 
 #### Почему именно так?
 
-- **kebab-case** для папок и файлов стандартизирует проект, предотвращает баги в разных ОС и не ломает git.
-- Разбиение по папкам сжатого вида позволяет удобно складывать стили, тесты, типы ≈ один компонент = одна самостоятельная единица.
+- Папка компонента позволяет держать рядом стили, тесты и типы.
+- Единое именование облегчает поиск. Регистр в путях импорта должен точно совпадать с именами файлов, независимо от выбранного стиля.
+- Именованные экспорты сохраняют одинаковое имя при импорте. Default export позволяет выбрать локальное имя; оба варианта поддерживаются React.
+- Tree shaking зависит от сборщика, формата модулей и побочных эффектов. Одна структура папок не гарантирует уменьшения bundle.
 
-- **Именованные экспорты** легче автодополняются IDE, уменьшают ошибки и не путают с default-переносом — это и для TypeScript, и для рефакторинга лучше.
-- Нет лишних barrel-exports (глобальных index.ts): tree-shaking работает идеально, проект масштабируется без боли.
-- Git всегда видит разницу между `UserProfile` и `userProfile` — меньше конфликтов при командной работе.
+Не меняйте `core.ignorecase` ради соглашения об именах: настройка зависит от файловой системы. При переименовании только регистра используйте промежуточное имя через `git mv` и проверяйте diff.
 
-**Настройка чувствительности к регистру на Git:**
-
-```bash
-git config core.ignorecase false
-```
+См. [импорт и экспорт компонентов](https://react.dev/learn/importing-and-exporting-components).
 
 #### Пример шаблона для нового компонента (boilerplate):
 
@@ -182,6 +179,7 @@ components/
 // components/my-component/index.tsx
 
 import type { ReactNode } from 'react'
+import { cn } from '@/utils/classnames'
 import styles from './styles.module.css'
 
 export type MyComponentProps = {
@@ -196,6 +194,10 @@ export const MyComponent = ({ children, className }: MyComponentProps): React.JS
 
 ---
 
+В примерах `cn` — утилита проекта, а `@/` — настроенный alias. Их нужно определить в своём проекте или заменить обычными импортами.
+
+Для выбранного выше соглашения:
+
 - **Одна папка = один компонент**  
   (kebab-case, index.tsx — экспорт именованный)
 
@@ -206,7 +208,9 @@ export const MyComponent = ({ children, className }: MyComponentProps): React.JS
 
 ### 2.1 Стрелочные функции для компонентов
 
-**✅ Хорошая практика — компоненты как стрелочные функции:**
+Стрелочная функция и function declaration — корректные способы объявления компонента. Ниже используется стрелочная функция как соглашение примеров.
+
+**✅ Компонент как стрелочная функция:**
 
 ```typescript
 // Компонент без пропсов
@@ -348,13 +352,27 @@ MemoizedUserCard.displayName = 'UserCard'
 
 **С кастомным сравнением:**
 
+Обычно достаточно стандартного сравнения `memo`. Пользовательский компаратор нужен только при измеримой пользе и должен учитывать все пропсы, влияющие на вывод и поведение, включая callbacks. Для карточки выше сравнение только по `id` оставит устаревшие имя и email.
+
 ```typescript
-const areEqual = (prevProps: Props, nextProps: Props) => {
-  return prevProps.user.id === nextProps.user.id;
+type UserCardProps = {
+  user: { id: string; name: string; email: string };
 };
 
+const areEqual = (prevProps: UserCardProps, nextProps: UserCardProps): boolean => {
+  return prevProps.user.id === nextProps.user.id &&
+    prevProps.user.name === nextProps.user.name &&
+    prevProps.user.email === nextProps.user.email;
+};
+```
+
+Применение к `UserCard` выше:
+
+```typescript
 export const MemoizedUserCard = React.memo(UserCard, areEqual);
 ```
+
+См. ограничения [кастомного сравнения в React.memo](https://react.dev/reference/react/memo#specifying-a-custom-comparison-function). При добавлении новых пропсов пересмотрите компаратор.
 
 ### 2.4 Разбиение больших компонентов
 
@@ -437,7 +455,9 @@ const Form = (): React.JSX.Element => {
 
 ### 2.6 Сокращение кода через destructuring
 
-**❌ Плохо:**
+Оба варианта корректны. Выбирайте читаемый для команды вариант; меньше строк не означает лучше.
+
+**Именованная промежуточная переменная:**
 
 ```typescript
 const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,7 +466,7 @@ const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 };
 ```
 
-**✅ Хорошо:**
+**Деструктуризация аргумента:**
 
 ```typescript
 const onChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
@@ -694,11 +714,13 @@ useEffect(() => {
 }, []);
 ```
 
-**Когда `AbortController` нужен:**
+**Выбор cleanup:**
+
+Важно не дать устаревшему ответу изменить актуальное состояние. Можно отменить запрос, игнорировать устаревший результат или использовать механизм библиотеки запросов. Отмена также экономит ресурсы, если API её поддерживает.
 
 | Сценарий                         | Нужен `AbortController`?      | Почему?                                                                                                    |
 | -------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Одноразовый запрос в `useEffect` | ✅ **Да**                     | Если компонент размонтируется, запрос отменяется                                                           |
+| Одноразовый запрос в `useEffect` | **Один из вариантов**                     | Если компонент размонтируется, запрос отменяется                                                           |
 | `useEffect` с `setInterval`      | ⚠️ **Если внутри есть fetch** | Сам interval очищается через `clearInterval`, а запросы внутри него можно отменять через `AbortController` |
 | Синхронные операции              | ❌ **Нет**                    | Запрос сразу выполняется, `abort` не нужен                                                                 |
 
@@ -1009,6 +1031,8 @@ return <div className={className}>;
 
 ### 5.2 Валидация и обработка ошибок
 
+Фрагмент использует `useState` и `useId` из React. `submitForm` — обработчик отправки проекта: он отвечает за серверные ошибки и состояние отправки. Клиентская валидация не заменяет проверку на сервере.
+
 ```typescript
 type FormState = {
   email: string
@@ -1019,6 +1043,7 @@ type FormState = {
   }
 }
 const LoginForm = (): React.JSX.Element => {
+  const formId = useId()
   const [formState, setFormState] = useState<FormState>({
     email: '',
     password: '',
@@ -1054,8 +1079,13 @@ const LoginForm = (): React.JSX.Element => {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} noValidate>
+      <label htmlFor={`${formId}-email`}>Email</label>
       <input
+        id={`${formId}-email`}
+        name="email"
+        aria-invalid={Boolean(formState.errors.email)}
+        aria-describedby={formState.errors.email ? `${formId}-email-error` : undefined}
         type="email"
         value={formState.email}
         onChange={({ target: { value } }) =>
@@ -1064,9 +1094,25 @@ const LoginForm = (): React.JSX.Element => {
         autoComplete="email"
       />
       {formState.errors.email && (
-        <span className="error">{formState.errors.email}</span>
+        <span id={`${formId}-email-error`} role="alert">{formState.errors.email}</span>
       )}
 
+      <label htmlFor={`${formId}-password`}>Password</label>
+      <input
+        id={`${formId}-password`}
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        value={formState.password}
+        aria-invalid={Boolean(formState.errors.password)}
+        aria-describedby={formState.errors.password ? `${formId}-password-error` : undefined}
+        onChange={({ target: { value } }) =>
+          setFormState({ ...formState, password: value })
+        }
+      />
+      {formState.errors.password && (
+        <span id={`${formId}-password-error`} role="alert">{formState.errors.password}</span>
+      )}
       <button type="submit">Submit</button>
     </form>
   )
@@ -1229,14 +1275,14 @@ fetchUser();
 
 ### ✅ Структура
 
-- [ ] Используются alias для импортов
+- [ ] Импорты разрешаются сборкой и тестами; aliases при необходимости настроены согласованно
 - [ ] Порядок импортов правильный
-- [ ] Файлы в `kebab-case`
-- [ ] Реэкспорт через `index.ts`
+- [ ] Имена файлов соответствуют соглашению проекта, регистр импортов точен
+- [ ] Экспорты и структура папок последовательны; index.ts не обязателен
 
 ### ✅ Компоненты
 
-- [ ] Стрелочные функции для компонентов
+- [ ] Компоненты объявлены на верхнем уровне через arrow function или function declaration
 - [ ] Правильная типизация пропсов
 - [ ] `React.memo()` где нужно
 - [ ] Большие компоненты разбиты
@@ -1245,17 +1291,17 @@ fetchUser();
 ### ✅ React и DOM
 
 - [ ] Нет использования `querySelector`, `getElementById`, `getElementsByClassName` для управления UI внутри React-компонентов
-- [ ] Нет прямых манипуляций с DOM; UI меняется через state/props
-- [ ] `useRef` используется только для фокуса, скролла, измерений или сторонних библиотек
-- [ ] Все изменения UI через состояние (`useState`, `useReducer`)
-- [ ] Формы используют controlled components
+- [ ] Императивные DOM-интеграции изолированы и не конфликтуют с обновлениями React
+- [ ] Refs используются для DOM-интеграций и значений, изменение которых не должно запускать render
+- [ ] Данные для render передаются через props/state; фокус, измерения и uncontrolled inputs имеют понятный жизненный цикл
+- [ ] Controlled или uncontrolled подход выбран осознанно; режим input не меняется во время его жизни
 - [ ] Условный рендеринг используется для логики показа/скрытия; CSS (`display`, `visibility`) — только для визуальных состояний, responsive или сохранения состояния DOM
 
 ### ✅ Хуки
 
 - [ ] `useCallback` используется правильно
-- [ ] Логика вынесена в кастомные хуки
-- [ ] `AbortController` в `useEffect`
+- [ ] Кастомные хуки выделяют связное поведение, если это упрощает компонент или переиспользование
+- [ ] Асинхронные effects обрабатывают ошибки и защищены от устаревших результатов
 
 ### ✅ Производительность
 
@@ -1271,7 +1317,7 @@ fetchUser();
 
 ### ✅ Антипаттерны
 
-- [ ] Нет `dangerouslySetInnerHTML`
+- [ ] Пользовательский текст выводится через JSX; необходимый HTML санитизируется перед dangerouslySetInnerHTML
 - [ ] `key` везде где нужно
 - [ ] Нет `console.log()`
 - [ ] Нет закомментированного кода

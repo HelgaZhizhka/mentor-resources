@@ -194,42 +194,27 @@
 
 ### 3.1 Почему kebab-case?
 
-- **Стандарт HTML/CSS** (традиционный подход)
-- **Читаемость** (слова разделены дефисом)
-- **Совместимость** с методологиями (BEM, SMACSS)
+`kebab-case` — распространённое соглашение, а не обязательный стандарт HTML. CSS Modules часто используют camelCase. Важно следовать одному подходу в проекте.
 
-**Плохо:**
+**❌ Плохо — непоследовательное именование в одной карточке:**
 
 ```html
-<!-- camelCase (для JS, не для HTML!) -->
-<div class="newsCard">
-  <button class="submitButton">
-    <!-- snake_case (для Python/SQL, не для CSS!) -->
-    <div class="news_card">
-      <button class="submit_button">
-        <!-- PascalCase (для React компонентов, не для классов!) -->
-        <div class="NewsCard">
-          <!-- Без разделителей -->
-          <div class="newscard"></div>
-        </div>
-      </button>
-    </div>
-  </button>
-</div>
+<article class="newsCard">
+  <h2 class="news_title">School news</h2>
+  <button type="button" class="NewsButton">Show details</button>
+</article>
 ```
 
-**Хорошо:**
+**✅ Хорошо — единое соглашение и допустимая вложенность элементов:**
 
 ```html
-<!-- kebab-case -->
-<div class="news-card">
-  <button class="submit-button">
-    <section class="user-profile">
-      <article class="blog-post"></article>
-    </section>
-  </button>
-</div>
+<article class="news-card">
+  <h2 class="news-card__title">School news</h2>
+  <button type="button" class="news-card__button">Show details</button>
+</article>
 ```
+
+Внутри `button` не размещайте секции, статьи или другие интерактивные элементы.
 
 ### 3.2 BEM (рекомендуется)
 
@@ -409,7 +394,7 @@
 - [ ] Только ОДИН `<main>` на странице
 - [ ] Все `<img>` имеют атрибут `alt`
 - [ ] Для изображений указаны `width` и `height`
-- [ ] Классы именуются в kebab-case
+- [ ] Классы именуются последовательно согласно соглашению проекта
 - [ ] Uppercase текст реализован через CSS `text-transform`, не в HTML
 - [ ] Нет избыточных `<div>` (можно упростить?)
 - [ ] Нет inline стилей и inline JavaScript (onclick)
