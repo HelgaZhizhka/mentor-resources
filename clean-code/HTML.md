@@ -228,7 +228,7 @@
   <p class="news-card__description">Description</p>
 
   <!-- Modifier -->
-  <button class="button button_primary news-card__button">Read More</button>
+  <button class="button button--primary news-card__button">Read More</button>
 </div>
 ```
 
@@ -397,7 +397,7 @@
 - [ ] Классы именуются последовательно согласно соглашению проекта
 - [ ] Uppercase текст реализован через CSS `text-transform`, не в HTML
 - [ ] Нет избыточных `<div>` (можно упростить?)
-- [ ] Нет inline стилей и inline JavaScript (onclick)
+- [ ] Статические стили и состояния описаны классами; вычисляемые inline-значения допустимы по [правилам CSS](CSS.md). Нет inline JavaScript (`onclick`)
 - [ ] Все `<input>` имеют связанные `<label>`
 - [ ] Кнопки имеют корректный `type` (button/submit)
 - [ ] Интерактивные элементы focusable (button, a, input)
@@ -413,6 +413,6 @@
 
 **Ручные:**
 
-- Keyboard navigation (Tab, Enter, Esc)
+- Keyboard navigation (Tab/Shift+Tab, Enter, Space, Esc; стрелки для составных виджетов)
 - Screen reader (NVDA, JAWS, VoiceOver)
 - Отключить CSS — структура должна быть понятна

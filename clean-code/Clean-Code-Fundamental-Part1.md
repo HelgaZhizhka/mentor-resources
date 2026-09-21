@@ -2,6 +2,8 @@
 
 **Чистый код** — это код, который легко читать, понимать и поддерживать. Он написан так, что другой разработчик (или вы через полгода) сможет быстро разобраться, что происходит, и внести изменения без страха что-то сломать.
 
+> Примеры цен показывают структуру кода; для реальных денежных расчётов учитывайте [точность и округление](Clean-Code-Fundamental-Part4.md#денежные-суммы-и-точность).
+
 ## Зачем нужен чистый код?
 
 - **Снижает стоимость поддержки** — меньше времени на разбор "что это вообще делает"
@@ -188,38 +190,22 @@ const shouldRenderHeader = (): boolean => {
 };
 ```
 
-**Одна функция — одно действие:**
+**Одна функция — одна понятная задача:**
+
+Несколько вызовов могут составлять одну задачу: регистрация пользователя включает проверку, сохранение и уведомление. Важны согласованный уровень абстракции и ответственность, а не количество вызовов.
 
 ```typescript
-// ❌ Плохо — функция делает слишком много
-const processUserAndSendEmail = (user: User) => {
-  validateUser(user);
-  saveUser(user);
-  sendWelcomeEmail(user);
-  logActivity(user);
-};
-
-// ✅ Хорошо — каждая функция делает одно
-const validateUser = (user: User): boolean => {
-  /*...*/
-};
-const saveUser = (user: User): void => {
-  /*...*/
-};
-const sendWelcomeEmail = (user: User): void => {
-  /*...*/
-};
-const logUserActivity = (user: User): void => {
-  /*...*/
-};
-
+// Фрагмент сервиса: validateUser бросает ошибку при невалидных данных.
+// Все операции в этом примере синхронные; для Promise нужен await.
 const onboardNewUser = (user: User): void => {
-  if (!validateUser(user)) return;
+  validateUser(user);
   saveUser(user);
   sendWelcomeEmail(user);
   logUserActivity(user);
 };
 ```
+
+Это функция-координатор. Детали валидации, хранения и отправки письма находятся в соответствующих функциях. Если уведомление может завершиться ошибкой после сохранения, отдельно определите поведение сценария: повторная отправка, очередь или сообщение пользователю. Выделение функций само по себе эту задачу не решает.
 
 ### 1.4 Классы и компоненты
 
@@ -488,7 +474,9 @@ createUser({
 });
 ```
 
-**Избегать boolean флагов:**
+**Избегать непонятных позиционных boolean-аргументов:**
+
+Именованные поля делают настройки отображения понятнее, но не устраняют ветвление. Если флаг переключает функцию между самостоятельными операциями, рассмотрите отдельные функции. Несколько настроек UI сами по себе не требуют такого разделения.
 
 ```typescript
 // ❌ Плохо
@@ -651,9 +639,14 @@ const validateUserEmail = (user: User): void => {
   }
 };
 
-const calculateUserAge = (birthDate: Date): number => {
-  const today = new Date();
-  return today.getFullYear() - birthDate.getFullYear();
+// Валидные даты рождения не позже today, календарь локального часового пояса.
+// Для родившихся 29 февраля в невисокосный год возраст увеличивается 1 марта.
+const calculateUserAge = (birthDate: Date, today: Date = new Date()): number => {
+  const birthdayHasPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+  return today.getFullYear() - birthDate.getFullYear() - (birthdayHasPassed ? 0 : 1);
 };
 
 const formatUserInfo = (user: User, age: number): string =>
@@ -734,10 +727,12 @@ const processPayment = (amount: number, user: User): void => {
 };
 ```
 
-**Один тип возврата:**
+**Понятный контракт возврата:**
+
+Если разные значения обозначают одно отсутствие пользователя, выберите одно представление. `User | null` уже является union; альтернативные результаты допустимы, когда их смысл явно описан. Если причины отказа важны вызывающему коду, сохраните их, например в discriminated union, вместо сведения к `null`.
 
 ```typescript
-// ❌ Плохо — разные типы возврата
+// ❌ Несколько значений обозначают одно отсутствие пользователя
 const getUser = (id: string): User | null | undefined | false => {
   if (!id) return false; // ❌
   if (id === 'invalid') return undefined; // ❌
@@ -745,7 +740,7 @@ const getUser = (id: string): User | null | undefined | false => {
   return user || null; // ❌
 };
 
-// ✅ Хорошо — один тип возврата
+// ✅ Один способ обозначить отсутствие пользователя
 const getUser = (id: string): User | null => {
   if (!id) return null;
   if (id === 'invalid') return null;
@@ -899,12 +894,13 @@ const debounce = <Args extends unknown[]>(fn: (...args: Args) => void, delay: nu
 **3. Workarounds и хаки:**
 
 ```typescript
-// ✅ Объясняем временное решение
-const parseDate = (dateString: string): Date => {
-  // FIXME: Safari не поддерживает ISO формат с timezone,
-  // временно используем библиотеку date-fns
-  // Удалить после обновления минимальной версии Safari до 16+
-  return parse(dateString, 'yyyy-MM-dd', new Date());
+// Пример адаптера для условного legacy API.
+import { parse } from 'date-fns';
+
+const parseLegacyDate = (dateString: string): Date => {
+  // Legacy API передаёт календарную дату как dd.MM.yyyy без часового пояса.
+  // TODO: Удалить адаптер после перехода API на согласованный формат дат.
+  return parse(dateString, 'dd.MM.yyyy', new Date());
 };
 ```
 
@@ -1000,13 +996,17 @@ const DEBUG_MODE = true;
 **Формат:**
 
 ```
-// TODO: Что нужно сделать (Автор, Дата)
+// TODO: Что нужно сделать и при каком условии; ссылка на задачу, если есть
 // FIXME: Что сломано (приоритет)
 // HACK: Почему хак, когда удалить
 // NOTE: Важная информация
 ```
 
+Автор и дата — необязательные соглашения команды. Проверяйте актуальность TODO по задаче и состоянию кода, а не только по наличию даты.
+
 ### 3.5 Комментарии "почему", а не "что"
+
+Не пересказывайте очевидные операции. Комментарии о контракте, ограничениях, единицах измерения и формате внешних данных тоже полезны, даже если отвечают на вопрос «что».
 
 **❌ Плохо — комментарий описывает ЧТО делает код:**
 

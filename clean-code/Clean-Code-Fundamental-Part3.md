@@ -362,18 +362,21 @@ const copy = { ...user };
 copy.address.city = 'LA';
 console.log(user.address.city); // 'LA' — оригинал изменился! ❌
 
+// Каждый вариант проверяем на свежих данных: shallow copy уже изменил user.
+const original = { name: 'John', address: { city: 'NY' } };
+
 // ✅ Глубокое копирование
-const deepCopy = JSON.parse(JSON.stringify(user)); // Работает для простых случаев
+const deepCopy = JSON.parse(JSON.stringify(original)); // Работает для простых случаев
 deepCopy.address.city = 'LA';
-console.log(user.address.city); // 'NY' ✅
+console.log(original.address.city); // 'NY' ✅
 
 // ✅ Или structuredClone (новый API)
-const deepCopy2 = structuredClone(user);
+const deepCopy2 = structuredClone(original);
 
 // ✅ Или вручную для конкретного случая
 const deepCopy3 = {
-  ...user,
-  address: { ...user.address },
+  ...original,
+  address: { ...original.address },
 };
 ```
 
@@ -520,12 +523,14 @@ const processUser = async (userId: string) => {
     const validatedUser = await validateUser(user);
     const orders = await fetchUserOrders(validatedUser.id);
     const data = { user: validatedUser, orders };
-    await saveUserData(data);
+    return await saveUserData(data);
   } catch (error) {
-    handleError(error);
+    return handleError(error);
   }
 };
 ```
+
+`return await` внутри `try` сохраняет результат и позволяет обработать отклонение `saveUserData` в этом `catch`. Возврат `handleError` сохраняет и его результат, включая Promise. При смене синтаксиса проверяйте успешный и ошибочный пути; см. [безопасный рефакторинг](Safe-Refactoring.md).
 
 **Try-catch для ошибок:**
 

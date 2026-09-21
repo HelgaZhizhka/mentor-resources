@@ -591,6 +591,9 @@ const isUser = (value: unknown): value is User => {
 
 const loadUser = async (): Promise<User> => {
   const response = await fetch('/api/user');
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
   const data: unknown = await response.json();
 
   if (!isUser(data)) {
@@ -702,21 +705,11 @@ const validUsers = users.filter(isDefined); // Type: User[]
 
 `as const` фиксирует значения, но иногда нужно ещё проверить, что объект соответствует ожидаемой форме. Для этого используйте `satisfies`.
 
-**❌ Плохо — `as` может скрыть ошибку:**
+**Различайте проверку формы и утверждение типа:**
 
-```typescript
-type Route = {
-  path: string;
-  title: string;
-};
+`as` не выполняет runtime-проверку, но и не разрешает любую несовместимость: объект без обязательного `title` может вызвать ошибку уже при приведении к `Record<string, Route>`. Для конфигурации предпочитайте проверку через `satisfies`; утверждение типа применяйте только с обоснованием, описанным в разделе о `as`.
 
-const routes = {
-  home: { path: '/', title: 'Home' },
-  profile: { path: '/profile', label: 'Profile' }, // ❌ title отсутствует
-} as Record<string, Route>;
-```
-
-**✅ Хорошо — `satisfies` проверяет форму, но сохраняет точные типы:**
+**✅ Проверка формы и сохранение литералов — `as const satisfies`:**
 
 ```typescript
 type Route = {
@@ -727,8 +720,14 @@ type Route = {
 const routes = {
   home: { path: '/', title: 'Home' },
   profile: { path: '/profile', title: 'Profile' },
-} satisfies Record<string, Route>;
+} as const satisfies Record<string, Route>;
+
+// Тип routes.home.path — '/'. Пропуск title вызовет ошибку компиляции.
 ```
+
+`satisfies` проверяет совместимость и сохраняет полезную информацию о структуре объекта, но сам по себе не фиксирует все литералы: без `as const` поле `path` в этом примере имеет тип `string`. `as const` добавляет readonly на уровне типов, а не замораживает объект во время выполнения.
+
+Источник: [TypeScript 4.9 — satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html).
 
 **Когда использовать:**
 
@@ -921,7 +920,7 @@ type CompleteUserForm = Required<UpdateUserPayload>;
 
 ### 5.1 Вынос числовых значений
 
-**Правило:** Числа в коде – это магия! Делаем их понятными.
+**Правило:** Давайте имена неочевидным числовым значениям, чтобы объяснить их смысл. Очевидные литералы, например `0` для пустого счётчика или `2` в математической формуле, не требуют констант вроде `ZERO` и `TWO`.
 
 **❌ Плохо — непонятно, что значит `10`:**
 

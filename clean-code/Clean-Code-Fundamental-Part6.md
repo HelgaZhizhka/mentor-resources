@@ -37,7 +37,9 @@ useEffect(() => {
 }, []); // ❌ Утечка памяти — интервал не очищается
 ```
 
-**✅ Хорошо — очищаем interval:**
+**Первый шаг — очищаем interval:**
+
+Это показывает только очистку таймера. Если `fetchData` возвращает Promise, дополнительно нужны обработка ошибок, отмена и решение о перекрытии запросов — см. полный пример ниже.
 
 ```typescript
 useEffect(() => {
@@ -51,19 +53,35 @@ useEffect(() => {
 
 Если `fetchData` создаётся внутри компонента, следите за dependency array. Часто лучше объявить функцию внутри `useEffect` или вынести логику в custom hook.
 
-**✅ Хорошо — polling с `AbortController`:**
+**✅ Polling без перекрытия запросов, с обработкой ошибок и отменой:**
+
+Контракт `fetchData`: возвращает Promise, проверяет HTTP-статус и данные, передаёт `signal` в `fetch` и не публикует результат после отмены. Повторный запрос начинается через секунду после завершения предыдущего.
 
 ```typescript
 useEffect(() => {
   const controller = new AbortController();
 
-  const interval = setInterval(() => {
-    fetchData({ signal: controller.signal });
-  }, 1000);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  const poll = async (): Promise<void> => {
+    try {
+      await fetchData({ signal: controller.signal });
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        console.error('Polling failed:', error);
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        timeout = setTimeout(() => { void poll(); }, 1000);
+      }
+    }
+  };
+
+  void poll();
 
   return () => {
     controller.abort();
-    clearInterval(interval);
+    clearTimeout(timeout);
   };
 }, [fetchData]);
 ```
@@ -170,6 +188,8 @@ container.appendChild(newButton);
 
 ## 4. Обязательные скобки для if/else/for
 
+Это соглашение стиля: команда может требовать скобки всегда или разрешать однострочные guard clauses (`if (!user) return;`). В справочнике встречается второй вариант. Для нескольких инструкций блок обязателен; при добавлении инструкции к короткому условию обязательно добавьте скобки. Закрепите выбранный стиль в линтере проекта.
+
 **Проблемы без скобок:**
 
 - **Легко ошибиться** при добавлении новой строки
@@ -204,7 +224,7 @@ if (user.isActive) {
 
 ### 4.2 Настройка ESLint
 
-Добавьте правило в `eslint.config.js`:
+Если команда выбрала скобки во всех случаях, добавьте правило в `eslint.config.js`:
 
 ```javascript
 export default [

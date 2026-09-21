@@ -27,11 +27,7 @@ import { Card } from '@/components/common/card';
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@utils/*": ["src/utils/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@types/*": ["src/types/*"]
+      "@/*": ["src/*"]
     }
   }
 }
@@ -55,14 +51,12 @@ export default defineConfig({
         find: '@',
         replacement: resolve(__dirname, './src'),
       },
-      {
-        find: '@images',
-        replacement: resolve(__dirname, './src/assets/images'),
-      },
     ],
   },
 });
 ```
+
+Используйте общий префикс: `@/components/...`, `@/utils/...`, `@/assets/images/...`. Если добавляете отдельный алиас, настройте его и в TypeScript, и в сборщике: [`paths` не меняет пути в выходном JavaScript](https://www.typescriptlang.org/docs/handbook/modules/reference.html#paths-does-not-affect-emit).
 
 ### 1.2 Порядок импортов
 
@@ -688,6 +682,8 @@ const MainPage = (): React.JSX.Element => {
 
 **✅ Решение — отменять запрос с `AbortController`:**
 
+Фрагмент компонента: `setData` обновляет состояние типа `ApiData`, а `isApiData(value: unknown): value is ApiData` проверяет все необходимые поля ответа. Реализация зависит от API; пример type guard приведён в [TypeScript](TypeScript.md#41-type-assertion-as). HTTP-ошибка, невалидный JSON и неверная структура должны обрабатываться отдельно от ожидаемой отмены.
+
 ```typescript
 useEffect(() => {
   const controller = new AbortController();
@@ -697,8 +693,16 @@ useEffect(() => {
       const response = await fetch('https://api.example.com/data', {
         signal: controller.signal,
       });
-      const data = await response.json();
-      setData(data);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data: unknown = await response.json();
+      if (!isApiData(data)) {
+        throw new Error('Invalid API response');
+      }
+      if (!controller.signal.aborted) {
+        setData(data);
+      }
     } catch (error: unknown) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) {
         console.error('Ошибка загрузки:', error);
@@ -946,7 +950,7 @@ import * as MUI from '@mui/material'
 const App = () => <MUI.Button>Click</MUI.Button>
 ```
 
-**✅ Хорошо — именованный импорт конкретных компонентов:**
+**✅ Импорт по отдельному пути (default import):**
 
 ```typescript
 import Button from '@mui/material/Button'
@@ -957,9 +961,11 @@ const App = () => <Button>Click</Button>
 
 **Преимущества:**
 
-- Меньше размер бандла
-- Быстрее загрузка
-- Tree shaking работает эффективнее
+- Явно виден используемый модуль.
+- Для MUI такие импорты могут ускорить запуск и пересборку в development.
+- Современные сборщики умеют tree shaking импортов верхнего уровня в production; уменьшение бандла не гарантировано только сменой синтаксиса. Проверяйте результат сборки.
+
+Источник: [MUI — minimizing bundle size](https://mui.com/material-ui/guides/minimizing-bundle-size/).
 
 ### 4.3 Вынос сложных вычислений в переменные
 
@@ -984,7 +990,7 @@ const className = classNames(
   darkMode && styles.dark
 );
 
-return <div className={className}>;
+return <div className={className} />;
 ```
 
 ## 5. Работа с формами
@@ -1070,12 +1076,12 @@ const LoginForm = (): React.JSX.Element => {
       password: validatePassword(formState.password),
     }
 
+    setFormState((previous) => ({ ...previous, errors }))
     if (errors.email || errors.password) {
-      setFormState({ ...formState, errors })
       return
     }
 
-    submitForm(formState)
+    submitForm({ email: formState.email, password: formState.password })
   }
 
   return (
@@ -1123,11 +1129,13 @@ const LoginForm = (): React.JSX.Element => {
 
 ### 6.1 Глобальные CSS переменные вместо useTheme
 
-**Проблема:** `useTheme` в каждом компоненте вызывает лишние ререндеры.
+Если компонент использует тему только для CSS-цветов, переменные позволяют обойтись без подписки на контекст. Для поведения в JavaScript `useTheme` остаётся подходящим инструментом. Ререндер потребителя при изменении нужной ему темы ожидаем; сам по себе он не ошибка.
 
 **✅ Решение — CSS переменные + атрибут `data-theme`:**
 
 **В `ThemeProvider`:**
+
+Фрагмент использует React hooks `useState`, `useEffect`, `useMemo` и заранее созданный `ThemeContext`. Стабильный `value` предотвращает обновления контекста только из-за новой ссылки на объект; это не блокирует все ререндеры дочерних компонентов.
 
 ```typescript
 const ThemeProvider = ({
@@ -1141,8 +1149,10 @@ const ThemeProvider = ({
     document.body.setAttribute('data-theme', theme)
   }, [theme])
 
+  const contextValue = useMemo(() => ({ theme, setTheme }), [theme])
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   )
@@ -1154,6 +1164,7 @@ const ThemeProvider = ({
 ```css
 :root {
   --white: #fff;
+  --black: #000;
   --dark: #212529;
   --light: #f4f4f4;
   --body-bg: var(--white);
@@ -1181,9 +1192,11 @@ body[data-theme='dark'] {
 
 **Преимущества:**
 
-- ✅ Нет лишних ререндеров
-- ✅ Проще поддерживать
-- ✅ CSS переменные работают быстрее
+- Компонентам, которым нужны только CSS-токены, не требуется подписка на тему.
+- Цвета задаются централизованно.
+- Браузер всё равно пересчитывает стили; выигрыш производительности нужно измерять.
+
+Источник: [React — useContext](https://react.dev/reference/react/useContext).
 
 ## 7. Next.js Best Practices
 
@@ -1268,7 +1281,7 @@ fetchUser();
 **Комментарии должны быть актуальны и полезны. Удаляй:**
 
 - Закомментированный код
-- TODO без даты
+- Неактуальные TODO; отсутствие даты само по себе не делает TODO бесполезным
 - Очевидные комментарии
 
 ## Чек-лист: React Best Practices

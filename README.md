@@ -23,6 +23,8 @@
 5. [SOLID и принципы проектирования](clean-code/Clean-Code-Fundamental-Part5.md) — все пять принципов SOLID, KISS, DRY, YAGNI, композиция.
 6. [Дополнительные практики](clean-code/Clean-Code-Fundamental-Part6.md) — методы, таймеры, условия и размер файлов.
 
+Дополнительно: [Безопасный рефакторинг](clean-code/Safe-Refactoring.md) — сохранение контрактов, маленькие шаги, FIRST и тесты границ.
+
 ### Практики по технологиям
 
 - [TypeScript](clean-code/TypeScript.md) — типизация, проверка внешних данных и контракты.

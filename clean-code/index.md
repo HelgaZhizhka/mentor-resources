@@ -50,6 +50,15 @@
 - [✅ Форматирование](Check-List.md#-форматирование)
 - [Заключение](Check-List.md#заключение)
 
+### [Безопасный рефакторинг](Safe-Refactoring.md)
+
+- [Контракт](Safe-Refactoring.md#1-зафиксируйте-контракт)
+- [Небольшие шаги](Safe-Refactoring.md#2-меняйте-небольшими-шагами)
+- [Словарь вместо switch](Safe-Refactoring.md#3-пример-словарь-вместо-switch)
+- [Promise-цепочка и async/await](Safe-Refactoring.md#4-пример-promise-цепочка-и-asyncawait)
+- [FIRST и границы тестирования](Safe-Refactoring.md#5-first-и-границы-тестирования)
+- [Самопроверка перед ревью](Safe-Refactoring.md#6-самопроверка-перед-ревью)
+
 ### [Часть 1: Основы чистого кода](Clean-Code-Fundamental-Part1.md)
 
 - [Зачем нужен чистый код?](Clean-Code-Fundamental-Part1.md#зачем-нужен-чистый-код)
@@ -146,7 +155,7 @@
 - [3. Event Delegation](Clean-Code-Fundamental-Part6.md#3-event-delegation)
 - [3.1 Как использовать Event Delegation](Clean-Code-Fundamental-Part6.md#31-как-использовать-event-delegation)
 - [3.2 Когда НЕ использовать Event Delegation](Clean-Code-Fundamental-Part6.md#32-когда-не-использовать-event-delegation)
-- [4. Обязательные скобки для if/else/for](Clean-Code-Fundamental-Part6.md#4-обязательные-скобки-для-ifelsefor)
+- [4. Скобки для if/else/for и соглашения проекта](Clean-Code-Fundamental-Part6.md#4-обязательные-скобки-для-ifelsefor)
 - [4.2 Настройка ESLint](Clean-Code-Fundamental-Part6.md#42-настройка-eslint)
 - [5. Размер файлов (200-400 строк)](Clean-Code-Fundamental-Part6.md#5-размер-файлов-200-400-строк)
 - [5.2 Рекомендуемые размеры](Clean-Code-Fundamental-Part6.md#52-рекомендуемые-размеры)
